@@ -1,0 +1,24 @@
+{
+	"name": "Replion_Test",
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+			"Replion": {
+				"$path": "src"
+			}
+		},
+		"TestService": {
+			"$className": "TestService",
+			"$properties": {
+				"ExecuteWithStudioRun": true
+			},
+			"TestEZ": {
+				"$path": "packages/testez/src"
+			},
+			"run": {
+				"$path": "RunTests.server.lua"
+			}
+		}
+	}
+}
