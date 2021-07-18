@@ -110,10 +110,10 @@ function Replion:Set(path: Utils.StringArray | string, newValue: any): any
 	local lastValue: any = dataPath[last]
 	local action: string?
 
-	if lastValue ~= newValue then
-		action = newValue == nil and Enums.Action.Removed or Enums.Action.Changed
-	elseif lastValue == nil then
+	if lastValue == nil then
 		action = Enums.Action.Added
+	elseif newValue ~= lastValue then
+		action = newValue == nil and Enums.Action.Removed or Enums.Action.Changed
 	end
 
 	dataPath[last] = newValue
@@ -137,6 +137,7 @@ function Replion:Update(path: Utils.StringArray | string, valuesToUpdate: any): 
 	local action: string?
 
 	if lastValue == nil then
+		dataPath[last] = valuesToUpdate
 		action = Enums.Action.Added
 	else
 		dataPath[last] = Utils.assign(lastValue, valuesToUpdate)
@@ -203,18 +204,23 @@ function Replion:GetReplion(player: Player): Replion?
 	return replions[player]
 end
 
-function Replion:_fireUpdate(option: any, path: { string }, newValue: any)
-	option:Expect(string.format('No change on %q update!', Utils.convertTablePathToString(path)))
+function Replion:_fireUpdate(action: any, path: { string }, newValue: any)
+	action:Expect(string.format('No change on %q update!', Utils.convertTablePathToString(path)))
 
-	option = option:Unwrap()
+	action = action:Unwrap()
 
 	if not Replion.TESTING then
-		OnUpdateEvent:FireClient(self.Player, option, path, newValue)
+		OnUpdateEvent:FireClient(self.Player, action, path, newValue)
 	end
 
-	local signal: Signal.Signal = Utils.getSignal(self._signals, path)
+	local signal: Signal.Signal? = Utils.getSignal(self._signals, path)
 	if signal then
-		signal:Fire(option, newValue)
+		signal:Fire(action, newValue)
+	end
+
+	local rootSignal: Signal.Signal? = Utils.getSignal(self._signals, path[1])
+	if rootSignal and rootSignal ~= signal then
+		rootSignal:Fire(action, newValue)
 	end
 end
 

@@ -8,10 +8,16 @@ return function()
 
 	local newReplion = Replion.new(fakePlayer, {
 		Test = true,
+		OtherValue = true,
 		Values = {
 			A = false,
 			B = true,
 			C = false,
+		},
+
+		Others = {
+			A = true,
+			B = true,
 		},
 
 		Coins = 0,
@@ -43,8 +49,25 @@ return function()
 		end)
 
 		it('should change values', function()
-			newReplion:Set('Test', false)
-			expect(newReplion.Data.Test).to.be.equal(false)
+			newReplion:Set('OtherValue', false)
+			expect(newReplion.Data.OtherValue).to.be.equal(false)
+		end)
+
+		it('should return valid actions', function()
+			local actions: { string } = {}
+			local connection = newReplion:OnUpdate('Others', function(action: string)
+				table.insert(actions, action)
+			end)
+
+			newReplion:Set('Others.A', nil)
+			newReplion:Set('Others.B', false)
+			newReplion:Set('Others.C', true)
+
+			expect(actions[1]).to.be.equal('Removed')
+			expect(actions[2]).to.be.equal('Changed')
+			expect(actions[3]).to.be.equal('Added')
+
+			connection:Disconnect()
 		end)
 	end)
 
@@ -79,9 +102,9 @@ return function()
 				value = newValue
 			end)
 
-			newReplion:Set('Test', true)
+			newReplion:Set('Test', false)
 
-			expect(value).to.be.equal(true)
+			expect(value).to.be.equal(false)
 
 			connection:Disconnect()
 		end)
