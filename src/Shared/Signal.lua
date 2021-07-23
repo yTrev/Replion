@@ -39,12 +39,12 @@ function Signal.new(): Signal
 	}, Signal)
 end
 
-function Signal.Is(object)
+function Signal.Is(object): boolean
 	return typeof(object) == 'table' and getmetatable(object) == Signal
 end
 
-function Signal:Connect(callback): Connection
-	local newConnection = Connection.new(self, callback)
+function Signal:Connect(callback: Callback): Connection
+	local newConnection: Connection = Connection.new(self, callback)
 	table.insert(self._connections, newConnection)
 
 	return newConnection
@@ -60,7 +60,7 @@ function Signal:Fire(...: any)
 	end
 end
 
-function Signal:Wait(): thread
+function Signal:Wait(): ...any
 	table.insert(self._threads, coroutine.running())
 
 	return coroutine.yield()
@@ -74,6 +74,6 @@ function Signal:Destroy()
 end
 
 export type Signal = typeof(Signal.new())
-export type Connection = typeof(Connection.new(Signal.new(), function() end))
+export type Connection = typeof(Connection.new(Signal.new(), print))
 
 return Signal
