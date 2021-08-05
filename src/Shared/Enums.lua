@@ -1,3 +1,5 @@
+--!strict
+
 local function enum(name: string, enums: { string })
 	local newEnum = {}
 

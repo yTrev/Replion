@@ -39,7 +39,7 @@ return function()
 
 			newSignal:Destroy()
 
-			expect(newSignal._connections).to.be.equal(nil)
+			expect(newSignal._handlerListHead).to.be.equal(false)
 		end)
 	end)
 

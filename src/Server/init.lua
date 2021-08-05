@@ -2,6 +2,9 @@
 
 --[[
 	Replion = Replion.new(player: Player, data: table): Replion
+	Replion.Data: any
+	Replion.Player: Player
+
 	Replion:GetReplion(player: Player): Replion?
 
 	Replion:OnUpdate(path: { string } | string, callback: (...any) -> ()): Connection
@@ -78,6 +81,36 @@ end
 
 function Replion:__tostring()
 	return string.format('Replion<%s>', self.Player.Name)
+end
+
+function Replion:_fireUpdate(action: any, path: { string }, newValue: any)
+	action:Expect(string.format('No change on %q update!', Utils.convertTablePathToString(path)))
+
+	action = action:Unwrap()
+
+	if not Replion.TESTING then
+		OnUpdateEvent:FireClient(self.Player, action, path, newValue)
+	end
+
+	local signal: Signal.Signal? = Utils.getSignal(self._signals, path)
+	if signal then
+		signal:Fire(action, newValue)
+	end
+
+	local rootSignal: Signal.Signal? = Utils.getSignal(self._signals, path[1])
+	if rootSignal and rootSignal ~= signal then
+		rootSignal:Fire(action, newValue)
+	end
+end
+
+function Replion:_getFromPath(path: Utils.StringArray): (any, string)
+	local dataPath = self.Data
+
+	for i: number = 1, #path - 1 do
+		dataPath = dataPath[path[i]]
+	end
+
+	return dataPath, path[#path]
 end
 
 function Replion:OnUpdate(path: Utils.StringArray | string, callback: (any) -> ()): Signal.Connection
@@ -202,36 +235,6 @@ end
 
 function Replion:GetReplion(player: Player): Replion?
 	return replions[player]
-end
-
-function Replion:_fireUpdate(action: any, path: { string }, newValue: any)
-	action:Expect(string.format('No change on %q update!', Utils.convertTablePathToString(path)))
-
-	action = action:Unwrap()
-
-	if not Replion.TESTING then
-		OnUpdateEvent:FireClient(self.Player, action, path, newValue)
-	end
-
-	local signal: Signal.Signal? = Utils.getSignal(self._signals, path)
-	if signal then
-		signal:Fire(action, newValue)
-	end
-
-	local rootSignal: Signal.Signal? = Utils.getSignal(self._signals, path[1])
-	if rootSignal and rootSignal ~= signal then
-		rootSignal:Fire(action, newValue)
-	end
-end
-
-function Replion:_getFromPath(path: Utils.StringArray): (any, string)
-	local dataPath = self.Data
-
-	for i: number = 1, #path - 1 do
-		dataPath = dataPath[path[i]]
-	end
-
-	return dataPath, path[#path]
 end
 
 function Replion:Destroy()

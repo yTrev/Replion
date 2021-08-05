@@ -1,10 +1,14 @@
+--!strict
 --[[
 	Replion:Start()
 
 	Replion:OnUpdate(path: { string }| string, callback: (...any) -> ()): Connection
 
+	Replion:GetData(): any
 	Replion:Get(path: { string } | string): any
 	Replion:GetOption(path: { string } | string): Option<any>
+
+	Replion.Data: any
 ]]
 
 -- ===========================================================================
@@ -23,25 +27,25 @@ local Enums = require(script.Parent.Shared.Enums)
 -- ===========================================================================
 -- Variables
 -- ===========================================================================
-local ReplionFolder: Folder = ReplicatedStorage:WaitForChild('ReplionEvents')
+local ReplionFolder: Folder = ReplicatedStorage:WaitForChild('ReplionEvents') :: Folder
 
 local started: boolean = false
-local waitData: Signal.Signal = Signal.new()
-local signals: { Signal.Signal } = {}
+local waitData: Signal = Signal.new()
+local signals: { [string]: Signal.Signal } = {}
 
-local Replion = {
-	Action = Enums.Action,
-}
+local Replion = {}
+Replion.Action = Enums.Action
 
-function Replion:_getData()
-	local data = self.Data
-	return data and data or waitData:Wait()
-end
+type Signal = Signal.Signal
+type Connection = Signal.Connection
 
+-- ===========================================================================
+-- Private functions
+-- ===========================================================================
 function Replion:_processUpdate(action: string, path: { string }, newValue: any)
-	local updateSignal: Signal.Signal? = Utils.getSignal(signals, path)
+	local updateSignal: Signal? = Utils.getSignal(signals, path)
 
-	local data = self:_getData()
+	local data = self:GetData()
 	local last: string = path[#path]
 
 	for i: number = 1, #path - 1 do
@@ -49,41 +53,58 @@ function Replion:_processUpdate(action: string, path: { string }, newValue: any)
 	end
 
 	if typeof(newValue) == 'table' then
-		data[last] = Utils.assign(data[last], newValue)
+		if typeof(data[last]) == 'table' then
+			data[last] = Utils.assign(data[last], newValue)
+		else
+			data[last] = newValue
+		end
 	else
 		data[last] = newValue
 	end
 
 	local actionEnum: string = self.Action[action]
 	if updateSignal then
-		updateSignal:Fire(actionEnum, newValue, last)
+		(updateSignal :: Signal):Fire(actionEnum, newValue, last)
 	end
 
-	local rootSignal: Signal.Signal? = signals[path[1]]
+	local rootSignal: Signal? = signals[path[1]]
 	if rootSignal and rootSignal ~= updateSignal then
 		rootSignal:Fire(actionEnum, last, newValue)
 	end
 end
 
-function Replion:OnUpdate(path: Utils.StringArray | string, callback)
-	local signal: any = Utils.getSignal(signals, path, true)
+-- ===========================================================================
+-- Public functions
+-- ===========================================================================
+function Replion:GetData(): any
+	return self.Data or waitData:Wait()
+end
+
+function Replion:OnUpdate(path: Utils.StringArray | string, callback): Connection
+	assert(typeof(callback) == 'function', 'Invalid callback!')
+
+	local signal: Signal = Utils.getSignal(signals, path, true)
 	return signal:Connect(callback)
 end
 
-function Replion:Get(path: Utils.String | string)
+function Replion:Get(path: Utils.StringArray | string): any
+	local pathInTable: { string }
+
 	if typeof(path) == 'string' then
-		path = Utils.convertPathToTable(path :: string)
+		pathInTable = Utils.convertPathToTable(path :: string)
+	else
+		pathInTable = path :: Utils.StringArray
 	end
 
-	local value: any = self:_getData()
-	for _: number, name: string in ipairs(path) do
+	local value: any = self:GetData()
+	for _: number, name: string in ipairs(pathInTable) do
 		value = value[name]
 	end
 
 	return value
 end
 
-function Replion:GetOption(path: Utils.StringArray | string)
+function Replion:GetOption(path: Utils.StringArray | string): any
 	return Option.Wrap(self:Get(path))
 end
 
@@ -94,7 +115,7 @@ function Replion:Start()
 
 	started = true
 
-	local requestData: RemoteEvent = ReplionFolder:FindFirstChild('RequestData')
+	local requestData: RemoteEvent = ReplionFolder:FindFirstChild('RequestData') :: RemoteEvent
 	local connection: RBXScriptConnection
 	connection = requestData.OnClientEvent:Connect(function(data: any)
 		connection:Disconnect()
@@ -103,12 +124,11 @@ function Replion:Start()
 
 		waitData:Fire(self.Data)
 		waitData:Destroy()
-		waitData = nil
 	end)
 
 	requestData:FireServer()
 
-	local onUpdate: RemoteEvent = ReplionFolder:FindFirstChild('OnUpdate')
+	local onUpdate: RemoteEvent = ReplionFolder:FindFirstChild('OnUpdate') :: RemoteEvent
 	onUpdate.OnClientEvent:Connect(function(...: any)
 		self:_processUpdate(...)
 	end)

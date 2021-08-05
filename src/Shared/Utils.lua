@@ -1,5 +1,7 @@
+--!strict
 local Signal = require(script.Parent.Signal)
 
+type Signal = Signal.Signal
 export type StringArray = { string }
 
 local function convertTablePathToString(path: StringArray): string
@@ -11,11 +13,14 @@ local function convertPathToTable(path: string): StringArray
 end
 
 local function getSignal(signals, path: string | StringArray, create: boolean?): any
+	local pathInString: string
 	if typeof(path) == 'table' then
-		path = convertTablePathToString(path)
+		pathInString = convertTablePathToString(path)
+	else
+		pathInString = path :: string
 	end
 
-	local pathSignal: Signal.Signal? = signals[path]
+	local pathSignal: Signal? = signals[pathInString]
 	if pathSignal == nil and create then
 		pathSignal = Signal.new()
 		signals[path] = pathSignal
