@@ -52,12 +52,8 @@ function Replion:_processUpdate(action: string, path: { string }, newValue: any)
 		data = data[path[i]]
 	end
 
-	if typeof(newValue) == 'table' then
-		if typeof(data[last]) == 'table' then
-			data[last] = Utils.assign(data[last], newValue)
-		else
-			data[last] = newValue
-		end
+	if typeof(newValue) == 'table' and typeof(data[last]) == 'table' then
+		data[last] = Utils.assign(data[last], newValue)
 	else
 		data[last] = newValue
 	end
