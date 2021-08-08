@@ -23,7 +23,7 @@ local function getSignal(signals, path: string | StringArray, create: boolean?):
 	local pathSignal: Signal? = signals[pathInString]
 	if pathSignal == nil and create then
 		pathSignal = Signal.new()
-		signals[path] = pathSignal
+		signals[pathInString] = pathSignal
 	end
 
 	return pathSignal
