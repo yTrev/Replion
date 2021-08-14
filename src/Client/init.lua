@@ -25,6 +25,11 @@ local Signal = require(script.Parent.Shared.Signal)
 local Enums = require(script.Parent.Shared.Enums)
 
 -- ===========================================================================
+-- Constants
+-- ===========================================================================
+local RETRY_DELAY: number = 0.5
+
+-- ===========================================================================
 -- Variables
 -- ===========================================================================
 local ReplionFolder: Folder = ReplicatedStorage:WaitForChild('ReplionEvents') :: Folder
@@ -114,12 +119,17 @@ function Replion:Start()
 	local requestData: RemoteEvent = ReplionFolder:FindFirstChild('RequestData') :: RemoteEvent
 	local connection: RBXScriptConnection
 	connection = requestData.OnClientEvent:Connect(function(data: any)
-		connection:Disconnect()
+		-- Data not ready, retry.
+		if data == nil then
+			task.delay(RETRY_DELAY, requestData.FireServer, requestData)
+		else
+			connection:Disconnect()
 
-		self.Data = data
+			self.Data = data
 
-		waitData:Fire(self.Data)
-		waitData:Destroy()
+			waitData:Fire(data)
+			waitData:Destroy()
+		end
 	end)
 
 	requestData:FireServer()

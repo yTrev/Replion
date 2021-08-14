@@ -254,6 +254,8 @@ RequestData.OnServerEvent:Connect(function(player: Player)
 
 	if playerReplion then
 		RequestData:FireClient(player, playerReplion.Data)
+	else
+		RequestData:FireClient(player, nil)
 	end
 end)
 
