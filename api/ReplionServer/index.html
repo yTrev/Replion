@@ -29,8 +29,8 @@ local newReplion = Replion.new({
 newReplion:Add(&#x27;Coins&#x27;, 20)
 print(newReplion:Get(&#x27;Coins&#x27;)) --&gt; 30
 ```"><meta data-react-helmet="true" property="og:url" content="https://yTrev.github.io/Replion/api/ReplionServer"><meta data-react-helmet="true" name="docusaurus_locale" content="en"><meta data-react-helmet="true" name="docusaurus_tag" content="default"><link data-react-helmet="true" rel="canonical" href="https://yTrev.github.io/Replion/api/ReplionServer"><link data-react-helmet="true" rel="alternate" href="https://yTrev.github.io/Replion/api/ReplionServer" hreflang="en"><link data-react-helmet="true" rel="alternate" href="https://yTrev.github.io/Replion/api/ReplionServer" hreflang="x-default"><link rel="stylesheet" href="/Replion/assets/css/styles.09cc9487.css">
-<link rel="preload" href="/Replion/assets/js/runtime~main.99f6d67a.js" as="script">
-<link rel="preload" href="/Replion/assets/js/main.0bc881b8.js" as="script">
+<link rel="preload" href="/Replion/assets/js/runtime~main.de004594.js" as="script">
+<link rel="preload" href="/Replion/assets/js/main.573a3d5b.js" as="script">
 </head>
 <body>
 <script>!function(){function t(t){document.documentElement.setAttribute("data-theme",t)}var e=function(){var t=null;try{t=localStorage.getItem("theme")}catch(t){}return t}();t(null!==e?e:"light")}()</script><div id="__docusaurus">
@@ -47,13 +47,7 @@ print(newReplion:Get(&#x27;Coins&#x27;)) --&gt; 30
 newReplion<span class="token punctuation">:</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">,</span> <span class="token number">20</span><span class="token punctuation">)</span>
 <span class="token function">print</span><span class="token punctuation">(</span>newReplion<span class="token punctuation">:</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">--> 30</span>
 </code></pre>
-</div></header><h2><a aria-hidden="true" tabindex="-1" class="anchor anchor__h2 anchorWithStickyNavbar_31ik" id="types"></a>Types<a class="hash-link" href="#types" title="Direct link to heading">#</a></h2><div class="divider_3z1R"></div><h3><a aria-hidden="true" tabindex="-1" class="anchor anchor__h3 anchorWithStickyNavbar_31ik" id="Action"></a><code style="text-decoration:none">Action</code><a class="hash-link" href="#Action" title="Direct link to heading">#</a></h3><span class="docTag_3qMS" style="border-color:#dc0073;color:#dc0073">Enum</span><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/Client/init.lua#L44"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code class="purple__nFc">interface</code> <code>Action {</code><div class="inset_2cJr"><div><code>Added: </code><code class="blue_2Afy">&quot;Added&quot;</code><span class="inlineDescription_17uy">-- <span>
-<p>A new value was added;</p>
-</span></span></div><div><code>Changed: </code><code class="blue_2Afy">&quot;Changed&quot;</code><span class="inlineDescription_17uy">-- <span>
-<p>A value was changed;</p>
-</span></span></div><div><code>Removed: </code><code class="blue_2Afy">&quot;Removed&quot;</code><span class="inlineDescription_17uy">-- <span>
-<p>A value was removed.</p>
-</span></span></div></div><code>}</code></div><div></div><div class="divider_3z1R"></div><h3><a aria-hidden="true" tabindex="-1" class="anchor anchor__h3 anchorWithStickyNavbar_31ik" id="Action"></a><code style="text-decoration:none">Action</code><a class="hash-link" href="#Action" title="Direct link to heading">#</a></h3><span class="docTag_3qMS" style="border-color:#dc0073;color:#dc0073">Enum</span><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/Server/init.lua#L71"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code class="purple__nFc">interface</code> <code>Action {</code><div class="inset_2cJr"><div><code>Added: </code><code class="blue_2Afy">&quot;Added&quot;</code><span class="inlineDescription_17uy">-- <span>
+</div></header><h2><a aria-hidden="true" tabindex="-1" class="anchor anchor__h2 anchorWithStickyNavbar_31ik" id="types"></a>Types<a class="hash-link" href="#types" title="Direct link to heading">#</a></h2><div class="divider_3z1R"></div><h3><a aria-hidden="true" tabindex="-1" class="anchor anchor__h3 anchorWithStickyNavbar_31ik" id="Action"></a><code style="text-decoration:none">Action</code><a class="hash-link" href="#Action" title="Direct link to heading">#</a></h3><span class="docTag_3qMS" style="border-color:#dc0073;color:#dc0073">Enum</span><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/Server/init.lua#L71"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code class="purple__nFc">interface</code> <code>Action {</code><div class="inset_2cJr"><div><code>Added: </code><code class="blue_2Afy">&quot;Added&quot;</code><span class="inlineDescription_17uy">-- <span>
 <p>A new value was added;</p>
 </span></span></div><div><code>Changed: </code><code class="blue_2Afy">&quot;Changed&quot;</code><span class="inlineDescription_17uy">-- <span>
 <p>A value was changed;</p>
@@ -396,34 +390,6 @@ newReplion<span class="token punctuation">:</span><span class="token function">A
     ],
     &quot;types&quot;: [
         {
-            &quot;name&quot;: &quot;Action&quot;,
-            &quot;desc&quot;: &quot;&quot;,
-            &quot;fields&quot;: [
-                {
-                    &quot;name&quot;: &quot;Added&quot;,
-                    &quot;lua_type&quot;: &quot;\&quot;Added\&quot;&quot;,
-                    &quot;desc&quot;: &quot;A new value was added;&quot;
-                },
-                {
-                    &quot;name&quot;: &quot;Changed&quot;,
-                    &quot;lua_type&quot;: &quot;\&quot;Changed\&quot;&quot;,
-                    &quot;desc&quot;: &quot;A value was changed;&quot;
-                },
-                {
-                    &quot;name&quot;: &quot;Removed&quot;,
-                    &quot;lua_type&quot;: &quot;\&quot;Removed\&quot;&quot;,
-                    &quot;desc&quot;: &quot;A value was removed.&quot;
-                }
-            ],
-            &quot;tags&quot;: [
-                &quot;Enum&quot;
-            ],
-            &quot;source&quot;: {
-                &quot;line&quot;: 44,
-                &quot;path&quot;: &quot;src/Client/init.lua&quot;
-            }
-        },
-        {
             &quot;name&quot;: &quot;Configuration&quot;,
             &quot;desc&quot;: &quot;&quot;,
             &quot;fields&quot;: [
@@ -486,8 +452,8 @@ newReplion<span class="token punctuation">:</span><span class="token function">A
         &quot;line&quot;: 116,
         &quot;path&quot;: &quot;src/Server/init.lua&quot;
     }
-}</pre></details></div><div class="col col--3"><div class="tableOfContents_35-E thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link">Types</a><ul><li><a href="#Action" class="table-of-contents__link">Action</a></li><li><a href="#Action" class="table-of-contents__link">Action</a></li><li><a href="#Configuration" class="table-of-contents__link">Configuration</a></li></ul></li><li><a href="#properties" class="table-of-contents__link">Properties</a><ul><li><a href="#Action" class="table-of-contents__link">Action</a></li><li><a href="#Data" class="table-of-contents__link">Data</a></li><li><a href="#Player" class="table-of-contents__link">Player</a></li><li><a href="#WriteLib" class="table-of-contents__link">WriteLib</a></li></ul></li><li><a href="#functions" class="table-of-contents__link">Functions</a><ul><li><a href="#new" class="table-of-contents__link">.new</a></li><li><a href="#Decrease" class="table-of-contents__link">:Decrease</a></li><li><a href="#Destroy" class="table-of-contents__link">:Destroy</a></li><li><a href="#Get" class="table-of-contents__link">:Get</a></li><li><a href="#GetReplion" class="table-of-contents__link">:GetReplion</a></li><li><a href="#Increase" class="table-of-contents__link">:Increase</a></li><li><a href="#OnUpdate" class="table-of-contents__link">:OnUpdate</a></li><li><a href="#Set" class="table-of-contents__link">:Set</a></li><li><a href="#Update" class="table-of-contents__link">:Update</a></li><li><a href="#Write" class="table-of-contents__link">:Write</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2021 yTrev. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
-<script src="/Replion/assets/js/runtime~main.99f6d67a.js"></script>
-<script src="/Replion/assets/js/main.0bc881b8.js"></script>
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_35-E thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link">Types</a><ul><li><a href="#Action" class="table-of-contents__link">Action</a></li><li><a href="#Configuration" class="table-of-contents__link">Configuration</a></li></ul></li><li><a href="#properties" class="table-of-contents__link">Properties</a><ul><li><a href="#Action" class="table-of-contents__link">Action</a></li><li><a href="#Data" class="table-of-contents__link">Data</a></li><li><a href="#Player" class="table-of-contents__link">Player</a></li><li><a href="#WriteLib" class="table-of-contents__link">WriteLib</a></li></ul></li><li><a href="#functions" class="table-of-contents__link">Functions</a><ul><li><a href="#new" class="table-of-contents__link">.new</a></li><li><a href="#Decrease" class="table-of-contents__link">:Decrease</a></li><li><a href="#Destroy" class="table-of-contents__link">:Destroy</a></li><li><a href="#Get" class="table-of-contents__link">:Get</a></li><li><a href="#GetReplion" class="table-of-contents__link">:GetReplion</a></li><li><a href="#Increase" class="table-of-contents__link">:Increase</a></li><li><a href="#OnUpdate" class="table-of-contents__link">:OnUpdate</a></li><li><a href="#Set" class="table-of-contents__link">:Set</a></li><li><a href="#Update" class="table-of-contents__link">:Update</a></li><li><a href="#Write" class="table-of-contents__link">:Write</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2021 yTrev. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
+<script src="/Replion/assets/js/runtime~main.de004594.js"></script>
+<script src="/Replion/assets/js/main.573a3d5b.js"></script>
 </body>
 </html>
