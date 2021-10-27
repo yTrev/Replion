@@ -1,26 +1,38 @@
+local ReplicatedStorage = game:GetService('ReplicatedStorage')
+
 return function()
-	local Replion = require(game:GetService('ReplicatedStorage').Replion)
+	local Replion = require(ReplicatedStorage:FindFirstChild('Replion'))
 	Replion.TESTING = true
 
-	local fakePlayer = {
-		Name = 'JohnDoe',
+	local testWriteLib = {
+		AddCoins = function(replion: any, amount: number)
+			replion:Increase('Coins', amount)
+		end,
 	}
 
-	local newReplion = Replion.new(fakePlayer, {
-		Test = true,
-		OtherValue = true,
-		Values = {
-			A = false,
-			B = true,
-			C = false,
+	local newReplion = Replion.new({
+		Player = {
+			Name = 'JohnDoe',
 		},
 
-		Others = {
-			A = true,
-			B = true,
-		},
+		WriteLib = testWriteLib,
 
-		Coins = 0,
+		Data = {
+			Test = true,
+			OtherValue = true,
+			Values = {
+				A = false,
+				B = true,
+				C = false,
+			},
+
+			Others = {
+				A = true,
+				B = true,
+			},
+
+			Coins = 0,
+		},
 	})
 
 	describe('Replion.new', function()
@@ -161,5 +173,21 @@ return function()
 
 	it('should have a tostring', function()
 		expect(string.match(tostring(newReplion), 'Replion<.+>')).to.be.ok()
+	end)
+
+	describe('Replion:Write', function()
+		it("should error if the write function doesn't exist", function()
+			expect(function()
+				newReplion:Write('RandomStuff', 20)
+			end).to.throw()
+		end)
+
+		it('should update the values', function()
+			local oldCoins = newReplion:Get('Coins')
+
+			newReplion:Write('AddCoins', 20)
+
+			expect(newReplion:Get('Coins')).to.be.equal(oldCoins + 20)
+		end)
 	end)
 end

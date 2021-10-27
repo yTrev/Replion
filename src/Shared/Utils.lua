@@ -15,7 +15,7 @@ end
 local function getSignal(signals, path: string | StringArray, create: boolean?): any
 	local pathInString: string
 	if typeof(path) == 'table' then
-		pathInString = convertTablePathToString(path)
+		pathInString = convertTablePathToString(path :: StringArray)
 	else
 		pathInString = path :: string
 	end
@@ -44,7 +44,7 @@ local function shallowCopy(tableToCopy: any): any
 	return new
 end
 
-local function assign(targetTable, newValues: { any })
+local function assign(targetTable, newValues: { [any]: any })
 	local newTable = shallowCopy(targetTable)
 
 	for k: any, value: any in pairs(newValues) do

@@ -1,4 +1,6 @@
---------------------------------------------------------------------------------
+--!strict
+
+--============================================================================--
 --               Batched Yield-Safe Signal Implementation                     --
 -- This is a Signal class which has effectively identical behavior to a       --
 -- normal RBXScriptSignal, with the only difference being a couple extra      --
@@ -21,7 +23,7 @@
 --                                                                            --
 -- Authors:                                                                   --
 --   stravant - July 31st, 2021 - Created the file.                           --
---------------------------------------------------------------------------------
+--============================================================================--
 
 -- The currently idle thread to run the next handler on
 local freeRunnerThread: thread? = nil
@@ -66,7 +68,7 @@ function Connection.new(signal: Signal, callback: Callback): Connection
 end
 
 function Connection:Disconnect()
-	assert(self._connected, "Can't disconnect a connection twice.", 2)
+	assert(self._connected, "Can't disconnect a connection twice.")
 
 	self._connected = false
 
@@ -113,7 +115,7 @@ function Signal.Is(object): boolean
 	return type(object) == 'table' and getmetatable(object) == Signal
 end
 
-function Signal:Connect(callback: Callback)
+function Signal:Connect(callback: Callback): Connection
 	local connection: Connection = Connection.new(self, callback)
 	if self._handlerListHead then
 		connection._next = self._handlerListHead
@@ -145,7 +147,7 @@ function Signal:Fire(...: any)
 				freeRunnerThread = coroutine.create(runEventHandlerInFreeThread)
 			end
 
-			task.spawn(freeRunnerThread, item._callback, ...)
+			task.spawn(freeRunnerThread :: thread, item._callback, ...)
 		end
 
 		item = item._next
@@ -154,7 +156,7 @@ end
 
 -- Implement Signal:Wait() in terms of a temporary connection using
 -- a Signal:Connect() which disconnects itself.
-function Signal:Wait()
+function Signal:Wait(): (...any)
 	local waitingCoroutine: thread = coroutine.running()
 	local cn: Connection
 

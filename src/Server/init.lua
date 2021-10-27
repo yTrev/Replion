@@ -1,24 +1,4 @@
 --!strict
-
---[[
-	Replion = Replion.new(player: Player, data: table): Replion
-	Replion.Data: any
-	Replion.Player: Player
-
-	Replion:GetReplion(player: Player): Replion?
-
-	Replion:OnUpdate(path: { string } | string, callback: (...any) -> ()): Connection
-
-	Replion:Set(path: { string } | string, newValue: any): any
-	Replion:Update(path: { string } | string, valuesToUpdate: any): any
-	Replion:Increase(path: { string } | string, number: number): number
-	Replion:Decrease(path: { string } | string, number: number): number
-
-	Replion:Get(path: { string } | string): any
-
-	Replion:Destroy()
-]]
-
 -- ===========================================================================
 -- Roblox services
 -- ===========================================================================
@@ -27,10 +7,40 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 -- ===========================================================================
 -- Modules
 -- ===========================================================================
-local Option = require(script.Parent.Shared.Option)
 local Utils = require(script.Parent.Shared.Utils)
 local Signal = require(script.Parent.Shared.Signal)
 local Enums = require(script.Parent.Shared.Enums)
+
+-- ===========================================================================
+-- Constants
+-- ===========================================================================
+local INVALID_CALLBACK: string = "%q isn't a valid callback!"
+local WRITE_LIB_NOT_FOUND: string = 'No write library in %s'
+local INVALID_WRITE_CALLBACK: string = '%q is not a valid write callback!'
+local NO_CHANGE_DETECTED: string = 'No change on %q update!'
+local INVALID_NUMBER: string = "%q isn't a number!"
+
+-- ===========================================================================
+-- Types
+-- ===========================================================================
+type Callback = (...any) -> (...any)
+type Signal = Signal.Signal
+type StringArray = Utils.StringArray
+type StringPath = StringArray | string
+type WriteLib = { [string]: Callback }
+
+--[=[
+	@interface Configuration
+	@within ReplionServer
+	.Player Player
+	.Data any
+	.WriteLib {[string]: (Replion, ...any) -> (...any)} 
+]=]
+type Configuration = {
+	Player: Player,
+	Data: any,
+	WriteLib: WriteLib?,
+}
 
 -- ===========================================================================
 -- Variables
@@ -50,19 +60,83 @@ RequestData.Parent = ReplionFolder
 
 ReplionFolder.Parent = ReplicatedStorage
 
-local Replion = {}
-Replion.__index = Replion
+--[=[
+	@interface Action
+	@tag Enum
+	@within ReplionServer
+	.Added "Added" -- A new value was added;
+	.Changed "Changed" -- A value was changed;
+	.Removed "Removed" -- A value was removed.
+]=]
 
-Replion.Action = Enums.Action
-Replion.TESTING = nil
+--[=[
+	@prop Action Enums
+	@tag Enums
+	@within ReplionServer
+	@readonly
+]=]
 
-function Replion.new(player: Player, initialData: any): Replion
+--[=[
+	The player Data table.
+	@prop Data any
+	@within ReplionServer
+	@readonly
+]=]
+
+--[=[
+	@prop Player Player
+	@within ReplionServer
+	@readonly
+]=]
+
+--[=[
+	@prop WriteLib { [string]: (Replion, ...any) -> (...any) }?
+	@within ReplionServer
+	@readonly
+]=]
+
+--[=[
+	@class ReplionServer
+	@server
+
+	```lua
+	local Replion = require(path.to.Replion)
+
+	local newReplion = Replion.new({
+		Player = player,
+		Data = {
+			Coins = 10,
+		},
+	})
+
+	newReplion:Add('Coins', 20)
+	print(newReplion:Get('Coins')) --> 30
+	```
+]=]
+
+local ReplionServer = {}
+ReplionServer.__index = ReplionServer
+
+ReplionServer.Action = Enums.Action
+ReplionServer.TESTING = nil
+
+--[=[
+	Creates a new `Replion` to the desired player.
+	@error Invalid player -- Occur when the player argument isn't a Player instance.
+	@error Invalid data -- Occur when the data argument isn't a table.
+	@param configuration Configuration
+	@return ReplionServer
+]=]
+function ReplionServer.new(configuration: Configuration): Replion
+	local player: Player = configuration.Player
+	local initialData = configuration.Data
+
 	if replions[player] then
 		return replions[player]
 	end
 
 	assert(
-		typeof(player) == 'Instance' and player:IsA('Player') or Replion.TESTING and typeof(player) == 'table',
+		typeof(player) == 'Instance' and player:IsA('Player') or ReplionServer.TESTING and typeof(player) == 'table',
 		'Invalid player!'
 	)
 
@@ -71,40 +145,39 @@ function Replion.new(player: Player, initialData: any): Replion
 	local self = setmetatable({
 		Data = initialData,
 		Player = player,
+		WriteLib = configuration.WriteLib,
 		_signals = {},
-	}, Replion)
+	}, ReplionServer)
 
 	replions[player] = self
 
 	return self
 end
 
-function Replion:__tostring()
+function ReplionServer:__tostring(): string
 	return string.format('Replion<%s>', self.Player.Name)
 end
 
-function Replion:_fireUpdate(action: any, path: { string }, newValue: any)
-	action:Expect(string.format('No change on %q update!', Utils.convertTablePathToString(path)))
+function ReplionServer:_fireUpdate(action: string?, path: { string }, newValue: any)
+	assert(action, string.format(NO_CHANGE_DETECTED, Utils.convertTablePathToString(path)))
 
-	action = action:Unwrap()
-
-	if not Replion.TESTING then
+	if not ReplionServer.TESTING then
 		OnUpdateEvent:FireClient(self.Player, action, path, newValue)
 	end
 
-	local signal: Signal.Signal? = Utils.getSignal(self._signals, path)
+	local signal: Signal? = Utils.getSignal(self._signals, path)
 	if signal then
 		signal:Fire(action, newValue)
 	end
 
-	local rootSignal: Signal.Signal? = Utils.getSignal(self._signals, path[1])
+	local rootSignal: Signal? = Utils.getSignal(self._signals, path[1])
 	if rootSignal and rootSignal ~= signal then
 		rootSignal:Fire(action, newValue)
 	end
 end
 
-function Replion:_getFromPath(path: Utils.StringArray): (any, string)
-	local dataPath = self.Data
+function ReplionServer:_getFromPath(path: StringArray): (any, string)
+	local dataPath: any = self.Data
 
 	for i: number = 1, #path - 1 do
 		dataPath = dataPath[path[i]]
@@ -113,29 +186,56 @@ function Replion:_getFromPath(path: Utils.StringArray): (any, string)
 	return dataPath, path[#path]
 end
 
-function Replion:OnUpdate(path: Utils.StringArray | string, callback: (any) -> ()): Signal.Connection
+--[=[
+	Listen to the changes of a value on the Data table.
+	@error Invalid path -- Occur when the path isn't a string or an array of strings.
+	@error Invalid callback -- Occur when the callback isn't a function.
+	@param path string | { string }
+	@param callback (...any) -> ()
+	@return Connection
+]=]
+function ReplionServer:OnUpdate(path: StringPath, callback: Callback): Signal.Connection
 	local pathInString: string
 
 	if typeof(path) == 'table' then
-		pathInString = Utils.convertTablePathToString(path :: Utils.StringArray)
+		pathInString = Utils.convertTablePathToString(path :: StringArray)
 	else
 		pathInString = path :: string
 	end
 
 	assert(typeof(pathInString) == 'string', string.format("%q isn't a valid path!", tostring(pathInString)))
-	assert(typeof(callback) == 'function', string.format("%q isn't a valid callback!", tostring(callback)))
+	assert(typeof(callback) == 'function', string.format(INVALID_CALLBACK, tostring(callback)))
 
-	local signal: Signal.Signal = Utils.getSignal(self._signals, pathInString, true)
+	local signal: Signal = Utils.getSignal(self._signals, pathInString, true)
 	return signal:Connect(callback)
 end
 
-function Replion:Set(path: Utils.StringArray | string, newValue: any): any
-	local pathInTable: Utils.StringArray
+--[=[
+	@error WriteLib not found -- Occur when a WriteLib doesn't exist.
+	@param path string | { string }
+	@param ... any
+	@return ...any
+]=]
+function ReplionServer:Write(name: string, ...: any): (...any)
+	local writeLib = assert(self.WriteLib, string.format(WRITE_LIB_NOT_FOUND, tostring(self)))
+
+	-- Maybe add pcall to prevent errors? But I don't think it's necessary.
+	local callbackFunction: Callback = assert(writeLib[name], string.format(INVALID_WRITE_CALLBACK, name))
+	return callbackFunction(self, ...)
+end
+
+--[=[
+	@param path string | { string }
+	@param newValue any
+	@return any
+]=]
+function ReplionServer:Set(path: StringPath, newValue: any): any
+	local pathInTable: StringArray
 
 	if typeof(path) == 'string' then
-		pathInTable = Utils.convertPathToTable(path)
+		pathInTable = Utils.convertPathToTable(path :: string)
 	else
-		pathInTable = path :: Utils.StringArray
+		pathInTable = path :: StringArray
 	end
 
 	local dataPath: any, last: string = self:_getFromPath(pathInTable)
@@ -151,18 +251,23 @@ function Replion:Set(path: Utils.StringArray | string, newValue: any): any
 
 	dataPath[last] = newValue
 
-	self:_fireUpdate(Option.Wrap(action), pathInTable, newValue)
+	self:_fireUpdate(action, pathInTable, newValue)
 
 	return dataPath[last]
 end
 
-function Replion:Update(path: Utils.StringArray | string, valuesToUpdate: any): any
-	local pathInTable: Utils.StringArray
+--[=[
+	@param path string | { string }
+	@param valuesToUpdate any
+	@return any
+]=]
+function ReplionServer:Update(path: StringPath, valuesToUpdate: any): any
+	local pathInTable: StringArray
 
 	if typeof(path) == 'string' then
-		pathInTable = Utils.convertPathToTable(path)
+		pathInTable = Utils.convertPathToTable(path :: string)
 	else
-		pathInTable = path :: Utils.StringArray
+		pathInTable = path :: StringArray
 	end
 
 	local dataPath: any, last: string = self:_getFromPath(pathInTable)
@@ -177,18 +282,23 @@ function Replion:Update(path: Utils.StringArray | string, valuesToUpdate: any): 
 		action = Enums.Action.Changed
 	end
 
-	self:_fireUpdate(Option.Wrap(action), pathInTable, valuesToUpdate)
+	self:_fireUpdate(action, pathInTable, valuesToUpdate)
 
 	return dataPath[last]
 end
 
-function Replion:Get(path: Utils.StringArray | string): any
-	local pathInTable: Utils.StringArray
+--[=[
+	Returns the value at the given path.
+	@param path: { string } | string
+	@return any
+]=]
+function ReplionServer:Get(path: StringPath): any
+	local pathInTable: StringArray
 
 	if typeof(path) == 'string' then
-		pathInTable = Utils.convertPathToTable(path)
+		pathInTable = Utils.convertPathToTable(path :: string)
 	else
-		pathInTable = path :: Utils.StringArray
+		pathInTable = path :: StringArray
 	end
 
 	local value: any = self.Data
@@ -199,22 +309,25 @@ function Replion:Get(path: Utils.StringArray | string): any
 	return value
 end
 
-function Replion:Increase(path: Utils.StringArray | string, number: number): number
-	local pathInTable: Utils.StringArray
+--[=[
+	@error Invalid number -- Occur when the number parameter isn't a number.
+	@param path string | { string }
+	@param number number
+	@return number
+]=]
+function ReplionServer:Increase(path: StringPath, number: number): number
+	number = assert(tonumber(number), string.format(INVALID_NUMBER, tostring(number)))
+
+	local pathInTable: StringArray
 
 	if typeof(path) == 'string' then
-		pathInTable = Utils.convertPathToTable(path)
+		pathInTable = Utils.convertPathToTable(path :: string)
 	else
-		pathInTable = path :: Utils.StringArray
+		pathInTable = path :: StringArray
 	end
 
 	local dataPath: any, last: string = self:_getFromPath(pathInTable)
-	local lastValue: any = dataPath[last]
-
-	assert(
-		typeof(lastValue) == 'number',
-		string.format("%q isn't a number!", Utils.convertTablePathToString(pathInTable))
-	)
+	local lastValue: any = assert(tonumber(dataPath[last]), string.format(INVALID_NUMBER, tostring(dataPath[last])))
 
 	local action: string? = Enums.Action.Changed
 	local newValue: number = lastValue + number
@@ -224,28 +337,40 @@ function Replion:Increase(path: Utils.StringArray | string, number: number): num
 		action = Enums.Action.Changed
 	end
 
-	self:_fireUpdate(Option.Wrap(action), pathInTable, newValue)
+	self:_fireUpdate(action, pathInTable, newValue)
 
 	return newValue
 end
 
-function Replion:Decrease(path: Utils.StringArray | string, number: number): number
+--[=[
+	@error Invalid number -- Occur when the number parameter isn't a number.
+	@param path string | { string }
+	@param number number
+	@return number
+]=]
+function ReplionServer:Decrease(path: StringPath, number: number): number
 	return self:Increase(path, -number)
 end
 
-function Replion:GetReplion(player: Player): Replion?
+--[=[
+	@param player Player
+	@return ReplionServer?
+]=]
+function ReplionServer:GetReplion(player: Player): Replion?
 	return replions[player]
 end
 
-function Replion:Destroy()
-	for _, signal: Signal.Signal in pairs(self._signals) do
+--[=[
+	Destroys the Replion object.
+]=]
+function ReplionServer:Destroy()
+	for _: string, signal: Signal in pairs(self._signals) do
 		signal:Destroy()
 	end
 
-	self._signals = nil
-
 	replions[self.Player] = nil
 
+	table.clear(self)
 	setmetatable(self, nil)
 end
 
@@ -259,6 +384,9 @@ RequestData.OnServerEvent:Connect(function(player: Player)
 	end
 end)
 
-export type Replion = typeof(Replion.new(Instance.new('Player'), {}))
+export type Replion = typeof(ReplionServer.new({
+	Player = Instance.new('Player'),
+	Data = {},
+}))
 
-return Replion
+return ReplionServer

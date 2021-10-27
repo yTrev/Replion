@@ -1,8 +1,8 @@
 # Replion
-Replion é um module que permite a replicação de informações do _Servidor_ para o _Cliente_ de forma eficiente, e cujo foco  ser leve e utilizar pouca banda.
+Replion is a module that allows the replication of information from _Server_ to _Client_ lightly and efficiently.
 
-# Exemplo
-Um simples exemplo totalmente funcional que mostra como se utilizar o Replion.
+# Example
+A simple example that shows how to use Replion.
 
 ### **Server**
 ```lua
@@ -16,7 +16,10 @@ local DEFAULT_DATA = {
 }
 
 local function createReplion(player: Player)
-	Replion.new(player, DEFAULT_DATA)
+	Replion.new({
+		Player = player,
+		Data = DEFAULT_DATA
+	})
 end
 
 Players.PlayerAdded:Connect(createReplion)
@@ -32,14 +35,14 @@ for _: number, player: Player in ipairs(Players:GetPlayers()) do
 end
 
 while true do
-	for _: number, player: Player in pairs(Players:GetPlayers()) do
+	for _: number, player: Player in ipairs(Players:GetPlayers()) do
 		local playerReplion: Replion.Replion? = Replion:GetReplion(player)
 		if playerReplion then
 			playerReplion:Increase('Coins', 10)
 		end
 	end
 
-	wait(1)
+	task.wait(1)
 end
 ```
 
