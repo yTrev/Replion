@@ -137,7 +137,7 @@ end
 
 --[=[
 	@error Invalid callback -- Occur when the callback isn't a function.
-	@param path: { string } | string
+	@param path { string } | string
 	@return callback (...any) -> ()
 	@return Connection
 	@within ReplionClient
@@ -151,7 +151,7 @@ end
 
 --[=[
 	Returns the value at the given path.
-	@param path: { string } | string
+	@param path { string } | string
 	@return any
 	@within ReplionClient
 ]=]

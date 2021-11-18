@@ -289,7 +289,7 @@ end
 
 --[=[
 	Returns the value at the given path.
-	@param path: { string } | string
+	@param path { string } | string
 	@return any
 ]=]
 function ReplionServer:Get(path: StringPath): any

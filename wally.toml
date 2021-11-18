@@ -1,8 +1,7 @@
 [package]
 name = "ytrev/replion"
-version = "0.2.0"
+version = "0.2.1"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 
-[dev-dependencies]
-TestEZ = "roblox/testez@0.4.1"
+[dependencies]
