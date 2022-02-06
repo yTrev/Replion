@@ -9,22 +9,23 @@ A simple example that shows how to use Replion.
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local Players = game:GetService('Players')
 
-local Replion = require(ReplicatedStorage.Replion)
+local ReplionService = require(ReplicatedStorage.Replion)
 
 local DEFAULT_DATA = {
 	Coins = 0,
 }
 
 local function createReplion(player: Player)
-	Replion.new({
+	ReplionService.new({
+		Name = "Default",
 		Player = player,
-		Data = DEFAULT_DATA
+		Data = DEFAULT_DATA,
 	})
 end
 
 Players.PlayerAdded:Connect(createReplion)
 Players.PlayerRemoving:Connect(function(player: Player)
-	local playerReplion: Replion.Replion? = Replion:GetReplion(player)
+	local playerReplion = ReplionService:GetReplion(player)
 	if playerReplion then
 		playerReplion:Destroy()
 	end
@@ -36,7 +37,7 @@ end
 
 while true do
 	for _: number, player: Player in ipairs(Players:GetPlayers()) do
-		local playerReplion: Replion.Replion? = Replion:GetReplion(player)
+		local playerReplion = ReplionService:GetReplion(player)
 		if playerReplion then
 			playerReplion:Increase('Coins', 10)
 		end
@@ -49,11 +50,14 @@ end
 ### **Client**
 ```lua
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
-local Replion = require(ReplicatedStorage.Replion)
 
-Replion:OnUpdate('Coins', function(action: string, newValue: number)
-	print(action, newValue)
-end)
+local ReplionController = require(ReplicatedStorage.Replion)
 
-Replion:Start()
+ReplionController:AwaitReplion("Default")
+	:andThen(function(clientReplion)
+		clientReplion:OnUpdate('Coins', 10)
+	end)
+	:catch(warn)
+
+ReplionController.Start()
 ```

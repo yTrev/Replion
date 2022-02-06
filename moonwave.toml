@@ -1,0 +1,19 @@
+gitRepoUrl = "https://github.com/yTrev/Replion"
+
+[[classOrder]]
+section = "Server"
+classes = ["ReplionService", "ServerReplion"]
+
+[[classOrder]]
+section = "Client"
+classes = ["ReplionController", "ClientReplion"]
+
+[docusaurus]
+favicon = "/img/favicon.ico"
+
+[navbar]
+title = ""
+
+[navbar.logo]
+alt = "Replion"
+src = "/img/logo.svg"
