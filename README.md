@@ -24,12 +24,6 @@ local function createReplion(player: Player)
 end
 
 Players.PlayerAdded:Connect(createReplion)
-Players.PlayerRemoving:Connect(function(player: Player)
-	local playerReplion = ReplionService:GetReplion(player)
-	if playerReplion then
-		playerReplion:Destroy()
-	end
-end)
 
 for _: number, player: Player in ipairs(Players:GetPlayers()) do
 	createReplion(player)

@@ -1,6 +1,6 @@
 [package]
 name = "ytrev/replion"
-description = "A lightweight Data Replicator."
+description = "A lightweight State Replicator."
 version = "0.3.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"

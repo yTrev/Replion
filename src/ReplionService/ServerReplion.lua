@@ -42,7 +42,7 @@ local function assertDestroyed(destroyed: boolean?)
 end
 
 --[=[
-	@type Extensions { [string]: (Replion, ...any) -> (...any) }?
+	@type Extensions { [string]: (ServerReplion, ...any) -> (...any) }?
 	@within ServerReplion
 ]=]
 
@@ -57,7 +57,7 @@ end
 	@within ServerReplion
 	.Player Player
 	.Name string
-	.Data { [any]: any }
+	.Data { [string]: any }
 	.Extensions Extensions
 	.Tags { string }?
 ]=]
@@ -91,10 +91,10 @@ ServerReplion.__index = ServerReplion
 ServerReplion.Enums = Enums
 
 --[=[
+	Creates a new `ServerReplion` to the desired player.
+
 	@param config Configuration
 	@return ServerReplion
-
-	Creates a new `ServerReplion` to the desired player.
 ]=]
 function ServerReplion.new(config: Configuration)
 	configurationCheck(config)
@@ -140,9 +140,6 @@ ServerReplion.Write = ServerReplion.Execute
 
 local onUpdateCheck = t.strict(t.tuple(pathCheck, t.callback))
 --[=[
-	@param path Path
-	@return Connection
-	
 	Listen to the changes of a value on the Data table.
 
 	```lua
@@ -150,6 +147,10 @@ local onUpdateCheck = t.strict(t.tuple(pathCheck, t.callback))
 		print(newValue)
 	end)
 	```
+
+	@param path Path
+	@param callback (action: Action, ...any) -> ()
+	@return Connection
 ]=]
 function ServerReplion:OnUpdate(path: Types.Path, callback: Types.Callback): Types.Connection
 	assertDestroyed(self.Destroyed)
@@ -161,8 +162,6 @@ end
 
 local beforeDestroyCheck = t.strict(t.callback)
 --[=[
-	@since v0.3.0
-
 	A callback that will be called before the Replion is destroyed.
 
 	```lua
@@ -171,6 +170,8 @@ local beforeDestroyCheck = t.strict(t.callback)
 		print(coins)
 	end)
 	```
+
+	@since v0.3.0
 ]=]
 function ServerReplion:BeforeDestroy(callback: Types.Callback): Types.Connection
 	assertDestroyed(self.Destroyed)
@@ -181,12 +182,12 @@ function ServerReplion:BeforeDestroy(callback: Types.Callback): Types.Connection
 end
 
 --[=[
-	@param path Path
-
 	```lua
 	Replion:Set('Coins', 20)
 	Replion:Set({'Pets', petId}, true)
 	```
+
+	@param path Path
 ]=]
 function ServerReplion:Set(path: Types.Path, newValue: any): any
 	assertDestroyed(self.Destroyed)
@@ -215,8 +216,6 @@ end
 
 local updateCheck = t.strict(t.tuple(pathCheck, t.table))
 --[=[
-	@param path Path
-	
 	Update some values on the Data table.
 	Can be used in Arrays and in Dictionaries.
 
@@ -244,7 +243,9 @@ local updateCheck = t.strict(t.tuple(pathCheck, t.table))
 			Level = 1,
 		}
 	]]--
-	```	
+	```
+
+	@param path Path
 ]=]
 function ServerReplion:Update(path: Types.Path, values: Types.Table): any
 	assertDestroyed(self.Destroyed)
@@ -272,11 +273,11 @@ end
 
 local increaseCheck = t.strict(t.tuple(pathCheck, t.number))
 --[=[
-	@param path Path
-
 	```lua
 	local newCoins: number = Replion:Increase('Coins', 20)
 	```
+
+	@param path Path
 ]=]
 function ServerReplion:Increase(path: Types.Path, value: number): number
 	assertDestroyed(self.Destroyed)
@@ -308,11 +309,11 @@ function ServerReplion:Increase(path: Types.Path, value: number): number
 end
 
 --[=[
-	@param path Path
-
 	```lua
 	local newCoins: number = Replion:Decrease('Coins', 20)
 	```
+
+	@param path Path
 ]=]
 function ServerReplion:Decrease(path: Types.Path, value: number): number
 	assertDestroyed(self.Destroyed)
@@ -321,12 +322,12 @@ function ServerReplion:Decrease(path: Types.Path, value: number): number
 end
 
 --[=[
-	@param path Path
-
 	```lua
 	local coins: number = Replion:Get('Coins')
 	local level: number = Replion:Get('Stats.Level')
 	```
+
+	@param path Path
 ]=]
 function ServerReplion:Get(path: Types.Path): any
 	assertDestroyed(self.Destroyed)
@@ -337,16 +338,16 @@ function ServerReplion:Get(path: Types.Path): any
 end
 
 --[=[
-	@param path Path
-	@since v0.3.0
-	
-	@error "Invalid path" -- This error is thrown when the path does not have a value.
-	
 	If the value is not found, an error will be thrown.
 
 	```lua
 	local coins: number = Replion:GetExpect('Coins')
 	```
+
+	@param path Path
+	@since v0.3.0
+	
+	@error "Invalid path" -- This error is thrown when the path does not have a value.
 ]=]
 function ServerReplion:GetExpect(path: Types.Path, message: string?): any
 	assertDestroyed(self.Destroyed)
@@ -360,15 +361,15 @@ function ServerReplion:GetExpect(path: Types.Path, message: string?): any
 end
 
 --[=[	
-	@param path Path
-	@since v0.3.0
-	
 	Inserts a new value into the array.
 	
 	:::note Arrays only
 	This only works on Arrays.
+
+	@param path Path
+	@since v0.3.0
 ]=]
-function ServerReplion:Insert(path: Types.Path, value: any, index: number?)
+function ServerReplion:Insert(path: Types.Path, value: any, index: number?): (number, any)
 	assertDestroyed(self.Destroyed)
 	pathCheck(path)
 
@@ -383,16 +384,18 @@ function ServerReplion:Insert(path: Types.Path, value: any, index: number?)
 
 	Utils.fireSignals(self._signals, stringArray, Enums.Action.Added, index, value)
 	Network.FireUpdate(self, Enums.Action.Added, stringArray, index, value)
+
+	return index, value
 end
 
 --[=[
-	@param path Path
-	@since v0.3.0
-	
 	Removes a value from the array.
 
 	:::note Arrays only
 	This only works on Arrays.
+
+	@param path Path
+	@since v0.3.0
 ]=]
 function ServerReplion:Remove(path: Types.Path, index: number?): any
 	assertDestroyed(self.Destroyed)
@@ -414,13 +417,13 @@ function ServerReplion:Remove(path: Types.Path, index: number?): any
 end
 
 --[=[
-	@param path Path
-	@since v0.3.0
-	
 	Finds a value in the array.
 
 	:::note Arrays only
 	This only works on Arrays.
+
+	@param path Path
+	@since v0.3.0
 ]=]
 function ServerReplion:Find(path: Types.Path, value: any): (any, number?)
 	assertDestroyed(self.Destroyed)
@@ -437,15 +440,15 @@ function ServerReplion:Find(path: Types.Path, value: any): (any, number?)
 end
 
 --[=[
-	@param path Path
-	@since v0.3.0
-
 	Finds a value in the array and removes it.
 
 	:::note Arrays only
 	This only works on Arrays.
+
+	@param path Path
+	@since v0.3.0
 ]=]
-function ServerReplion:FindRemove(path: Types.Path, value: any)
+function ServerReplion:FindRemove(path: Types.Path, value: any): any?
 	assertDestroyed(self.Destroyed)
 
 	local array: Types.GenericArray = self:GetExpect(path)
@@ -456,13 +459,13 @@ function ServerReplion:FindRemove(path: Types.Path, value: any)
 end
 
 --[=[
-	@param path Path
-	@since v0.3.0
-
 	Clears the array.
 
 	:::note Arrays only
 	This only works on Arrays.
+
+	@param path Path
+	@since v0.3.0
 ]=]
 function ServerReplion:Clear(path: Types.Path)
 	assertDestroyed(self.Destroyed)
@@ -479,9 +482,9 @@ function ServerReplion:Clear(path: Types.Path)
 end
 
 --[=[
-	@since v0.3.0
-
 	Returns if the ServerReplion is destroyed.
+
+	@since v0.3.0
 ]=]
 function ServerReplion:IsDestroyed(): boolean
 	return self.Destroyed == true

@@ -15,6 +15,20 @@ local copy = llama.Dictionary.copy
 local pathCheck = t.strict(t.union(t.string, t.array(t.string)))
 
 --[=[
+	The player Data table.
+	@prop Data { [string]: any }
+	@within ClientReplion
+	@readonly
+]=]
+
+--[=[
+	The replion Tags.
+	@prop Tags { string }
+	@within ClientReplion
+	@readonly
+]=]
+
+--[=[
 	@class ClientReplion
 	@client
 ]=]
@@ -45,7 +59,7 @@ end
 
 local beforeDestroyCheck = t.strict(t.callback)
 --[=[
-	@param callback () -> (ClientReplion)
+	@param callback () -> ()
 ]=]
 function ClientReplion:BeforeDestroy(callback: Types.Callback): Types.Connection
 	beforeDestroyCheck(callback)

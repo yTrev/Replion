@@ -77,7 +77,7 @@ type ServerReplion = ServerReplion.ServerReplion
 
 --[=[
 	@param config Configuration
-	@return Replion?
+	@return ServerReplion?
 ]=]
 function ReplionService.new(config: ServerReplion.Configuration)
 	local newReplion = ServerReplion.new(config)
@@ -93,7 +93,7 @@ local getReplionCheck = t.strict(t.tuple(t.instanceIsA('Player'), t.string))
 --[=[
 	@param player Player
 	@param name string
-	@return Replion?
+	@return ServerReplion?
 	@since v0.3.0
 ]=]
 function ReplionService:GetReplion(player: Player, name: string): ServerReplion?
@@ -105,7 +105,7 @@ end
 local getReplionsCheck = t.strict(t.instanceIsA('Player'))
 --[=[
 	@param player Player
-	@return { [string]: Replion }?
+	@return { [string]: ServerReplion }?
 	@since v0.3.0
 ]=]
 function ReplionService:GetReplions(player: Player): { [string]: ServerReplion }?

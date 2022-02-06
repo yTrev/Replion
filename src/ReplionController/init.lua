@@ -198,8 +198,19 @@ local function configureConnnections()
 end
 
 --[=[
+	@type EventCallback (name: string, replion: ClientReplion) -> ()
+	@within ReplionController
+]=]
+
+--[=[
 	@prop Action Enums
 	@tag Enum
+	@within ReplionController
+	@readonly
+]=]
+
+--[=[
+	@prop ClientReplion ClientReplion
 	@within ReplionController
 	@readonly
 ]=]
@@ -261,13 +272,13 @@ function ReplionController.OnStart()
 	return if statedCompleted then Promise.resolve() else Promise.fromEvent(onStart.Event)
 end
 
-type EventCallback = (string, ClientReplion) -> ()
+type EventCallback = (name: string, replion: ClientReplion) -> ()
 
 local callbackCheck = t.strict(t.callback)
 --[=[
-	Connects that will be called when a replion is created.
+	A callback that is called when a replion is created.
 
-	@callback (string, ClientReplion) -> ()
+	@param callback EventCallback
 	@return Connection
 ]=]
 function ReplionController:OnReplionAdded(callback: EventCallback): Types.Connection
@@ -278,9 +289,9 @@ end
 
 local filteredCallback = t.strict(t.string, t.callback)
 --[=[
-	Connects that will be called when a replion that contains the given tag is created.
+	A callback that will be called when a replion that contains the given tag is created.
 
-	@callback (string, ClientReplion) -> ()
+	@param callback EventCallback
 	@return Connection
 ]=]
 function ReplionController:OnReplionAddedWithTag(tag: string, callback: EventCallback): Types.Connection
@@ -294,9 +305,9 @@ function ReplionController:OnReplionAddedWithTag(tag: string, callback: EventCal
 end
 
 --[=[
-	Connects that will be called when a replion is detroy'ed.
+	A callback that is called when a replion is removed.
 
-	@callback (string, ClientReplion) -> ()
+	@param callback EventCallback
 	@return Connection
 ]=]
 function ReplionController:OnReplionRemoved(callback: EventCallback): Types.Connection
@@ -306,9 +317,9 @@ function ReplionController:OnReplionRemoved(callback: EventCallback): Types.Conn
 end
 
 --[=[
-	Connects that will be called when a replion that contains the given tag is detroy'ed.
+	A callback that will be called when a replion that contains the given tag is removed.
 
-	@callback (string, ClientReplion) -> ()
+	@param callback EventCallback
 	@return Connection
 ]=]
 function ReplionController:OnReplionRemovedWithTag(tag: string, callback: EventCallback): Types.Connection
