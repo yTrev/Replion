@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="generator" content="Docusaurus v2.0.0-beta.9">
+<title data-react-helmet="true">ServerReplion | Replion</title><meta data-react-helmet="true" property="og:title" content="ServerReplion | Replion"><meta data-react-helmet="true" name="twitter:card" content="summary_large_image"><meta data-react-helmet="true" property="og:url" content="https://yTrev.github.io/Replion/api/ServerReplion"><meta data-react-helmet="true" name="docusaurus_locale" content="en"><meta data-react-helmet="true" name="docusaurus_tag" content="default"><link data-react-helmet="true" rel="shortcut icon" href="/Replion/img/favicon.ico"><link data-react-helmet="true" rel="canonical" href="https://yTrev.github.io/Replion/api/ServerReplion"><link data-react-helmet="true" rel="alternate" href="https://yTrev.github.io/Replion/api/ServerReplion" hreflang="en"><link data-react-helmet="true" rel="alternate" href="https://yTrev.github.io/Replion/api/ServerReplion" hreflang="x-default"><link rel="stylesheet" href="/Replion/assets/css/styles.06f234af.css">
+<link rel="preload" href="/Replion/assets/js/runtime~main.950e3ce4.js" as="script">
+<link rel="preload" href="/Replion/assets/js/main.225e38c3.js" as="script">
+</head>
+<body>
+<script>!function(){function e(e){document.documentElement.setAttribute("data-theme",e)}var t=function(){var e=null;try{e=localStorage.getItem("theme")}catch(e){}return e}();null!==t?e(t):window.matchMedia("(prefers-color-scheme: dark)").matches?e("dark"):(window.matchMedia("(prefers-color-scheme: light)").matches,e("light"))}()</script><div id="__docusaurus">
+<div><a href="#" class="skipToContent_1oUP">Skip to main content</a></div><nav class="navbar navbar--fixed-top"><div class="navbar__inner"><div class="navbar__items"><button aria-label="Navigation bar toggle" class="navbar__toggle clean-btn" type="button" tabindex="0"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/Replion/"><div class="navbar__logo"><img src="/Replion/img/logo.svg" alt="Replion" class="themedImage_1VuW themedImage--light_3UqQ"><img src="/Replion/img/logo.svg" alt="Replion" class="themedImage_1VuW themedImage--dark_hz6m"></div><b class="navbar__title"></b></a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/Replion/api/">API</a></div><div class="navbar__items navbar__items--right"><a href="https://github.com/yTrev/Replion" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link"><span>GitHub<svg width="13.5" height="13.5" aria-hidden="true" viewBox="0 0 24 24" class="iconExternalLink_3J9K"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"></path></svg></span></a><div class="toggle_71bT toggle_3Zt9 toggleDisabled_3cF-"><div class="toggleTrack_32Fl" role="button" tabindex="-1"><div class="toggleTrackCheck_3lV7"><span class="toggleIcon_O4iE">🌜</span></div><div class="toggleTrackX_S2yS"><span class="toggleIcon_O4iE">🌞</span></div><div class="toggleTrackThumb_xI_Z"></div></div><input type="checkbox" class="toggleScreenReader_28Tw" aria-label="Switch between dark and light mode"></div><div class="navbar__search"><span aria-label="expand searchbar" role="button" class="search-icon" tabindex="0"></span><input type="search" id="search_input_react" placeholder="Press S to Search..." aria-label="Search" class="navbar__search-input search-bar"></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div class="main-wrapper docPageContainer_2Kz0"><div class="docPage_1bdk"><div class="docSidebarContainer_1ykS"><div class="sidebar_15mo"><nav class="menu thin-scrollbar menu_Bmed"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><a class="menu__link menu__link--sublist menu__link--active" href="#">Server</a><ul style="display:block;overflow:visible;height:auto" class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/Replion/api/ReplionService">​Replion​Service</a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/Replion/api/ServerReplion">​Server​Replion</a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><a class="menu__link menu__link--sublist" href="#">Client</a></li></ul></nav><button type="button" title="Collapse sidebar" aria-label="Collapse sidebar" class="button button--secondary button--outline collapseSidebarButton_1CGd"><svg width="20" height="20" aria-hidden="true" class="collapseSidebarButtonIcon_3E-R"><g fill="#7a7a7a"><path d="M9.992 10.023c0 .2-.062.399-.172.547l-4.996 7.492a.982.982 0 01-.828.454H1c-.55 0-1-.453-1-1 0-.2.059-.403.168-.551l4.629-6.942L.168 3.078A.939.939 0 010 2.528c0-.548.45-.997 1-.997h2.996c.352 0 .649.18.828.45L9.82 9.472c.11.148.172.347.172.55zm0 0"></path><path d="M19.98 10.023c0 .2-.058.399-.168.547l-4.996 7.492a.987.987 0 01-.828.454h-3c-.547 0-.996-.453-.996-1 0-.2.059-.403.168-.551l4.625-6.942-4.625-6.945a.939.939 0 01-.168-.55 1 1 0 01.996-.997h3c.348 0 .649.18.828.45l4.996 7.492c.11.148.168.347.168.55zm0 0"></path></g></svg></button></div></div><main class="docMainContainer_28N5"><div class="container padding-vert--lg"><div class="row"><div class="col docItemCol_3WPG"><div class="docItemContainer_3XDu"><article><div class="member_qHIL markdown"><div class="tocCollapsible_1PrD theme-doc-toc-mobile tocMobile_3ryM"><button type="button" class="clean-btn tocCollapsibleButton_2O1e">On this page</button></div><header><h1 class="docTitle_1ddc" style="text-decoration:none"><span style="display:inline-block">Server</span><span style="display:inline-block">Replion</span></h1><div class="luaClassTags_2Zrs"><span class="badge_3ZFo" style="color:#00CC67"><span class="badgeTooltip_2qiw">This item only works when running on the server.</span><span class="badgeToolTipTail_2yaQ"><svg fill="#00CC67" xmlns="http://www.w3.org/2000/svg" version="1.1" x="0px" y="0px" viewBox="0 0 90 90" role="img" aria-label="This item only works when running on the server."><polygon points="6.125,72.421 58.544,88.523 58.544,24.372 6.125,8.269 "></polygon><polygon points="79.818,15.77 79.868,15.755 29.615,1.453 10.328,6.318 60.102,21.609 "></polygon><path d="M61.643,78.738l22.232-6.582V17.801l-22.232,6.584V78.738z M73.811,69.257c-1.174,0-2.125-1.19-2.125-2.659  c0-1.468,0.951-2.658,2.125-2.658c1.172,0,2.123,1.19,2.123,2.658C75.934,68.066,74.982,69.257,73.811,69.257z M64.898,32.121  l16.336-4.41v7.117l-16.336,4.409V32.121z M64.898,41.292l16.336-4.41v7.116l-16.336,4.409V41.292z M64.898,50.463l16.336-4.411  v7.116l-16.336,4.411V50.463z"></path><polygon points="83.875,74.893 61.643,81.477 61.643,88.547 83.875,81.963 "></polygon></svg> <!-- -->Server</span></span></div><div></div></header><h2 class="anchor anchorWithStickyNavbar_31ik" id="types">Types<a aria-hidden="true" class="hash-link" href="#types" title="Direct link to heading">​</a></h2><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Extensions"><code style="text-decoration:none">Extensions</code><a aria-hidden="true" class="hash-link" href="#Extensions" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L48"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code class="purple__nFc">type</code> <code>Extensions<!-- --> = </code> <code class="purple__nFc">{</code><span><code>[</code><code class="blue_2Afy">string</code><code>]</code></span><code>: </code><code class="green_3LnD">(</code><div class="inset_2cJr"><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion">ServerReplion</a></code><code class="green_3LnD">,</code></div><div class="inset_2cJr"><code class="blue_2Afy">...any</code></div><code class="green_3LnD">)</code><code class="green_3LnD"> → </code><code class="green_3LnD">(</code><code class="blue_2Afy">...any</code><code class="green_3LnD">)</code><code class="purple__nFc">}</code><code class="blue_2Afy">?</code></div><div></div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Path"><code style="text-decoration:none">Path</code><a aria-hidden="true" class="hash-link" href="#Path" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L54"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code class="purple__nFc">type</code> <code>Path<!-- --> = </code> <code class="blue_2Afy">string</code><code class="op_1JtD"> | </code><code class="purple__nFc">{</code><code class="blue_2Afy">string</code><code class="purple__nFc">}</code></div><div>
+<p>A string or an array of strings.</p>
+</div><h2 class="anchor anchorWithStickyNavbar_31ik" id="properties">Properties<a aria-hidden="true" class="hash-link" href="#properties" title="Direct link to heading">​</a></h2><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Data"><code style="text-decoration:none">Data</code><a aria-hidden="true" class="hash-link" href="#Data" title="Direct link to heading">​</a></h3><span class="badge_3ZFo" style="color:#e74c3c"><span class="badgeTooltip_2qiw">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_2yaQ"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L71"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->.<!-- -->Data<!-- -->:<!-- --> </code> <code class="blue_2Afy">any</code></div><div>
+<p>The player Data table.</p>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Player"><code style="text-decoration:none">Player</code><a aria-hidden="true" class="hash-link" href="#Player" title="Direct link to heading">​</a></h3><span class="badge_3ZFo" style="color:#e74c3c"><span class="badgeTooltip_2qiw">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_2yaQ"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L77"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->.<!-- -->Player<!-- -->:<!-- --> </code> <code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Player" target="_blank" rel="noopener noreferrer">Player<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code></div><div></div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Extensions"><code style="text-decoration:none">Extensions</code><a aria-hidden="true" class="hash-link" href="#Extensions" title="Direct link to heading">​</a></h3><span class="badge_3ZFo" style="color:#e74c3c"><span class="badgeTooltip_2qiw">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_2yaQ"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L83"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->.<!-- -->Extensions<!-- -->:<!-- --> </code> <code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Extensions">Extensions</a></code></div><div></div><h2 class="anchor anchorWithStickyNavbar_31ik" id="functions">Functions<a aria-hidden="true" class="hash-link" href="#functions" title="Direct link to heading">​</a></h2><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="new"><code style="text-decoration:none">new</code><a aria-hidden="true" class="hash-link" href="#new" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L99"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->.</code><code class="green_3LnD">new</code><code>(</code><code>config<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Configuration">Configuration</a></code><code>) → </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion">ServerReplion</a></code></div><h3>Types</h3><h3 class="anchor anchorWithStickyNavbar_31ik" id="Configuration"><a aria-hidden="true" class="hash-link" href="#Configuration" title="Direct link to heading">​</a></h3><div class="memberString_P8-X"><code class="purple__nFc">interface</code> <code>Configuration<!-- --> <!-- -->{</code><div class="inset_2cJr"><div><code>Player<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Player" target="_blank" rel="noopener noreferrer">Player<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code></div><div><code>Name<!-- -->: </code><code class="blue_2Afy">string</code></div><div><code>Data<!-- -->: </code><code class="purple__nFc">{</code><span><code>[</code><code class="blue_2Afy">string</code><code>]</code></span><code>: </code><code class="blue_2Afy">any</code><code class="purple__nFc">}</code></div><div><code>Extensions<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Extensions">Extensions</a></code></div><div><code>Tags<!-- -->: </code><code class="purple__nFc">{</code><code class="blue_2Afy">string</code><code class="purple__nFc">}</code><code class="blue_2Afy">?</code></div></div><code>}</code></div><div></div><div>
+<p>Creates a new <code>ServerReplion</code> to the desired player.</p>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="OnUpdate"><code style="text-decoration:none">OnUpdate</code><a aria-hidden="true" class="hash-link" href="#OnUpdate" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L155"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">OnUpdate</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>callback<!-- -->: </code><code class="purple__nFc">(</code><div class="inset_2cJr"><code>action<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ReplionService#Action">Action</a></code><code class="purple__nFc">,</code></div><div class="inset_2cJr"><code class="blue_2Afy">...any</code></div><code class="purple__nFc">)</code><code class="purple__nFc"> → </code><code class="purple__nFc">(</code><code class="purple__nFc">)</code></div></div><code>) → </code><code class="blue_2Afy">Connection</code></div><div>
+<p>Listen to the changes of a value on the Data table.</p>
+<pre class="language-lua"><code class="language-lua">Replion<span class="token punctuation">:</span><span class="token function">OnUpdate</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">,</span> <span class="token keyword">function</span><span class="token punctuation">(</span>action<span class="token punctuation">,</span> newValue<span class="token punctuation">:</span> number<span class="token punctuation">)</span>
+	<span class="token function">print</span><span class="token punctuation">(</span>newValue<span class="token punctuation">)</span>
+<span class="token keyword">end</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="BeforeDestroy"><code style="text-decoration:none">BeforeDestroy</code><a aria-hidden="true" class="hash-link" href="#BeforeDestroy" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L176"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">BeforeDestroy</code><code>(</code><code>callback<!-- -->: </code><code class="blue_2Afy">Types.Callback</code><code>) → </code><code class="blue_2Afy">Types.Connection</code></div><div>
+<p>A callback that will be called before the Replion is destroyed.</p>
+<pre class="language-lua"><code class="language-lua">Replion<span class="token punctuation">:</span><span class="token function">BeforeDestroy</span><span class="token punctuation">(</span><span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">local</span> coins <span class="token operator">=</span> Replion<span class="token punctuation">:</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">)</span>
+	<span class="token function">print</span><span class="token punctuation">(</span>coins<span class="token punctuation">)</span>
+<span class="token keyword">end</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Set"><code style="text-decoration:none">Set</code><a aria-hidden="true" class="hash-link" href="#Set" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L192"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Set</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>newValue<!-- -->: </code><code class="blue_2Afy">any</code></div></div><code>) → </code><code class="blue_2Afy">any</code></div><div>
+<pre class="language-lua"><code class="language-lua">Replion<span class="token punctuation">:</span><span class="token function">Set</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">,</span> <span class="token number">20</span><span class="token punctuation">)</span>
+Replion<span class="token punctuation">:</span><span class="token function">Set</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'Pets'</span><span class="token punctuation">,</span> petId<span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token keyword">true</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Update"><code style="text-decoration:none">Update</code><a aria-hidden="true" class="hash-link" href="#Update" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L250"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Update</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>values<!-- -->: </code><code class="blue_2Afy">Types.Table</code></div></div><code>) → </code><code class="blue_2Afy">any</code></div><div>
+<p>
+  Update some values on the Data table.
+  Can be used in Arrays and in Dictionaries.
+</p>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> newReplion <span class="token operator">=</span> Replion<span class="token punctuation">.</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+	Name <span class="token operator">=</span> <span class="token string">'Data'</span><span class="token punctuation">,</span>
+	Player <span class="token operator">=</span> player<span class="token punctuation">,</span>
+	Data <span class="token operator">=</span> <span class="token punctuation">{</span>
+		Stats <span class="token operator">=</span> <span class="token punctuation">{</span>
+			Coins <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span>
+			Level <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span>
+		<span class="token punctuation">}</span>
+	<span class="token punctuation">}</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+<span class="token function">print</span><span class="token punctuation">(</span>Replion<span class="token punctuation">:</span><span class="token function">Update</span><span class="token punctuation">(</span><span class="token string">'Stats'</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
+	Coins <span class="token operator">=</span> <span class="token number">20</span><span class="token punctuation">,</span>
+	Level <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token comment">--[[ 
+	Prints:
+	{
+		Coins = 20,
+		Level = 1,
+	}
+]]</span><span class="token comment">--</span>
+</code></pre>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Increase"><code style="text-decoration:none">Increase</code><a aria-hidden="true" class="hash-link" href="#Increase" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L282"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Increase</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">number</code></div></div><code>) → </code><code class="blue_2Afy">number</code></div><div>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> newCoins<span class="token punctuation">:</span> number <span class="token operator">=</span> Replion<span class="token punctuation">:</span><span class="token function">Increase</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">,</span> <span class="token number">20</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Decrease"><code style="text-decoration:none">Decrease</code><a aria-hidden="true" class="hash-link" href="#Decrease" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L318"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Decrease</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">number</code></div></div><code>) → </code><code class="blue_2Afy">number</code></div><div>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> newCoins<span class="token punctuation">:</span> number <span class="token operator">=</span> Replion<span class="token punctuation">:</span><span class="token function">Decrease</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">,</span> <span class="token number">20</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Get"><code style="text-decoration:none">Get</code><a aria-hidden="true" class="hash-link" href="#Get" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L332"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Get</code><code>(</code><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>) → </code><code class="blue_2Afy">any</code></div><div>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> coins<span class="token punctuation">:</span> number <span class="token operator">=</span> Replion<span class="token punctuation">:</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">)</span>
+<span class="token keyword">local</span> level<span class="token punctuation">:</span> number <span class="token operator">=</span> Replion<span class="token punctuation">:</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token string">'Stats.Level'</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="GetExpect"><code style="text-decoration:none">GetExpect</code><a aria-hidden="true" class="hash-link" href="#GetExpect" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L352"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">GetExpect</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>message<!-- -->: </code><code class="blue_2Afy">string?</code></div></div><code>) → </code><code class="blue_2Afy">any</code></div><div>
+<p>If the value is not found, an error will be thrown.</p>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> coins<span class="token punctuation">:</span> number <span class="token operator">=</span> Replion<span class="token punctuation">:</span><span class="token function">GetExpect</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">)</span>
+</code></pre>
+</div><h3>Errors</h3><table class="errorTable_25fH"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;Invalid path&quot;</td><td>This error is thrown when the path does not have a value.</td></tr></tbody></table><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Insert"><code style="text-decoration:none">Insert</code><a aria-hidden="true" class="hash-link" href="#Insert" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L372"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Insert</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">any</code><code>,</code></div><div><code>index<!-- -->: </code><code class="blue_2Afy">number?</code></div></div><code>) → </code><code>(</code><div class="inset_2cJr"><div><code class="blue_2Afy">number</code><code>,</code></div><div><code class="blue_2Afy">any</code></div></div><code>)</code></div><div>
+<p>Inserts a new value into the array.</p>
+<div class="admonition admonition-note alert alert--secondary">
+  <div class="admonition-heading">
+    <h5><span class="admonition-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="16" viewBox="0 0 14 16">
+          <path d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"></path>
+        </svg></span>Arrays only</h5>
+  </div>
+  <div class="admonition-content">
+    <p>This only works on Arrays.</p>
+  </div>
+</div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Remove"><code style="text-decoration:none">Remove</code><a aria-hidden="true" class="hash-link" href="#Remove" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L400"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Remove</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>index<!-- -->: </code><code class="blue_2Afy">number?</code></div></div><code>) → </code><code class="blue_2Afy">any</code></div><div>
+<p>Removes a value from the array.</p>
+<div class="admonition admonition-note alert alert--secondary">
+  <div class="admonition-heading">
+    <h5><span class="admonition-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="16" viewBox="0 0 14 16">
+          <path d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"></path>
+        </svg></span>Arrays only</h5>
+  </div>
+  <div class="admonition-content">
+    <p>This only works on Arrays.</p>
+  </div>
+</div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Find"><code style="text-decoration:none">Find</code><a aria-hidden="true" class="hash-link" href="#Find" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L428"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Find</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">any</code></div></div><code>) → </code><code>(</code><div class="inset_2cJr"><div><code class="blue_2Afy">any</code><code>,</code></div><div><code class="blue_2Afy">number?</code></div></div><code>)</code></div><div>
+<p>Finds a value in the array.</p>
+<div class="admonition admonition-note alert alert--secondary">
+  <div class="admonition-heading">
+    <h5><span class="admonition-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="16" viewBox="0 0 14 16">
+          <path d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"></path>
+        </svg></span>Arrays only</h5>
+  </div>
+  <div class="admonition-content">
+    <p>This only works on Arrays.</p>
+  </div>
+</div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="FindRemove"><code style="text-decoration:none">FindRemove</code><a aria-hidden="true" class="hash-link" href="#FindRemove" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L451"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">FindRemove</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">any</code></div></div><code>) → </code><code class="blue_2Afy">any?</code></div><div>
+<p>Finds a value in the array and removes it.</p>
+<div class="admonition admonition-note alert alert--secondary">
+  <div class="admonition-heading">
+    <h5><span class="admonition-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="16" viewBox="0 0 14 16">
+          <path d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"></path>
+        </svg></span>Arrays only</h5>
+  </div>
+  <div class="admonition-content">
+    <p>This only works on Arrays.</p>
+  </div>
+</div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Clear"><code style="text-decoration:none">Clear</code><a aria-hidden="true" class="hash-link" href="#Clear" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L470"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Clear</code><code>(</code><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Clears the array.</p>
+<div class="admonition admonition-note alert alert--secondary">
+  <div class="admonition-heading">
+    <h5><span class="admonition-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="16" viewBox="0 0 14 16">
+          <path d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"></path>
+        </svg></span>Arrays only</h5>
+  </div>
+  <div class="admonition-content">
+    <p>This only works on Arrays.</p>
+  </div>
+</div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="IsDestroyed"><code style="text-decoration:none">IsDestroyed</code><a aria-hidden="true" class="hash-link" href="#IsDestroyed" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L489"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">IsDestroyed</code><code>(</code><code>) → </code><code class="blue_2Afy">boolean</code></div><div>
+<p>Returns if the ServerReplion is destroyed.</p>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Destroy"><code style="text-decoration:none">Destroy</code><a aria-hidden="true" class="hash-link" href="#Destroy" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L496"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Destroy</code><code>(</code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Destroys the Replion object.</p>
+</div></div></article></div><details><summary>Show raw api</summary><pre style="max-width:100%;white-space:pre-wrap">{
+    &quot;functions&quot;: [
+        {
+            &quot;name&quot;: &quot;new&quot;,
+            &quot;desc&quot;: &quot;Creates a new `ServerReplion` to the desired player.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;config&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Configuration&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;ServerReplion&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 99,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;OnUpdate&quot;,
+            &quot;desc&quot;: &quot;Listen to the changes of a value on the Data table.\n\n```lua\nReplion:OnUpdate(&#x27;Coins&#x27;, function(action, newValue: number)\n\tprint(newValue)\nend)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;callback&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;(action: Action, ...any) -&gt; ()&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Connection&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 155,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;BeforeDestroy&quot;,
+            &quot;desc&quot;: &quot;A callback that will be called before the Replion is destroyed.\n\n```lua\nReplion:BeforeDestroy(function()\n\tlocal coins = Replion:Get(&#x27;Coins&#x27;)\n\tprint(coins)\nend)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;callback&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Types.Callback&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Types.Connection\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;since&quot;: &quot;v0.3.0&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 176,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Set&quot;,
+            &quot;desc&quot;: &quot;```lua\nReplion:Set(&#x27;Coins&#x27;, 20)\nReplion:Set({&#x27;Pets&#x27;, petId}, true)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;newValue&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 192,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Update&quot;,
+            &quot;desc&quot;: &quot;Update some values on the Data table.\nCan be used in Arrays and in Dictionaries.\n\n```lua\nlocal newReplion = Replion.new({\n\tName = &#x27;Data&#x27;,\n\tPlayer = player,\n\tData = {\n\t\tStats = {\n\t\t\tCoins = 0,\n\t\t\tLevel = 0,\n\t\t}\n\t},\n})\n\nprint(Replion:Update(&#x27;Stats&#x27;, {\n\tCoins = 20,\n\tLevel = 1,\n}))\n\n--[[ \n\tPrints:\n\t{\n\t\tCoins = 20,\n\t\tLevel = 1,\n\t}\n]]--\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;values&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Types.Table&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 250,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Increase&quot;,
+            &quot;desc&quot;: &quot;```lua\nlocal newCoins: number = Replion:Increase(&#x27;Coins&#x27;, 20)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;value&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 282,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Decrease&quot;,
+            &quot;desc&quot;: &quot;```lua\nlocal newCoins: number = Replion:Decrease(&#x27;Coins&#x27;, 20)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;value&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 318,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Get&quot;,
+            &quot;desc&quot;: &quot;```lua\nlocal coins: number = Replion:Get(&#x27;Coins&#x27;)\nlocal level: number = Replion:Get(&#x27;Stats.Level&#x27;)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 332,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;GetExpect&quot;,
+            &quot;desc&quot;: &quot;If the value is not found, an error will be thrown.\n\n```lua\nlocal coins: number = Replion:GetExpect(&#x27;Coins&#x27;)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;message&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;errors&quot;: [
+                {
+                    &quot;lua_type&quot;: &quot;\&quot;Invalid path\&quot;&quot;,
+                    &quot;desc&quot;: &quot;This error is thrown when the path does not have a value.&quot;
+                }
+            ],
+            &quot;since&quot;: &quot;v0.3.0&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 352,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Insert&quot;,
+            &quot;desc&quot;: &quot;Inserts a new value into the array.\n\n:::note Arrays only\nThis only works on Arrays.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;value&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;index&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;since&quot;: &quot;v0.3.0&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 372,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Remove&quot;,
+            &quot;desc&quot;: &quot;Removes a value from the array.\n\n:::note Arrays only\nThis only works on Arrays.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;index&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;since&quot;: &quot;v0.3.0&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 400,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Find&quot;,
+            &quot;desc&quot;: &quot;Finds a value in the array.\n\n:::note Arrays only\nThis only works on Arrays.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;value&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;since&quot;: &quot;v0.3.0&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 428,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;FindRemove&quot;,
+            &quot;desc&quot;: &quot;Finds a value in the array and removes it.\n\n:::note Arrays only\nThis only works on Arrays.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;value&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;any?\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;since&quot;: &quot;v0.3.0&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 451,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Clear&quot;,
+            &quot;desc&quot;: &quot;Clears the array.\n\n:::note Arrays only\nThis only works on Arrays.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;path&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Path&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;since&quot;: &quot;v0.3.0&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 470,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;IsDestroyed&quot;,
+            &quot;desc&quot;: &quot;Returns if the ServerReplion is destroyed.&quot;,
+            &quot;params&quot;: [],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;boolean\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;since&quot;: &quot;v0.3.0&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 489,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Destroy&quot;,
+            &quot;desc&quot;: &quot;Destroys the Replion object.&quot;,
+            &quot;params&quot;: [],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 496,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        }
+    ],
+    &quot;properties&quot;: [
+        {
+            &quot;name&quot;: &quot;Data&quot;,
+            &quot;desc&quot;: &quot;The player Data table.&quot;,
+            &quot;lua_type&quot;: &quot;any&quot;,
+            &quot;readonly&quot;: true,
+            &quot;source&quot;: {
+                &quot;line&quot;: 71,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Player&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;lua_type&quot;: &quot;Player&quot;,
+            &quot;readonly&quot;: true,
+            &quot;source&quot;: {
+                &quot;line&quot;: 77,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Extensions&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;lua_type&quot;: &quot;Extensions&quot;,
+            &quot;readonly&quot;: true,
+            &quot;source&quot;: {
+                &quot;line&quot;: 83,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        }
+    ],
+    &quot;types&quot;: [
+        {
+            &quot;name&quot;: &quot;Extensions&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;lua_type&quot;: &quot;{ [string]: (ServerReplion, ...any) -&gt; (...any) }?&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 48,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Path&quot;,
+            &quot;desc&quot;: &quot;A string or an array of strings.&quot;,
+            &quot;lua_type&quot;: &quot;string | { string }&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 54,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Configuration&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Player&quot;,
+                    &quot;lua_type&quot;: &quot;Player&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Name&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Data&quot;,
+                    &quot;lua_type&quot;: &quot;{ [string]: any }&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Extensions&quot;,
+                    &quot;lua_type&quot;: &quot;Extensions&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Tags&quot;,
+                    &quot;lua_type&quot;: &quot;{ string }?&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 64,
+                &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+            }
+        }
+    ],
+    &quot;name&quot;: &quot;ServerReplion&quot;,
+    &quot;desc&quot;: &quot;&quot;,
+    &quot;realm&quot;: [
+        &quot;Server&quot;
+    ],
+    &quot;source&quot;: {
+        &quot;line&quot;: 88,
+        &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
+    }
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_35-E thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a><ul><li><a href="#Configuration" class="table-of-contents__link toc-highlight">Configuration</a></li><li><a href="#Extensions" class="table-of-contents__link toc-highlight">Extensions</a></li><li><a href="#Path" class="table-of-contents__link toc-highlight">Path</a></li></ul></li><li><a href="#properties" class="table-of-contents__link toc-highlight">Properties</a><ul><li><a href="#Data" class="table-of-contents__link toc-highlight">Data</a></li><li><a href="#Extensions" class="table-of-contents__link toc-highlight">Extensions</a></li><li><a href="#Player" class="table-of-contents__link toc-highlight">Player</a></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#BeforeDestroy" class="table-of-contents__link toc-highlight">:BeforeDestroy</a></li><li><a href="#Clear" class="table-of-contents__link toc-highlight">:Clear</a></li><li><a href="#Decrease" class="table-of-contents__link toc-highlight">:Decrease</a></li><li><a href="#Destroy" class="table-of-contents__link toc-highlight">:Destroy</a></li><li><a href="#Find" class="table-of-contents__link toc-highlight">:Find</a></li><li><a href="#FindRemove" class="table-of-contents__link toc-highlight">:FindRemove</a></li><li><a href="#Get" class="table-of-contents__link toc-highlight">:Get</a></li><li><a href="#GetExpect" class="table-of-contents__link toc-highlight">:GetExpect</a></li><li><a href="#Increase" class="table-of-contents__link toc-highlight">:Increase</a></li><li><a href="#Insert" class="table-of-contents__link toc-highlight">:Insert</a></li><li><a href="#IsDestroyed" class="table-of-contents__link toc-highlight">:IsDestroyed</a></li><li><a href="#OnUpdate" class="table-of-contents__link toc-highlight">:OnUpdate</a></li><li><a href="#Remove" class="table-of-contents__link toc-highlight">:Remove</a></li><li><a href="#Set" class="table-of-contents__link toc-highlight">:Set</a></li><li><a href="#Update" class="table-of-contents__link toc-highlight">:Update</a></li><li><a href="#new" class="table-of-contents__link toc-highlight">.new</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2022 yTrev. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
+<script src="/Replion/assets/js/runtime~main.950e3ce4.js"></script>
+<script src="/Replion/assets/js/main.225e38c3.js"></script>
+</body>
+</html>
