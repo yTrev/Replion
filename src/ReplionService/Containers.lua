@@ -11,7 +11,7 @@ export type Containers = {
 local Containers: Containers = {}
 
 local function getContainer(player: Player, dontCreate: boolean?): Container?
-	local container = Containers[player]
+	local container: Container? = Containers[player]
 
 	if container == nil and not dontCreate then
 		container = { n = 0, Replions = {} }

@@ -9,13 +9,6 @@ export type StringArray = Array<string>
 export type StringDictionary = Dictionary<string, any>
 export type Table = Dictionary<any, any>
 
-export type PacketData = {
-	Name: string,
-	Action: number,
-	Path: { string },
-	Value: any,
-}
-
 export type Enum = {
 	Name: string,
 	Value: number,

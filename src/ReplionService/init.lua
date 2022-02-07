@@ -48,6 +48,7 @@ type ServerReplion = ServerReplion.ServerReplion
 	.Added "Added" -- A new value was added;
 	.Changed "Changed" -- A value was changed;
 	.Removed "Removed" -- A value was removed.
+	.Cleared "Cleared" -- The entire table was cleared. Only works on arrays.
 ]=]
 
 --[=[

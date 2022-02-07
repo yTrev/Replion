@@ -1,7 +1,18 @@
-# Replion
-Replion is a module that allows the replication of information from _Server_ to _Client_ lightly and efficiently.
+<p align="center">
+	<img src=".github/logo.svg" height="180">
+	<br>
+	Replion is a module that allows the replication of information from Server to Client lightly and efficiently.
+</p>
 
-# Example
+# Installation
+
+## Wally
+Add Replion as a dependency to your `wally.toml` file:
+```
+Replion = "ytrev/replion@0.3.0"
+```
+
+# Usage
 A simple example that shows how to use Replion.
 
 ### **Server**
@@ -9,17 +20,15 @@ A simple example that shows how to use Replion.
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local Players = game:GetService('Players')
 
-local ReplionService = require(ReplicatedStorage.Replion)
-
-local DEFAULT_DATA = {
-	Coins = 0,
-}
+local ReplionService = require(ReplicatedStorage.Packages.Replion)
 
 local function createReplion(player: Player)
 	ReplionService.new({
-		Name = "Default",
+		Name = 'Data',
 		Player = player,
-		Data = DEFAULT_DATA,
+		Data = {
+			Coins = 0,
+		},
 	})
 end
 
@@ -31,7 +40,7 @@ end
 
 while true do
 	for _: number, player: Player in ipairs(Players:GetPlayers()) do
-		local playerReplion = ReplionService:GetReplion(player)
+		local playerReplion = ReplionService:GetReplion(player, 'Data')
 		if playerReplion then
 			playerReplion:Increase('Coins', 10)
 		end
@@ -45,11 +54,13 @@ end
 ```lua
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
-local ReplionController = require(ReplicatedStorage.Replion)
+local ReplionController = require(ReplicatedStorage.Packages.Replion)
 
-ReplionController:AwaitReplion("Default")
+ReplionController:AwaitReplion('Data')
 	:andThen(function(clientReplion)
-		clientReplion:OnUpdate('Coins', 10)
+		clientReplion:OnUpdate('Coins', function(action, newValue)
+			print(string.format('Coins %s to %i', action.Name, newValue))
+		end)
 	end)
 	:catch(warn)
 
