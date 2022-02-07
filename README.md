@@ -1,7 +1,18 @@
-# Replion
-Replion is a module that allows the replication of information from _Server_ to _Client_ lightly and efficiently.
+<p align="center">
+	<img src=".github/logo.svg" height="180">
+	<br>
+	Replion is a module that allows the replication of information from Server to Client lightly and efficiently.
+</p>
 
-# Example
+# Installation
+
+## Wally
+Add Replion as a dependency to your `wally.toml` file:
+```
+Replion = "ytrev/replion@0.3.0"
+```
+
+# Usage
 A simple example that shows how to use Replion.
 
 ### **Server**
@@ -9,26 +20,19 @@ A simple example that shows how to use Replion.
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local Players = game:GetService('Players')
 
-local Replion = require(ReplicatedStorage.Replion)
-
-local DEFAULT_DATA = {
-	Coins = 0,
-}
+local ReplionService = require(ReplicatedStorage.Packages.Replion)
 
 local function createReplion(player: Player)
-	Replion.new({
+	ReplionService.new({
+		Name = 'Data',
 		Player = player,
-		Data = DEFAULT_DATA
+		Data = {
+			Coins = 0,
+		},
 	})
 end
 
 Players.PlayerAdded:Connect(createReplion)
-Players.PlayerRemoving:Connect(function(player: Player)
-	local playerReplion: Replion.Replion? = Replion:GetReplion(player)
-	if playerReplion then
-		playerReplion:Destroy()
-	end
-end)
 
 for _: number, player: Player in ipairs(Players:GetPlayers()) do
 	createReplion(player)
@@ -36,7 +40,7 @@ end
 
 while true do
 	for _: number, player: Player in ipairs(Players:GetPlayers()) do
-		local playerReplion: Replion.Replion? = Replion:GetReplion(player)
+		local playerReplion = ReplionService:GetReplion(player, 'Data')
 		if playerReplion then
 			playerReplion:Increase('Coins', 10)
 		end
@@ -49,11 +53,16 @@ end
 ### **Client**
 ```lua
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
-local Replion = require(ReplicatedStorage.Replion)
 
-Replion:OnUpdate('Coins', function(action: string, newValue: number)
-	print(action, newValue)
-end)
+local ReplionController = require(ReplicatedStorage.Packages.Replion)
 
-Replion:Start()
+ReplionController:AwaitReplion('Data')
+	:andThen(function(clientReplion)
+		clientReplion:OnUpdate('Coins', function(action, newValue)
+			print(string.format('Coins %s to %i', action.Name, newValue))
+		end)
+	end)
+	:catch(warn)
+
+ReplionController.Start()
 ```

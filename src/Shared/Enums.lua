@@ -1,23 +1,35 @@
 --!strict
+local Types = require(script.Parent.Types)
 
-local function enum(name: string, enums: { string })
-	local newEnum = {}
+type EnumList = {
+	[string | number]: Types.Enum,
+}
 
-	for _, memberName: string in pairs(enums) do
-		newEnum[memberName] = memberName
-	end
+type Enums = { [string]: EnumList }
 
-	return setmetatable(newEnum, {
-		__index = function(_, key)
-			error(string.format('%q (%s) is not a valid member of %s', tostring(key), typeof(key), name), 2)
-		end,
-
-		__newindex = function()
-			error(string.format('Creating new member in %q is not allowed!', name), 2)
-		end,
-	})
+local function createEnum(name: string, value: number): Types.Enum
+	return table.freeze({
+		Name = name,
+		Value = value,
+	} :: any) :: Types.Enum
 end
 
-return {
-	Action = enum('Action', { 'Added', 'Changed', 'Removed' }),
+local function enum(enums: { string }): EnumList
+	local newEnum: EnumList = {}
+
+	for i, memberName: string in ipairs(enums) do
+		local newEnumItem = createEnum(memberName, i)
+
+		newEnum[memberName] = newEnumItem
+		newEnum[i] = newEnumItem
+	end
+
+	return table.freeze(newEnum)
+end
+
+local Enums: Enums = {
+	Action = enum({ 'Added', 'Changed', 'Removed', 'Cleared', 'None' }),
+	Event = enum({ 'Created', 'Deleted' }),
 }
+
+return table.freeze(Enums) :: Enums

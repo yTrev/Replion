@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
-local Replion = ReplicatedStorage:FindFirstChild('Replion')
+local DevPackages = ReplicatedStorage:FindFirstChild('DevPackages')
 
-require(script.Parent:FindFirstChild('TestEZ')).TestBootstrap:run({ Replion })
+local TestEZ = require(DevPackages:FindFirstChild('TestEZ'))
+TestEZ.TestBootstrap:run({ ReplicatedStorage:FindFirstChild('Tests') })

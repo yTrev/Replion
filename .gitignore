@@ -1,1 +1,4 @@
-build
+/build
+/DevPackages
+/Packages
+/roblox.toml

@@ -1,62 +1,83 @@
 --!strict
-local Signal = require(script.Parent.Signal)
+local Packages = script:FindFirstAncestor('Packages')
+local Signal = require(Packages:FindFirstChild('Signal'))
 
-type Signal = Signal.Signal
-export type StringArray = { string }
+local Types = require(script.Parent.Types)
 
-local function convertTablePathToString(path: StringArray): string
+local function convertTablePathToString(path: Types.StringArray): string
 	return table.concat(path, '.')
 end
 
-local function convertPathToTable(path: string): StringArray
+local function convertPathToTable(path: string): Types.StringArray
 	return string.split(path, '.')
 end
 
-local function getSignal(signals, path: string | StringArray, create: boolean?): any
-	local pathInString: string
-	if typeof(path) == 'table' then
-		pathInString = convertTablePathToString(path :: StringArray)
+local function getStringArrayFromPath(path: Types.Path): Types.StringArray
+	if typeof(path) == 'string' then
+		return convertPathToTable(path)
+	elseif typeof(path) == 'table' then
+		return path
 	else
-		pathInString = path :: string
+		error(string.format('%q is not a valid path', typeof(path)))
 	end
-
-	local pathSignal: Signal? = signals[pathInString]
-	if pathSignal == nil and create then
-		pathSignal = Signal.new()
-		signals[pathInString] = pathSignal
-	end
-
-	return pathSignal
 end
 
-local function shallowCopy(tableToCopy: any): any
-	local n: number = #tableToCopy
-	local new = table.create(n)
-
-	if n > 0 then
-		table.move(tableToCopy, 1, n, 1, new)
+local function getStringFromPath(path: Types.Path): string
+	if type(path) == 'string' then
+		return path
 	else
-		for k: any, value: any in pairs(tableToCopy) do
-			new[k] = value
-		end
+		return convertTablePathToString(path)
 	end
-
-	return new
 end
 
-local function assign(targetTable, newValues: { [any]: any })
-	local newTable = shallowCopy(targetTable)
+local function getFromPath(path: Types.Path, data: Types.StringDictionary): (any, string)
+	local pathInTable: Types.StringArray = getStringArrayFromPath(path)
 
-	for k: any, value: any in pairs(newValues) do
-		newTable[k] = value
+	local pathLength: number = #pathInTable
+	local value: any = data
+
+	for i = 1, pathLength - 1 do
+		value = value[pathInTable[i]]
 	end
 
-	return newTable
+	return value, pathInTable[pathLength]
+end
+
+local function getSignalFromPath(path: Types.Path?, signals: Types.Signals, create: boolean?): Types.Signal | nil
+	if path == nil then
+		return nil
+	end
+
+	local pathInString: string = getStringFromPath(path :: Types.Path)
+
+	local signal: any = signals[pathInString]
+	if signal == nil and create then
+		signal = Signal.new()
+		signals[pathInString] = signal
+	end
+
+	return signal
+end
+
+local function fireSignals(signals: Types.Signals, stringArray: Types.StringArray, ...)
+	local updateSignal = getSignalFromPath(stringArray, signals)
+
+	if updateSignal then
+		updateSignal:Fire(...)
+	end
+
+	local rootSignal: any = signals[stringArray[1]]
+	if rootSignal and rootSignal ~= updateSignal then
+		rootSignal:Fire(...)
+	end
 end
 
 return {
-	getSignal = getSignal,
 	convertTablePathToString = convertTablePathToString,
 	convertPathToTable = convertPathToTable,
-	assign = assign,
+	getFromPath = getFromPath,
+	getStringArrayFromPath = getStringArrayFromPath,
+	getStringFromPath = getStringFromPath,
+	getSignalFromPath = getSignalFromPath,
+	fireSignals = fireSignals,
 }

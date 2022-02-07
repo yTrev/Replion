@@ -4,17 +4,23 @@
 		"$className": "DataModel",
 		"ReplicatedStorage": {
 			"$className": "ReplicatedStorage",
-			"Replion": {
-				"$path": "src"
+			"Tests": {
+				"$path": "tests"
+			},
+			"Packages": {
+				"$path": "Packages",
+				"Replion": {
+					"$path": "src"
+				}
+			},
+			"DevPackages": {
+				"$path": "DevPackages"
 			}
 		},
 		"TestService": {
 			"$className": "TestService",
 			"$properties": {
 				"ExecuteWithStudioRun": true
-			},
-			"TestEZ": {
-				"$path": "packages/testez/src"
 			},
 			"run": {
 				"$path": "RunTests.server.lua"
