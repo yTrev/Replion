@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="generator" content="Docusaurus v2.0.0-beta.9">
 <title data-react-helmet="true">ServerReplion | Replion</title><meta data-react-helmet="true" property="og:title" content="ServerReplion | Replion"><meta data-react-helmet="true" name="twitter:card" content="summary_large_image"><meta data-react-helmet="true" property="og:url" content="https://yTrev.github.io/Replion/api/ServerReplion"><meta data-react-helmet="true" name="docusaurus_locale" content="en"><meta data-react-helmet="true" name="docusaurus_tag" content="default"><link data-react-helmet="true" rel="shortcut icon" href="/Replion/img/favicon.ico"><link data-react-helmet="true" rel="canonical" href="https://yTrev.github.io/Replion/api/ServerReplion"><link data-react-helmet="true" rel="alternate" href="https://yTrev.github.io/Replion/api/ServerReplion" hreflang="en"><link data-react-helmet="true" rel="alternate" href="https://yTrev.github.io/Replion/api/ServerReplion" hreflang="x-default"><link rel="stylesheet" href="/Replion/assets/css/styles.06f234af.css">
-<link rel="preload" href="/Replion/assets/js/runtime~main.950e3ce4.js" as="script">
-<link rel="preload" href="/Replion/assets/js/main.225e38c3.js" as="script">
+<link rel="preload" href="/Replion/assets/js/runtime~main.8948fd00.js" as="script">
+<link rel="preload" href="/Replion/assets/js/main.bbed63c1.js" as="script">
 </head>
 <body>
 <script>!function(){function e(e){document.documentElement.setAttribute("data-theme",e)}var t=function(){var e=null;try{e=localStorage.getItem("theme")}catch(e){}return e}();null!==t?e(t):window.matchMedia("(prefers-color-scheme: dark)").matches?e("dark"):(window.matchMedia("(prefers-color-scheme: light)").matches,e("light"))}()</script><div id="__docusaurus">
@@ -68,15 +68,16 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
 </div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Decrease"><code style="text-decoration:none">Decrease</code><a aria-hidden="true" class="hash-link" href="#Decrease" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L318"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Decrease</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">number</code></div></div><code>) → </code><code class="blue_2Afy">number</code></div><div>
 <pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> newCoins<span class="token punctuation">:</span> number <span class="token operator">=</span> Replion<span class="token punctuation">:</span><span class="token function">Decrease</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">,</span> <span class="token number">20</span><span class="token punctuation">)</span>
 </code></pre>
-</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Get"><code style="text-decoration:none">Get</code><a aria-hidden="true" class="hash-link" href="#Get" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L332"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Get</code><code>(</code><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>) → </code><code class="blue_2Afy">any</code></div><div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Get"><code style="text-decoration:none">Get</code><a aria-hidden="true" class="hash-link" href="#Get" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L334"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Get</code><code>(</code><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>) → </code><code class="blue_2Afy">any</code></div><div>
+<p>Returns the value at the path.</p>
 <pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> coins<span class="token punctuation">:</span> number <span class="token operator">=</span> Replion<span class="token punctuation">:</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">)</span>
 <span class="token keyword">local</span> level<span class="token punctuation">:</span> number <span class="token operator">=</span> Replion<span class="token punctuation">:</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token string">'Stats.Level'</span><span class="token punctuation">)</span>
 </code></pre>
-</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="GetExpect"><code style="text-decoration:none">GetExpect</code><a aria-hidden="true" class="hash-link" href="#GetExpect" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L352"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">GetExpect</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>message<!-- -->: </code><code class="blue_2Afy">string?</code></div></div><code>) → </code><code class="blue_2Afy">any</code></div><div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="GetExpect"><code style="text-decoration:none">GetExpect</code><a aria-hidden="true" class="hash-link" href="#GetExpect" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L354"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">GetExpect</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>message<!-- -->: </code><code class="blue_2Afy">string?</code></div></div><code>) → </code><code class="blue_2Afy">any</code></div><div>
 <p>If the value is not found, an error will be thrown.</p>
 <pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> coins<span class="token punctuation">:</span> number <span class="token operator">=</span> Replion<span class="token punctuation">:</span><span class="token function">GetExpect</span><span class="token punctuation">(</span><span class="token string">'Coins'</span><span class="token punctuation">)</span>
 </code></pre>
-</div><h3>Errors</h3><table class="errorTable_25fH"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;Invalid path&quot;</td><td>This error is thrown when the path does not have a value.</td></tr></tbody></table><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Insert"><code style="text-decoration:none">Insert</code><a aria-hidden="true" class="hash-link" href="#Insert" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L372"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Insert</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">any</code><code>,</code></div><div><code>index<!-- -->: </code><code class="blue_2Afy">number?</code></div></div><code>) → </code><code>(</code><div class="inset_2cJr"><div><code class="blue_2Afy">number</code><code>,</code></div><div><code class="blue_2Afy">any</code></div></div><code>)</code></div><div>
+</div><h3>Errors</h3><table class="errorTable_25fH"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;Invalid path&quot;</td><td>This error is thrown when the path does not have a value.</td></tr></tbody></table><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Insert"><code style="text-decoration:none">Insert</code><a aria-hidden="true" class="hash-link" href="#Insert" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L374"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Insert</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">any</code><code>,</code></div><div><code>index<!-- -->: </code><code class="blue_2Afy">number?</code></div></div><code>) → </code><code>(</code><div class="inset_2cJr"><div><code class="blue_2Afy">number</code><code>,</code></div><div><code class="blue_2Afy">any</code></div></div><code>)</code></div><div>
 <p>Inserts a new value into the array.</p>
 <div class="admonition admonition-note alert alert--secondary">
   <div class="admonition-heading">
@@ -88,7 +89,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
     <p>This only works on Arrays.</p>
   </div>
 </div>
-</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Remove"><code style="text-decoration:none">Remove</code><a aria-hidden="true" class="hash-link" href="#Remove" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L400"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Remove</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>index<!-- -->: </code><code class="blue_2Afy">number?</code></div></div><code>) → </code><code class="blue_2Afy">any</code></div><div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Remove"><code style="text-decoration:none">Remove</code><a aria-hidden="true" class="hash-link" href="#Remove" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L402"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Remove</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>index<!-- -->: </code><code class="blue_2Afy">number?</code></div></div><code>) → </code><code class="blue_2Afy">any</code></div><div>
 <p>Removes a value from the array.</p>
 <div class="admonition admonition-note alert alert--secondary">
   <div class="admonition-heading">
@@ -100,7 +101,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
     <p>This only works on Arrays.</p>
   </div>
 </div>
-</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Find"><code style="text-decoration:none">Find</code><a aria-hidden="true" class="hash-link" href="#Find" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L428"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Find</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">any</code></div></div><code>) → </code><code>(</code><div class="inset_2cJr"><div><code class="blue_2Afy">any</code><code>,</code></div><div><code class="blue_2Afy">number?</code></div></div><code>)</code></div><div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Find"><code style="text-decoration:none">Find</code><a aria-hidden="true" class="hash-link" href="#Find" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L430"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Find</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">any</code></div></div><code>) → </code><code>(</code><div class="inset_2cJr"><div><code class="blue_2Afy">any</code><code>,</code></div><div><code class="blue_2Afy">number?</code></div></div><code>)</code></div><div>
 <p>Finds a value in the array.</p>
 <div class="admonition admonition-note alert alert--secondary">
   <div class="admonition-heading">
@@ -112,7 +113,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
     <p>This only works on Arrays.</p>
   </div>
 </div>
-</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="FindRemove"><code style="text-decoration:none">FindRemove</code><a aria-hidden="true" class="hash-link" href="#FindRemove" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L451"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">FindRemove</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">any</code></div></div><code>) → </code><code class="blue_2Afy">any?</code></div><div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="FindRemove"><code style="text-decoration:none">FindRemove</code><a aria-hidden="true" class="hash-link" href="#FindRemove" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L453"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">FindRemove</code><code>(</code><div class="inset_2cJr"><div><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>,</code></div><div><code>value<!-- -->: </code><code class="blue_2Afy">any</code></div></div><code>) → </code><code class="blue_2Afy">any?</code></div><div>
 <p>Finds a value in the array and removes it.</p>
 <div class="admonition admonition-note alert alert--secondary">
   <div class="admonition-heading">
@@ -124,7 +125,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
     <p>This only works on Arrays.</p>
   </div>
 </div>
-</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Clear"><code style="text-decoration:none">Clear</code><a aria-hidden="true" class="hash-link" href="#Clear" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L470"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Clear</code><code>(</code><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Clear"><code style="text-decoration:none">Clear</code><a aria-hidden="true" class="hash-link" href="#Clear" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L472"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Clear</code><code>(</code><code>path<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Replion/api/ServerReplion#Path">Path</a></code><code>) → </code><code>(</code><code>)</code></div><div>
 <p>Clears the array.</p>
 <div class="admonition admonition-note alert alert--secondary">
   <div class="admonition-heading">
@@ -136,9 +137,9 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
     <p>This only works on Arrays.</p>
   </div>
 </div>
-</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="IsDestroyed"><code style="text-decoration:none">IsDestroyed</code><a aria-hidden="true" class="hash-link" href="#IsDestroyed" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L489"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">IsDestroyed</code><code>(</code><code>) → </code><code class="blue_2Afy">boolean</code></div><div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="IsDestroyed"><code style="text-decoration:none">IsDestroyed</code><a aria-hidden="true" class="hash-link" href="#IsDestroyed" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><span class="releaseVersion_3lep">since <!-- -->v0.3.0</span><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L491"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">IsDestroyed</code><code>(</code><code>) → </code><code class="blue_2Afy">boolean</code></div><div>
 <p>Returns if the ServerReplion is destroyed.</p>
-</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Destroy"><code style="text-decoration:none">Destroy</code><a aria-hidden="true" class="hash-link" href="#Destroy" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L496"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Destroy</code><code>(</code><code>) → </code><code>(</code><code>)</code></div><div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Destroy"><code style="text-decoration:none">Destroy</code><a aria-hidden="true" class="hash-link" href="#Destroy" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/yTrev/Replion/blob/master/src/ReplionService/ServerReplion.lua#L498"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>ServerReplion<!-- -->:</code><code class="green_3LnD">Destroy</code><code>(</code><code>) → </code><code>(</code><code>)</code></div><div>
 <p>Destroys the Replion object.</p>
 </div></div></article></div><details><summary>Show raw api</summary><pre style="max-width:100%;white-space:pre-wrap">{
     &quot;functions&quot;: [
@@ -324,7 +325,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
         },
         {
             &quot;name&quot;: &quot;Get&quot;,
-            &quot;desc&quot;: &quot;```lua\nlocal coins: number = Replion:Get(&#x27;Coins&#x27;)\nlocal level: number = Replion:Get(&#x27;Stats.Level&#x27;)\n```&quot;,
+            &quot;desc&quot;: &quot;Returns the value at the path.\n\n```lua\nlocal coins: number = Replion:Get(&#x27;Coins&#x27;)\nlocal level: number = Replion:Get(&#x27;Stats.Level&#x27;)\n```&quot;,
             &quot;params&quot;: [
                 {
                     &quot;name&quot;: &quot;path&quot;,
@@ -340,7 +341,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
             ],
             &quot;function_type&quot;: &quot;method&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 332,
+                &quot;line&quot;: 334,
                 &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
             }
         },
@@ -374,7 +375,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
             ],
             &quot;since&quot;: &quot;v0.3.0&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 352,
+                &quot;line&quot;: 354,
                 &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
             }
         },
@@ -411,7 +412,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
             &quot;function_type&quot;: &quot;method&quot;,
             &quot;since&quot;: &quot;v0.3.0&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 372,
+                &quot;line&quot;: 374,
                 &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
             }
         },
@@ -439,7 +440,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
             &quot;function_type&quot;: &quot;method&quot;,
             &quot;since&quot;: &quot;v0.3.0&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 400,
+                &quot;line&quot;: 402,
                 &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
             }
         },
@@ -471,7 +472,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
             &quot;function_type&quot;: &quot;method&quot;,
             &quot;since&quot;: &quot;v0.3.0&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 428,
+                &quot;line&quot;: 430,
                 &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
             }
         },
@@ -499,7 +500,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
             &quot;function_type&quot;: &quot;method&quot;,
             &quot;since&quot;: &quot;v0.3.0&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 451,
+                &quot;line&quot;: 453,
                 &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
             }
         },
@@ -517,7 +518,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
             &quot;function_type&quot;: &quot;method&quot;,
             &quot;since&quot;: &quot;v0.3.0&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 470,
+                &quot;line&quot;: 472,
                 &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
             }
         },
@@ -534,7 +535,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
             &quot;function_type&quot;: &quot;method&quot;,
             &quot;since&quot;: &quot;v0.3.0&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 489,
+                &quot;line&quot;: 491,
                 &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
             }
         },
@@ -545,7 +546,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
             &quot;returns&quot;: [],
             &quot;function_type&quot;: &quot;method&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 496,
+                &quot;line&quot;: 498,
                 &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
             }
         }
@@ -647,7 +648,7 @@ Replion<span class="token punctuation">:</span><span class="token function">Set<
         &quot;path&quot;: &quot;src/ReplionService/ServerReplion.lua&quot;
     }
 }</pre></details></div><div class="col col--3"><div class="tableOfContents_35-E thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a><ul><li><a href="#Configuration" class="table-of-contents__link toc-highlight">Configuration</a></li><li><a href="#Extensions" class="table-of-contents__link toc-highlight">Extensions</a></li><li><a href="#Path" class="table-of-contents__link toc-highlight">Path</a></li></ul></li><li><a href="#properties" class="table-of-contents__link toc-highlight">Properties</a><ul><li><a href="#Data" class="table-of-contents__link toc-highlight">Data</a></li><li><a href="#Extensions" class="table-of-contents__link toc-highlight">Extensions</a></li><li><a href="#Player" class="table-of-contents__link toc-highlight">Player</a></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#BeforeDestroy" class="table-of-contents__link toc-highlight">:BeforeDestroy</a></li><li><a href="#Clear" class="table-of-contents__link toc-highlight">:Clear</a></li><li><a href="#Decrease" class="table-of-contents__link toc-highlight">:Decrease</a></li><li><a href="#Destroy" class="table-of-contents__link toc-highlight">:Destroy</a></li><li><a href="#Find" class="table-of-contents__link toc-highlight">:Find</a></li><li><a href="#FindRemove" class="table-of-contents__link toc-highlight">:FindRemove</a></li><li><a href="#Get" class="table-of-contents__link toc-highlight">:Get</a></li><li><a href="#GetExpect" class="table-of-contents__link toc-highlight">:GetExpect</a></li><li><a href="#Increase" class="table-of-contents__link toc-highlight">:Increase</a></li><li><a href="#Insert" class="table-of-contents__link toc-highlight">:Insert</a></li><li><a href="#IsDestroyed" class="table-of-contents__link toc-highlight">:IsDestroyed</a></li><li><a href="#OnUpdate" class="table-of-contents__link toc-highlight">:OnUpdate</a></li><li><a href="#Remove" class="table-of-contents__link toc-highlight">:Remove</a></li><li><a href="#Set" class="table-of-contents__link toc-highlight">:Set</a></li><li><a href="#Update" class="table-of-contents__link toc-highlight">:Update</a></li><li><a href="#new" class="table-of-contents__link toc-highlight">.new</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2022 yTrev. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
-<script src="/Replion/assets/js/runtime~main.950e3ce4.js"></script>
-<script src="/Replion/assets/js/main.225e38c3.js"></script>
+<script src="/Replion/assets/js/runtime~main.8948fd00.js"></script>
+<script src="/Replion/assets/js/main.bbed63c1.js"></script>
 </body>
 </html>
