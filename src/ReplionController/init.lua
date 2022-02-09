@@ -10,14 +10,14 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local Packages = script:FindFirstAncestor('Packages')
 
 local Promise = require(Packages:FindFirstChild('Promise'))
-local llama = require(Packages:FindFirstChild('llama'))
 local t = require(Packages:FindFirstChild('t'))
 local Signal = require(Packages:FindFirstChild('Signal'))
 
 local Types = require(script.Parent.Shared.Types)
 local Enums = require(script.Parent.Shared.Enums)
-local Utils = require(script.Parent.Shared.Utils)
+
 local ClientReplion = require(script.ClientReplion)
+local ClientMethods = require(script.ClientMethods)
 
 -- ===========================================================================
 -- Variables
@@ -34,24 +34,9 @@ local onStart: BindableEvent = Instance.new('BindableEvent')
 local replionAdded: Types.Signal = Signal.new()
 local replionRemoved: Types.Signal = Signal.new()
 
-local merge = llama.Dictionary.merge
-local set = llama.Dictionary.set
-local copy = llama.List.copy
-local removeIndex = llama.List.removeIndex
-
 -- ===========================================================================
 -- Private functions
 -- ===========================================================================
-local function getAction(lastValue: any, newValue: any)
-	if lastValue == nil then
-		return Enums.Action.Added
-	elseif newValue == nil then
-		return Enums.Action.Removed
-	else
-		return Enums.Action.Changed
-	end
-end
-
 local function createReplion(name: string, data: Types.Table, tags: Types.StringArray)
 	if replions[name] then
 		return
@@ -61,110 +46,6 @@ local function createReplion(name: string, data: Types.Table, tags: Types.String
 	replions[name] = newReplion
 
 	replionAdded:Fire(name, newReplion)
-end
-
-local function replionUpdate(name: string, path: string, values: Types.Table)
-	local replion = replions[name] :: ClientReplion
-	local signals = replion._signals
-
-	local stringArray: Types.StringArray = Utils.convertPathToTable(path)
-	local dataPath: any, last: string = Utils.getFromPath(stringArray, replion.Data)
-
-	local currentValue: any = dataPath[last]
-
-	dataPath[last] = merge(currentValue, values)
-
-	if values[1] == nil then
-		local newLastIndex = #stringArray + 1
-
-		for index: string, value: any in pairs(values) do
-			stringArray[newLastIndex] = index
-
-			local indexSignal: any = Utils.getSignalFromPath(stringArray, signals)
-			if indexSignal then
-				local lastValue: any = currentValue[index]
-
-				indexSignal:Fire(getAction(lastValue, value), value, lastValue)
-			end
-		end
-
-		stringArray[newLastIndex] = nil
-	end
-
-	Utils.fireSignals(signals, stringArray, Enums.Action.Changed, values, last)
-end
-
-local function replionSet(name: string, path: string, value: any)
-	local replion = replions[name] :: ClientReplion
-	local signals = replion._signals
-
-	local stringArray: Types.StringArray = Utils.convertPathToTable(path)
-	local pathLength: number = #stringArray
-	local last: string = stringArray[pathLength]
-
-	local replionData = replion.Data
-
-	local action: Types.Enum
-
-	if #stringArray == 1 then
-		action = getAction(replionData[last], value)
-		replionData[last] = set(replionData, last, value)
-	else
-		local dataPath: any = replionData
-		local parent = stringArray[pathLength - 1]
-
-		for i = 1, pathLength - 2 do
-			dataPath = dataPath[stringArray[i]]
-		end
-
-		action = getAction(dataPath[parent][last], value)
-		dataPath[parent] = set(dataPath[parent], last, value)
-	end
-
-	Utils.fireSignals(signals, stringArray, action, value, last)
-end
-
-local function replionArrayInsert(name: string, path: string, index: number, value: any)
-	local replion = replions[name] :: ClientReplion
-	local signals = replion._signals
-
-	local stringArray: Types.StringArray = Utils.convertPathToTable(path)
-	local dataPath: any, last: string = Utils.getFromPath(stringArray, replion.Data)
-
-	local newData = copy(dataPath[last])
-	table.insert(newData, index, value)
-
-	dataPath[last] = newData
-
-	Utils.fireSignals(signals, stringArray, Enums.Action.Added, index, value)
-end
-
-local function replionArrayRemove(name: string, path: string, index: number)
-	local replion = replions[name] :: ClientReplion
-	local signals = replion._signals
-
-	local stringArray: Types.StringArray = Utils.convertPathToTable(path)
-	local dataPath: any, last: string = Utils.getFromPath(stringArray, replion.Data)
-
-	local oldValue = dataPath[last][index]
-
-	dataPath[last] = removeIndex(dataPath[last], index)
-
-	Utils.fireSignals(signals, stringArray, Enums.Action.Removed, index, oldValue)
-end
-
-local function replionArrayClear(name: string, path: string)
-	local replion = replions[name] :: ClientReplion
-	local signals = replion._signals
-
-	local stringArray: Types.StringArray = Utils.convertPathToTable(path)
-	local dataPath: any, last: string = Utils.getFromPath(stringArray, replion.Data)
-
-	local oldValue = copy(dataPath[last])
-
-	dataPath[last] = {}
-
-	Utils.fireSignals(signals, stringArray, Enums.Action.Cleared, oldValue)
 end
 
 local function configureConnnections()
@@ -182,6 +63,16 @@ local function configureConnnections()
 		(replion :: any):Destroy()
 	end)
 
+	local function connectEvent(remote: RemoteEvent, fn: (ClientReplion, ...any) -> ())
+		remote.OnClientEvent:Connect(function(name: string, ...: any)
+			local replion: ClientReplion = replions[name] :: ClientReplion
+
+			if replion then
+				fn(replion, ...)
+			end
+		end)
+	end
+
 	local methodsFolder: Folder = eventsFolder:FindFirstChild('Methods') :: Folder
 
 	local updateEvent = methodsFolder:FindFirstChild('Update') :: RemoteEvent
@@ -190,11 +81,11 @@ local function configureConnnections()
 	local arrayRemoveEvent = methodsFolder:FindFirstChild('ArrayRemove') :: RemoteEvent
 	local arrayClear = methodsFolder:FindFirstChild('ArrayClear') :: RemoteEvent
 
-	updateEvent.OnClientEvent:Connect(replionUpdate)
-	setEvent.OnClientEvent:Connect(replionSet)
-	arrayInsertEvent.OnClientEvent:Connect(replionArrayInsert)
-	arrayRemoveEvent.OnClientEvent:Connect(replionArrayRemove)
-	arrayClear.OnClientEvent:Connect(replionArrayClear)
+	connectEvent(updateEvent, ClientMethods.update)
+	connectEvent(setEvent, ClientMethods.set)
+	connectEvent(arrayInsertEvent, ClientMethods.insert)
+	connectEvent(arrayRemoveEvent, ClientMethods.remove)
+	connectEvent(arrayClear, ClientMethods.clear)
 end
 
 --[=[

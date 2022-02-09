@@ -1,6 +1,6 @@
 <p align="center">
-	<img src=".github/logo.svg" height="180">
-	<br>
+	<img src=".github/logo.svg" height="180" />
+	<br />
 	Replion is a module that allows the replication of information from Server to Client lightly and efficiently.
 </p>
 
@@ -9,7 +9,7 @@
 ## Wally
 Add Replion as a dependency to your `wally.toml` file:
 ```
-Replion = "ytrev/replion@0.3.1"
+Replion = "ytrev/replion@0.3.2"
 ```
 
 # Usage

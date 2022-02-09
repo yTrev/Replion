@@ -322,6 +322,8 @@ function ServerReplion:Decrease(path: Types.Path, value: number): number
 end
 
 --[=[
+	Returns the value at the path.
+
 	```lua
 	local coins: number = Replion:Get('Coins')
 	local level: number = Replion:Get('Stats.Level')
@@ -382,7 +384,7 @@ function ServerReplion:Insert(path: Types.Path, value: any, index: number?): (nu
 
 	table.insert(array, index :: number, value)
 
-	Utils.fireSignals(self._signals, stringArray, Enums.Action.Added, index, value)
+	Utils.fireSignalsForArray(self._signals, stringArray, Enums.Action.Added, index, value)
 	Network.FireUpdate(self, Enums.Action.Added, stringArray, index, value)
 
 	return index, value
@@ -410,7 +412,7 @@ function ServerReplion:Remove(path: Types.Path, index: number?): any
 
 	local value = table.remove(array, index)
 
-	Utils.fireSignals(self._signals, stringArray, Enums.Action.Removed, index, value)
+	Utils.fireSignalsForArray(self._signals, stringArray, Enums.Action.Removed, index, value)
 	Network.FireUpdate(self, Enums.Action.Removed, Utils.getStringArrayFromPath(path), index)
 
 	return value
@@ -477,7 +479,7 @@ function ServerReplion:Clear(path: Types.Path)
 	local array: any = assert(dataPath[last], 'Invalid array!')
 	table.clear(array)
 
-	Utils.fireSignals(self._signals, stringArray, Enums.Action.Cleared)
+	Utils.fireSignalsForArray(self._signals, stringArray, Enums.Action.Cleared)
 	Network.FireUpdate(self, Enums.Action.Cleared, Utils.getStringArrayFromPath(path))
 end
 

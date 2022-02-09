@@ -60,15 +60,33 @@ local function getSignalFromPath(path: Types.Path?, signals: Types.Signals, crea
 end
 
 local function fireSignals(signals: Types.Signals, stringArray: Types.StringArray, ...)
-	local updateSignal = getSignalFromPath(stringArray, signals)
+	local rootSignal: any = signals[stringArray[1]]
 
-	if updateSignal then
-		updateSignal:Fire(...)
+	if rootSignal then
+		local action, newValue, oldValue = ...
+		rootSignal:Fire(action, stringArray, newValue, oldValue)
 	end
 
+	if #stringArray > 1 then
+		local updateSignal = getSignalFromPath(stringArray, signals)
+		if updateSignal then
+			updateSignal:Fire(...)
+		end
+	end
+end
+
+local function fireSignalsForArray(signals: Types.Signals, stringArray: Types.StringArray, ...)
 	local rootSignal: any = signals[stringArray[1]]
-	if rootSignal and rootSignal ~= updateSignal then
+
+	if rootSignal then
 		rootSignal:Fire(...)
+	end
+
+	if #stringArray > 1 then
+		local updateSignal = getSignalFromPath(stringArray, signals)
+		if updateSignal then
+			updateSignal:Fire(...)
+		end
 	end
 end
 
@@ -80,4 +98,5 @@ return {
 	getStringFromPath = getStringFromPath,
 	getSignalFromPath = getSignalFromPath,
 	fireSignals = fireSignals,
+	fireSignalsForArray = fireSignalsForArray,
 }

@@ -16,7 +16,7 @@ local pathCheck = t.strict(t.union(t.string, t.array(t.string)))
 
 --[=[
 	The player Data table.
-	@prop Data { [string]: any }
+	@prop Data { [any]: any }
 	@within ClientReplion
 	@readonly
 ]=]
@@ -48,12 +48,32 @@ end
 
 local onUpdateCheck = t.strict(t.tuple(pathCheck, t.callback))
 --[=[
+	If the path is a root, then the callback will be: `(action: Enums, path: { string }, value: any, oldValue: any) -> ()`
+
+	Example:
+	```lua
+	-- "Pets" is a root.	
+	replion:OnUpdate('Pets', function(action: Enum, path: { string }, newValue: any, oldValue: any)
+	end)
+
+	-- "Stats.Coins" is not a root.
+	replion:OnUpdate('Stats.Coins', function(action: Enum, newValue: any, oldValue: any)
+	end)
+	```
+
+	The params for the callback change if the path is an Array.
+	If is an Array, there are three options:
+		- If a value is added: (action: Enum, index: number, value: any) -> ()
+		- If a value is removed: (action: Enum, index: number, oldValue: any) -> ()
+		- If the array is cleared: (action: Enum, oldValue: { any }}) -> ()
+
+	@param callback (action: Enum, newValue: any, oldValue: any) -> ()
 	@param path Path
 ]=]
-function ClientReplion:OnUpdate(path: Types.Path, callback: Types.Callback)
+function ClientReplion:OnUpdate(path: Types.Path, callback: Types.Callback): Types.Connection
 	onUpdateCheck(path, callback)
 
-	local signal: any = Utils.getSignalFromPath(path, self._signals, true)
+	local signal: Types.Signal = Utils.getSignalFromPath(path, self._signals, true)
 	return signal:Connect(callback)
 end
 
@@ -69,6 +89,8 @@ function ClientReplion:BeforeDestroy(callback: Types.Callback): Types.Connection
 end
 
 --[=[
+	Returns the value at the path.
+
 	@param path Path
 	@return any
 ]=]
