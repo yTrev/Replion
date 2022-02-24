@@ -70,9 +70,10 @@ local fireUpdateCheck = t.tuple(t.table, enumCheck, t.array(t.string))
 function NetworkServer.FireUpdate(replion, action: Types.Enum, path: Types.Path, ...: any)
 	assert(fireUpdateCheck(replion, action, path))
 
-	local pathStr: string = Utils.getStringFromPath(path)
-
-	assert(action ~= Enums.Action.None, string.format(NO_CHANGE_DETECTED, pathStr, tostring(replion)))
+	assert(
+		action ~= Enums.Action.None,
+		string.format(NO_CHANGE_DETECTED, Utils.getStringFromPath(path), tostring(replion))
+	)
 
 	local method: string = debug.info(2, 'n')
 	local targetEvent: string = assert(EVENTS_BY_METHOD[method], 'Invalid method: ' .. method)
@@ -81,7 +82,9 @@ function NetworkServer.FireUpdate(replion, action: Types.Enum, path: Types.Path,
 	-- TODO
 	-- In the future, we should add suport for multiple players.
 	if not NetworkServer.Testing then
-		event:FireClient(replion.Player, replion.Name, pathStr, ...)
+		local pathTable = Utils.getStringArrayFromPath(path)
+
+		event:FireClient(replion.Player, replion.Name, pathTable, ...)
 	end
 end
 

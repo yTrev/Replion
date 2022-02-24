@@ -20,6 +20,7 @@ local copy = llama.List.copy
 local removeIndex = llama.List.removeIndex
 
 type ClientReplion = ClientReplion.ClientReplion
+type StringArray = { string }
 
 local function getAction(oldValue: any, newValue: any): Types.Enum
 	if oldValue == nil then
@@ -31,23 +32,21 @@ local function getAction(oldValue: any, newValue: any): Types.Enum
 	end
 end
 
-local function replionUpdate(replion: ClientReplion, path: string, values: Types.Table)
+local function replionUpdate(replion: ClientReplion, path: StringArray, values: Types.Table)
 	local signals = replion._signals
 
-	local stringArray: Types.StringArray = Utils.convertPathToTable(path)
-	local dataPath: any, last: string = Utils.getFromPath(stringArray, replion.Data)
-
+	local dataPath: any, last: string = Utils.getFromPath(path, replion.Data)
 	local oldValue: any = dataPath[last]
 
 	dataPath[last] = merge(oldValue, values)
 
 	if values[1] == nil then
-		local newLastIndex = #stringArray + 1
+		local newLastIndex = #path + 1
 
 		for index: string, value: any in pairs(values) do
-			stringArray[newLastIndex] = index
+			path[newLastIndex] = index
 
-			local indexSignal: any = Utils.getSignalFromPath(stringArray, signals)
+			local indexSignal: any = Utils.getSignalFromPath(path, signals)
 			if indexSignal then
 				local lastValue: any = oldValue[index]
 
@@ -55,18 +54,17 @@ local function replionUpdate(replion: ClientReplion, path: string, values: Types
 			end
 		end
 
-		stringArray[newLastIndex] = nil
+		path[newLastIndex] = nil
 	end
 
-	Utils.fireSignals(signals, stringArray, Enums.Action.Changed, values, oldValue)
+	Utils.fireSignals(signals, path, Enums.Action.Changed, values, oldValue)
 end
 
-local function replionSet(replion: ClientReplion, path: string, value: any)
+local function replionSet(replion: ClientReplion, path: StringArray, value: any)
 	local signals = replion._signals
 
-	local stringArray: Types.StringArray = Utils.convertPathToTable(path)
-	local pathLength: number = #stringArray
-	local last: string = stringArray[pathLength]
+	local pathLength: number = #path
+	local last: string = path[pathLength]
 
 	local replionData = replion.Data
 	local oldValue: any
@@ -80,10 +78,10 @@ local function replionSet(replion: ClientReplion, path: string, value: any)
 		replionData[last] = value
 	else
 		local dataPath: any = replionData
-		local parent = stringArray[pathLength - 1]
+		local parent = path[pathLength - 1]
 
 		for i = 1, pathLength - 2 do
-			dataPath = dataPath[stringArray[i]]
+			dataPath = dataPath[path[i]]
 		end
 
 		oldValue = dataPath[parent][last]
@@ -92,47 +90,44 @@ local function replionSet(replion: ClientReplion, path: string, value: any)
 		dataPath[parent] = set(dataPath[parent], last, value)
 	end
 
-	Utils.fireSignals(signals, stringArray, action, value, oldValue)
+	Utils.fireSignals(signals, path, action, value, oldValue)
 end
 
-local function replionArrayInsert(replion: ClientReplion, path: string, index: number, value: any)
+local function replionArrayInsert(replion: ClientReplion, path: StringArray, index: number, value: any)
 	local signals = replion._signals
 
-	local stringArray: Types.StringArray = Utils.convertPathToTable(path)
-	local dataPath: any, last: string = Utils.getFromPath(stringArray, replion.Data)
+	local dataPath: any, last: string = Utils.getFromPath(path, replion.Data)
 
 	local newData = copy(dataPath[last])
 	table.insert(newData, index, value)
 
 	dataPath[last] = newData
 
-	Utils.fireSignalsForArray(signals, stringArray, Enums.Action.Added, index, value)
+	Utils.fireSignalsForArray(signals, path, Enums.Action.Added, index, value)
 end
 
-local function replionArrayRemove(replion: ClientReplion, path: string, index: number)
+local function replionArrayRemove(replion: ClientReplion, path: StringArray, index: number)
 	local signals = replion._signals
 
-	local stringArray: Types.StringArray = Utils.convertPathToTable(path)
-	local dataPath: any, last: string = Utils.getFromPath(stringArray, replion.Data)
+	local dataPath: any, last: string = Utils.getFromPath(path, replion.Data)
 
 	local oldValue = dataPath[last][index]
 
 	dataPath[last] = removeIndex(dataPath[last], index)
 
-	Utils.fireSignalsForArray(signals, stringArray, Enums.Action.Removed, index, oldValue)
+	Utils.fireSignalsForArray(signals, path, Enums.Action.Removed, index, oldValue)
 end
 
-local function replionArrayClear(replion: ClientReplion, path: string)
+local function replionArrayClear(replion: ClientReplion, path: StringArray)
 	local signals = replion._signals
 
-	local stringArray: Types.StringArray = Utils.convertPathToTable(path)
-	local dataPath: any, last: string = Utils.getFromPath(stringArray, replion.Data)
+	local dataPath: any, last: string = Utils.getFromPath(path, replion.Data)
 
 	local oldValue = copy(dataPath[last])
 
 	dataPath[last] = {}
 
-	Utils.fireSignalsForArray(signals, stringArray, Enums.Action.Cleared, oldValue)
+	Utils.fireSignalsForArray(signals, path, Enums.Action.Cleared, oldValue)
 end
 
 return {

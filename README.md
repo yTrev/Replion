@@ -9,7 +9,7 @@
 ## Wally
 Add Replion as a dependency to your `wally.toml` file:
 ```
-Replion = "ytrev/replion@0.3.2"
+Replion = "ytrev/replion@0.3.3"
 ```
 
 # Usage

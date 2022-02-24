@@ -29,6 +29,14 @@ ReplionService.ServerReplion = ServerReplion
 local replionAdded: Types.Signal = Signal.new()
 local replionRemoved: Types.Signal = Signal.new()
 
+local playerUnion = t.union(
+	t.instanceIsA('Player'),
+	t.strictInterface({
+		Name = t.string,
+		UserId = t.number,
+	})
+)
+
 local waitingPromises = {}
 
 local function getPlayerCache(player)
@@ -83,6 +91,10 @@ type ServerReplion = ServerReplion.ServerReplion
 function ReplionService.new(config: ServerReplion.Configuration)
 	local newReplion = ServerReplion.new(config)
 
+	newReplion:BeforeDestroy(function()
+		replionRemoved:Fire(newReplion)
+	end)
+
 	replionAdded:Fire(newReplion)
 
 	Network.FireEvent(Enums.Event.Created, newReplion.Player, newReplion.Name, newReplion.Data, newReplion.Tags)
@@ -90,7 +102,7 @@ function ReplionService.new(config: ServerReplion.Configuration)
 	return Containers.addToContainer(newReplion) :: ServerReplion
 end
 
-local getReplionCheck = t.strict(t.tuple(t.instanceIsA('Player'), t.string))
+local getReplionCheck = t.strict(t.tuple(playerUnion, t.string))
 --[=[
 	@param player Player
 	@param name string
@@ -103,7 +115,7 @@ function ReplionService:GetReplion(player: Player, name: string): ServerReplion?
 	return Containers.getFromContainer(player, name) :: ServerReplion?
 end
 
-local getReplionsCheck = t.strict(t.instanceIsA('Player'))
+local getReplionsCheck = t.strict(playerUnion)
 --[=[
 	@param player Player
 	@return { [string]: ServerReplion }?
@@ -121,7 +133,7 @@ function ReplionService:GetReplions(player: Player): { [string]: ServerReplion }
 	end
 end
 
-local onReplionAddedCheck = t.strict(t.tuple(t.callback, t.optional(t.instanceIsA('Player'))))
+local onReplionAddedCheck = t.strict(t.tuple(t.callback, t.optional(playerUnion)))
 --[=[
 	@param callback () -> (ServerReplion)
 	@return RBXScriptConnection
@@ -152,7 +164,7 @@ function ReplionService:OnReplionRemoved(callback, targetPlayer: Player?): Types
 	end)
 end
 
-local awaitReplionCheck = t.strict(t.tuple(t.instanceIsA('Player'), t.string))
+local awaitReplionCheck = t.strict(t.tuple(playerUnion, t.string))
 --[=[
 	@return Promise
 	@since v0.3.0

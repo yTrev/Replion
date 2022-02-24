@@ -22,7 +22,7 @@ return function()
 		})
 
 		it('should update only the values passed', function()
-			ClientMethods.update(newReplion, 'ValueA', {
+			ClientMethods.update(newReplion, { 'ValueA' }, {
 				ValueC = 'Foo',
 				ValueE = 100,
 			})
@@ -36,7 +36,7 @@ return function()
 		it('values should be immutable', function()
 			local oldValue = newReplion:Get('ValueA.ValueB')
 
-			ClientMethods.update(newReplion, 'ValueA.ValueB', {
+			ClientMethods.update(newReplion, { 'ValueA', 'ValueB' }, {
 				ValueD = 'Foo',
 			})
 
@@ -46,15 +46,14 @@ return function()
 		it('should fire the OnUpdate event', function()
 			local eventAction, valueE, valueEOld
 
-			local conn = newReplion:OnUpdate('ValueA.ValueB', function(action, newValue, oldValue, path: { string })
+			local conn = newReplion:OnUpdate('ValueA.ValueB', function(action, newValue, oldValue, _path: { string })
 				eventAction = action
 
 				valueE = newValue.ValueE
 				valueEOld = oldValue.ValueE
-				valuePath = path
 			end)
 
-			ClientMethods.update(newReplion, 'ValueA.ValueB', {
+			ClientMethods.update(newReplion, { 'ValueA', 'ValueB' }, {
 				ValueE = 'Foo',
 			})
 
@@ -78,16 +77,28 @@ return function()
 		it('should set the value', function()
 			local oldValue = newReplion:Get('Value')
 
-			ClientMethods.set(newReplion, 'Value', 'Bar')
+			ClientMethods.set(newReplion, { 'Value' }, 'Bar')
 
 			expect(oldValue).to.be.equal('Foo')
 			expect(newReplion:Get('Value')).to.be.equal('Bar')
 		end)
 
+		it('should support packed strings', function()
+			local packFormat = 'bi2i2'
+
+			-- This format returns "��." which has a "." in it, when we split, it will be split into
+			-- {'ValueA', '��', ''}
+			local binaryResult = string.pack(packFormat, 1, -26, 46)
+
+			ClientMethods.set(newReplion, { 'ValueA', binaryResult }, 'Bar')
+
+			expect(newReplion:Get({ 'ValueA', binaryResult })).to.be.equal('Bar')
+		end)
+
 		it('values should be immutable', function()
 			local oldValue = newReplion:Get('ValueA')
 
-			ClientMethods.set(newReplion, 'ValueA.OtherValue', false)
+			ClientMethods.set(newReplion, { 'ValueA', 'OtherValue' }, false)
 
 			expect(oldValue ~= newReplion:Get('ValueA')).to.be.equal(true)
 		end)
@@ -102,7 +113,7 @@ return function()
 				valueBOld = oldValue
 			end)
 
-			ClientMethods.set(newReplion, 'ValueA.ValueB', {
+			ClientMethods.set(newReplion, { 'ValueA', 'ValueB' }, {
 				ValueE = 'Foo',
 			})
 
@@ -121,7 +132,7 @@ return function()
 		})
 
 		it('should insert the value', function()
-			ClientMethods.insert(newReplion, 'Values', 1, 'Foo')
+			ClientMethods.insert(newReplion, { 'Values' }, 1, 'Foo')
 
 			local newValue = newReplion:Get('Values')
 
@@ -132,7 +143,7 @@ return function()
 		it('values should be immutable', function()
 			local oldValue = newReplion:Get('Values')
 
-			ClientMethods.insert(newReplion, 'Values', 2, 'Bar')
+			ClientMethods.insert(newReplion, { 'Values' }, 2, 'Bar')
 
 			expect(oldValue ~= newReplion:Get('Values')).to.be.equal(true)
 		end)
@@ -147,7 +158,7 @@ return function()
 				newValue = value
 			end)
 
-			ClientMethods.insert(newReplion, 'Values', 3, 'Bar')
+			ClientMethods.insert(newReplion, { 'Values' }, 3, 'Bar')
 
 			expect(eventAction).to.be.a('table')
 			expect(eventAction.Name).to.be.equal('Added')
@@ -174,7 +185,7 @@ return function()
 		})
 
 		it('should remove the value', function()
-			ClientMethods.remove(newReplion, 'Values', 1)
+			ClientMethods.remove(newReplion, { 'Values' }, 1)
 
 			local newValue = newReplion:Get('Values')
 
@@ -186,7 +197,7 @@ return function()
 		it('values should be immutable', function()
 			local oldValue = newReplion:Get('Values')
 
-			ClientMethods.remove(newReplion, 'Values', 1)
+			ClientMethods.remove(newReplion, { 'Values' }, 1)
 
 			expect(oldValue ~= newReplion:Get('Values')).to.be.equal(true)
 		end)
@@ -201,7 +212,7 @@ return function()
 				newValue = value
 			end)
 
-			ClientMethods.remove(newReplion, 'OtherValues', 1)
+			ClientMethods.remove(newReplion, { 'OtherValues' }, 1)
 
 			expect(eventAction).to.be.a('table')
 			expect(eventAction.Name).to.be.equal('Removed')
@@ -228,7 +239,7 @@ return function()
 		})
 
 		it('should clear the array', function()
-			ClientMethods.clear(newReplion, 'Values')
+			ClientMethods.clear(newReplion, { 'Values' })
 
 			local newValue = newReplion:Get('Values')
 
@@ -239,7 +250,7 @@ return function()
 		it('values should be immutable', function()
 			local oldValue = newReplion:Get('Values')
 
-			ClientMethods.clear(newReplion, 'Values')
+			ClientMethods.clear(newReplion, { 'Values' })
 
 			expect(oldValue ~= newReplion:Get('Values')).to.be.equal(true)
 		end)
@@ -253,7 +264,7 @@ return function()
 				eventOld = oldValue
 			end)
 
-			ClientMethods.clear(newReplion, 'OtherValues')
+			ClientMethods.clear(newReplion, { 'OtherValues' })
 
 			expect(eventAction).to.be.a('table')
 			expect(eventAction.Name).to.be.equal('Cleared')
