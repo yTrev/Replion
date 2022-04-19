@@ -9,7 +9,7 @@
 ## Wally
 Add Replion as a dependency to your `wally.toml` file:
 ```
-Replion = "ytrev/replion@0.3.3"
+Replion = "ytrev/replion@0.3.4"
 ```
 
 # Usage
@@ -58,7 +58,7 @@ local ReplionController = require(ReplicatedStorage.Packages.Replion)
 
 ReplionController:AwaitReplion('Data')
 	:andThen(function(clientReplion)
-		clientReplion:OnUpdate('Coins', function(action, newValue)
+		clientReplion:OnUpdate('Coins', function(action, _path, newValue)
 			print(string.format('Coins %s to %i', action.Name, newValue))
 		end)
 	end)

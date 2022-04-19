@@ -1,6 +1,5 @@
 --!strict
-local Packages = script:FindFirstAncestor('Packages')
-local Signal = require(Packages:FindFirstChild('Signal'))
+local Signal = require(script.Parent.Parent.Parent.Signal)
 
 local Types = require(script.Parent.Types)
 
@@ -97,6 +96,8 @@ return {
 	getStringArrayFromPath = getStringArrayFromPath,
 	getStringFromPath = getStringFromPath,
 	getSignalFromPath = getSignalFromPath,
+
+	-- I need to refactor this
 	fireSignals = fireSignals,
 	fireSignalsForArray = fireSignalsForArray,
 }

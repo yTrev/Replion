@@ -7,12 +7,13 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 -- ===========================================================================
 -- Modules
 -- ===========================================================================
-local Packages = script:FindFirstAncestor('Packages')
-local t = require(Packages:FindFirstChild('t'))
+local Replion = script.Parent.Parent
 
-local Enums = require(script.Parent.Parent.Shared.Enums)
-local Types = require(script.Parent.Parent.Shared.Types)
-local Utils = require(script.Parent.Parent.Shared.Utils)
+local t = require(Replion.Parent.t)
+
+local Enums = require(Replion.Shared.Enums)
+local Types = require(Replion.Shared.Types)
+local Utils = require(Replion.Shared.Utils)
 local Containers = require(script.Parent.Containers)
 
 -- ===========================================================================

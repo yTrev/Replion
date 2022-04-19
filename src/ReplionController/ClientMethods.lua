@@ -2,12 +2,12 @@
 -- ===========================================================================
 -- Modules
 -- ===========================================================================
-local Packages = script:FindFirstAncestor('Packages')
-local llama = require(Packages:FindFirstChild('llama'))
+local Replion = script.Parent.Parent
+local llama = require(Replion.Parent.llama)
 
-local Types = require(script.Parent.Parent.Shared.Types)
-local Enums = require(script.Parent.Parent.Shared.Enums)
-local Utils = require(script.Parent.Parent.Shared.Utils)
+local Types = require(Replion.Shared.Types)
+local Enums = require(Replion.Shared.Enums)
+local Utils = require(Replion.Shared.Utils)
 
 local ClientReplion = require(script.Parent.ClientReplion)
 
@@ -16,7 +16,6 @@ local ClientReplion = require(script.Parent.ClientReplion)
 -- ===========================================================================
 local merge = llama.Dictionary.merge
 local set = llama.Dictionary.set
-local copy = llama.List.copy
 local removeIndex = llama.List.removeIndex
 
 type ClientReplion = ClientReplion.ClientReplion
@@ -98,7 +97,7 @@ local function replionArrayInsert(replion: ClientReplion, path: StringArray, ind
 
 	local dataPath: any, last: string = Utils.getFromPath(path, replion.Data)
 
-	local newData = copy(dataPath[last])
+	local newData = table.clone(dataPath[last])
 	table.insert(newData, index, value)
 
 	dataPath[last] = newData
@@ -123,7 +122,7 @@ local function replionArrayClear(replion: ClientReplion, path: StringArray)
 
 	local dataPath: any, last: string = Utils.getFromPath(path, replion.Data)
 
-	local oldValue = copy(dataPath[last])
+	local oldValue = table.clone(dataPath[last])
 
 	dataPath[last] = {}
 

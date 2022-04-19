@@ -2,14 +2,15 @@
 -- ===========================================================================
 -- Modules
 -- ===========================================================================
-local Packages = script:FindFirstAncestor('Packages')
-local t = require(Packages:FindFirstChild('t'))
-local llama = require(Packages:FindFirstChild('llama'))
-local Signal = require(Packages:FindFirstChild('Signal'))
+local Replion = script.Parent.Parent
 
-local Types = require(script.Parent.Parent.Shared.Types)
-local Utils = require(script.Parent.Parent.Shared.Utils)
-local Enums = require(script.Parent.Parent.Shared.Enums)
+local t = require(Replion.Parent.t)
+local llama = require(Replion.Parent.llama)
+local Signal = require(Replion.Parent.Signal)
+
+local Types = require(Replion.Shared.Types)
+local Utils = require(Replion.Shared.Utils)
+local Enums = require(Replion.Shared.Enums)
 local Network = require(script.Parent.Network)
 local Containers = require(script.Parent.Containers)
 
@@ -387,7 +388,7 @@ function ServerReplion:Insert(path: Types.Path, value: any, index: number?): (nu
 	Utils.fireSignalsForArray(self._signals, stringArray, Enums.Action.Added, index, value)
 	Network.FireUpdate(self, Enums.Action.Added, stringArray, index, value)
 
-	return index, value
+	return index :: number, value
 end
 
 --[=[
@@ -457,6 +458,8 @@ function ServerReplion:FindRemove(path: Types.Path, value: any): any?
 	local index: number? = table.find(array, value)
 	if index then
 		return self:Remove(path, index)
+	else
+		return nil
 	end
 end
 
@@ -516,12 +519,6 @@ function ServerReplion:Destroy()
 	self.Destroyed = true
 end
 
-export type ServerReplion = typeof(ServerReplion.new({
-	Player = Instance.new('Player'),
-	Name = '',
-	Data = {},
-}))
-
 export type Configuration = {
 	Name: string, --> Name of the data, used to identify it.
 	Player: Player, --> Maybe add multiple Players?,
@@ -529,5 +526,11 @@ export type Configuration = {
 	Extensions: { [string]: (ServerReplion, ...any) -> () }?,
 	Tags: { string }?,
 }
+
+export type ServerReplion = typeof(ServerReplion.new({
+	Player = Instance.new('Player'),
+	Name = '',
+	Data = {},
+}))
 
 return ServerReplion

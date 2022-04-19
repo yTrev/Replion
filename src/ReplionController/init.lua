@@ -7,14 +7,14 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 -- ===========================================================================
 -- Modules
 -- ===========================================================================
-local Packages = script:FindFirstAncestor('Packages')
+local Replion = script.Parent
 
-local Promise = require(Packages:FindFirstChild('Promise'))
-local t = require(Packages:FindFirstChild('t'))
-local Signal = require(Packages:FindFirstChild('Signal'))
+local Promise = require(Replion.Parent.Promise)
+local t = require(Replion.Parent.t)
+local Signal = require(Replion.Parent.Signal)
 
-local Types = require(script.Parent.Shared.Types)
-local Enums = require(script.Parent.Shared.Enums)
+local Types = require(Replion.Shared.Types)
+local Enums = require(Replion.Shared.Enums)
 
 local ClientReplion = require(script.ClientReplion)
 local ClientMethods = require(script.ClientMethods)
@@ -65,7 +65,7 @@ local function configureConnnections()
 
 	local function connectEvent(remote: RemoteEvent, fn: (ClientReplion, ...any) -> ())
 		remote.OnClientEvent:Connect(function(name: string, ...: any)
-			local replion: ClientReplion = replions[name] :: ClientReplion
+			local replion = replions[name] :: ClientReplion
 
 			if replion then
 				fn(replion, ...)
@@ -232,7 +232,7 @@ local stringCheck = t.strict(t.string)
 function ReplionController:AwaitReplion(name: string)
 	stringCheck(name)
 
-	local createdReplion: ClientReplion? = replions[name]
+	local createdReplion = replions[name]
 	if createdReplion then
 		return Promise.resolve(createdReplion)
 	end

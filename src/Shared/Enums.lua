@@ -32,4 +32,6 @@ local Enums: Enums = {
 	Event = enum({ 'Created', 'Deleted' }),
 }
 
-return table.freeze(Enums) :: Enums
+table.freeze(Enums)
+
+return Enums

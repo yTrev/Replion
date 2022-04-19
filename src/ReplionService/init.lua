@@ -7,16 +7,17 @@ local Players = game:GetService('Players')
 -- ===========================================================================
 -- Modules
 -- ===========================================================================
-local Packages = script:FindFirstAncestor('Packages')
-local Promise = require(Packages:FindFirstChild('Promise'))
-local t = require(Packages:FindFirstChild('t'))
-local Signal = require(Packages:FindFirstChild('Signal'))
+local Replion = script.Parent
+
+local Promise = require(Replion.Parent.Promise)
+local t = require(Replion.Parent.t)
+local Signal = require(Replion.Parent.Signal)
 
 local Containers = require(script.Containers)
 local ServerReplion = require(script.ServerReplion)
 
-local Enums = require(script.Parent.Shared.Enums)
-local Types = require(script.Parent.Shared.Types)
+local Enums = require(Replion.Shared.Enums)
+local Types = require(Replion.Shared.Types)
 local Network = require(script.Network)
 
 -- ===========================================================================
@@ -37,7 +38,7 @@ local playerUnion = t.union(
 	})
 )
 
-local waitingPromises = {}
+local waitingPromises: { [Player]: any } = {}
 
 local function getPlayerCache(player)
 	if not waitingPromises[player] then

@@ -2,15 +2,12 @@
 -- ===========================================================================
 -- Modules
 -- ===========================================================================
-local Packages = script:FindFirstAncestor('Packages')
-local llama = require(Packages:FindFirstChild('llama'))
-local t = require(Packages:FindFirstChild('t'))
-local Signal = require(Packages:FindFirstChild('Signal'))
+local Replion = script.Parent.Parent
+local t = require(Replion.Parent.t)
+local Signal = require(Replion.Parent.Signal)
 
-local Types = require(script.Parent.Parent.Shared.Types)
-local Utils = require(script.Parent.Parent.Shared.Utils)
-
-local copy = llama.Dictionary.copy
+local Types = require(Replion.Shared.Types)
+local Utils = require(Replion.Shared.Utils)
 
 local pathCheck = t.strict(t.union(t.string, t.array(t.string)))
 
@@ -73,7 +70,7 @@ local onUpdateCheck = t.strict(t.tuple(pathCheck, t.callback))
 function ClientReplion:OnUpdate(path: Types.Path, callback: Types.Callback): Types.Connection
 	onUpdateCheck(path, callback)
 
-	local signal: Types.Signal = Utils.getSignalFromPath(path, self._signals, true)
+	local signal = Utils.getSignalFromPath(path, self._signals, true) :: Types.Signal
 	return signal:Connect(callback)
 end
 
@@ -108,7 +105,7 @@ end
 	@return any
 ]=]
 function ClientReplion:GetCopy(path: Types.Path)
-	return copy(self:Get(path))
+	return table.clone(self:Get(path))
 end
 
 function ClientReplion:Destroy()
