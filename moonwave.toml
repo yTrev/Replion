@@ -2,11 +2,11 @@ gitRepoUrl = "https://github.com/yTrev/Replion"
 
 [[classOrder]]
 section = "Server"
-classes = ["ReplionService", "ServerReplion"]
+classes = ["Server", "ServerReplion"]
 
 [[classOrder]]
 section = "Client"
-classes = ["ReplionController", "ClientReplion"]
+classes = ["Client", "ClientReplion"]
 
 [docusaurus]
 favicon = "/img/favicon.ico"

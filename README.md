@@ -7,28 +7,34 @@
 # Installation
 
 ## Wally
+
 Add Replion as a dependency to your `wally.toml` file:
+
 ```
-Replion = "ytrev/replion@0.3.4"
+Replion = "ytrev/replion@1.0.0"
 ```
 
 # Usage
+
 A simple example that shows how to use Replion.
 
 ### **Server**
+
 ```lua
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local Players = game:GetService('Players')
 
-local ReplionService = require(ReplicatedStorage.Packages.Replion)
+local Replion = require(ReplicatedStorage.Packages.Replion)
+local ReplionServer = Replion.Server
 
 local function createReplion(player: Player)
-	ReplionService.new({
-		Name = 'Data',
-		Player = player,
+	ReplionServer.new({
+		Channel = 'Data',
+		ReplicateTo = player,
+
 		Data = {
 			Coins = 0,
-		},
+		}
 	})
 end
 
@@ -40,7 +46,7 @@ end
 
 while true do
 	for _: number, player: Player in ipairs(Players:GetPlayers()) do
-		local playerReplion = ReplionService:GetReplion(player, 'Data')
+		local playerReplion = ReplionService:GetReplionFor(player, 'Data')
 		if playerReplion then
 			playerReplion:Increase('Coins', 10)
 		end
@@ -51,18 +57,23 @@ end
 ```
 
 ### **Client**
+
 ```lua
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
-local ReplionController = require(ReplicatedStorage.Packages.Replion)
+local Replion = require(ReplicatedStorage.Packages.Replion)
+local ReplionClient = Replion.Client
 
-ReplionController:AwaitReplion('Data')
-	:andThen(function(clientReplion)
-		clientReplion:OnUpdate('Coins', function(action, _path, newValue)
-			print(string.format('Coins %s to %i', action.Name, newValue))
-		end)
+ReplionClient:AwaitReplion('Data', function(dataReplion)
+	print('Coins:', ReplionClient:Get('Coins'))
+
+	local connection = dataReplion:OnChange('Coins', function(newCoins: number, _oldCoins: number)
+		print('Coins:', coins)
 	end)
-	:catch(warn)
 
-ReplionController.Start()
+	-- We can disconnect listeners from Replion!
+	task.delay(5, connection.Disconnect, connection)
+end)
+
+ReplionClient.Start()
 ```
