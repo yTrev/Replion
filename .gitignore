@@ -1,7 +1,7 @@
 build
 DevPackages
 Packages
-*.yml
+roblox.yml
 sourcemap.json
 old_*
 .luaurc
