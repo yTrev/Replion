@@ -1,4 +1,6 @@
 --!strict
+local RunService = game:GetService('RunService')
+
 local Signal = require(script.Parent.Parent.Signal)
 local Network = require(script.Parent.Internal.Network)
 local ClientReplion = require(script.ClientReplion)
@@ -8,19 +10,33 @@ export type ClientReplion = ClientReplion.ClientReplion
 type SerializedReplion = _T.SerializedReplion
 type SerializedReplions = { SerializedReplion }
 
-local cache: { [string]: ClientReplion? } = {}
+export type ReplionClient = {
+	OnReplionAdded: (self: ReplionClient, callback: (addedReplion: ClientReplion) -> ()) -> (_T.Connection),
+	OnReplionAddedWithTag: (
+		self: ReplionClient,
+		tag: string,
+		callback: (addedReplion: ClientReplion) -> ()
+	) -> (_T.Connection),
 
+	OnReplionRemoved: (self: ReplionClient, callback: (removedReplion: ClientReplion) -> ()) -> (_T.Connection),
+	OnReplionRemovedWithTag: (
+		self: ReplionClient,
+		tag: string,
+		callback: (addedReplion: ClientReplion) -> ()
+	) -> (_T.Connection),
+
+	GetReplion: (self: ReplionClient, channel: string) -> (ClientReplion?),
+	WaitReplion: (self: ReplionClient, channel: string) -> (ClientReplion),
+	AwaitReplion: (self: ReplionClient, channel: string, callback: (newReplion: ClientReplion) -> ()) -> (),
+
+	Start: () -> (),
+}
+
+local cache: { [string]: ClientReplion? } = {}
 local waitingList: { [string]: { thread } } = {}
 
 local addedSignal = Signal.new()
 local removedSignal = Signal.new()
-
-local addedRemote = Network.get('Added') :: RemoteEvent
-local removedRemote = Network.get('Removed') :: RemoteEvent
-local updateRemote = Network.get('Update') :: RemoteEvent
-local setRemote = Network.get('Set') :: RemoteEvent
-local runExtension = Network.get('RunExtension') :: RemoteEvent
-local arrayUpdate = Network.get('ArrayUpdate') :: RemoteEvent
 
 local function getWaitList(channel: string)
 	local list = waitingList[channel]
@@ -41,7 +57,7 @@ local function createReplion(serializedReplion: SerializedReplion)
 	local newReplion = ClientReplion.new(serializedReplion)
 
 	cache[channel] = newReplion
-	cache[newReplion._id] = newReplion
+	cache[serializedReplion.Id] = newReplion
 
 	addedSignal:Fire(newReplion)
 
@@ -60,31 +76,59 @@ end
 	
 	@client
 ]=]
-local Client = {}
+local Client: ReplionClient = {} :: any
 
 --[=[
-	The callback will be called when a replion is added.
+	Calls the callback when a replion is added.
 ]=]
 function Client:OnReplionAdded(callback: (addedReplion: ClientReplion) -> ()): _T.Connection
 	return addedSignal:Connect(callback :: any)
 end
 
 --[=[
-	The callback will be called when a replion is removed.
+	Calls the callback when a replion is removed.
 ]=]
 function Client:OnReplionRemoved(callback: (removedReplion: ClientReplion) -> ()): _T.Connection
 	return removedSignal:Connect(callback :: any)
 end
 
 --[=[
-	This function will return the replion that is associated with the channel.
+	Calls the callback when a replion with the given tag is added.
+]=]
+function Client:OnReplionAddedWithTag(tag: string, callback: (ClientReplion) -> ()): _T.Connection
+	return self:OnReplionAdded(function(replion: ClientReplion)
+		local tags: { string }? = replion.Tags
+
+		if tags and table.find(tags, tag) ~= nil then
+			callback(replion)
+		end
+	end)
+end
+
+--[=[
+	Calls the callback when a replion with the given tag is removed.
+]=]
+function Client:OnReplionRemovedWithTag(tag: string, callback: (ClientReplion) -> ()): _T.Connection
+	return self:OnReplionRemoved(function(replion: ClientReplion)
+		local tags: { string }? = replion.Tags
+
+		if tags and table.find(tags, tag) ~= nil then
+			callback(replion)
+		end
+	end)
+end
+
+--[=[
+	Returns the replion with the given channel.
 ]=]
 function Client:GetReplion(channel: string): ClientReplion?
 	return cache[channel]
 end
 
 --[=[
-	This function will yield the current thread until a replion with the channel is created.
+	Yields until the replion with the given channel is added.
+
+	@yields
 ]=]
 function Client:WaitReplion(channel: string): ClientReplion
 	local replion = cache[channel]
@@ -115,7 +159,14 @@ function Client:AwaitReplion(channel: string, callback: (newReplion: ClientRepli
 	table.insert(waitList, newThread)
 end
 
-function Client.Start()
+if RunService:IsClient() then
+	local addedRemote = Network.get('Added')
+	local removedRemote = Network.get('Removed')
+	local updateRemote = Network.get('Update')
+	local setRemote = Network.get('Set')
+	local runExtension = Network.get('RunExtension')
+	local arrayUpdate = Network.get('ArrayUpdate')
+
 	addedRemote.OnClientEvent:Connect(function(serializedReplions: SerializedReplion | SerializedReplions)
 		if #serializedReplions > 0 then
 			for _, serializedReplion in serializedReplions :: SerializedReplions do

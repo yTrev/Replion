@@ -1,23 +1,8 @@
---!strict
+--!nonstrict
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local Replion = require(ReplicatedStorage.Packages.Replion)
 
 local ReplionServer = Replion.Server
-
---[[
-	Tests TO-DO
-	new //
-	GetReplion //
-	OnReplionAdded
-	OnReplionRemoved
-	WaitReplion //
-	AwaitReplion //
-
-	GetReplionsFor // 
-	GetReplionFor //
-	WaitReplionFor
-	AwaitReplionFor //
-]]
 
 return function()
 	local fakePlayer = {
@@ -76,6 +61,12 @@ return function()
 			expect(newReplion).to.be.equal(ReplionServer:GetReplion(newReplion.Channel))
 		end)
 
+		it('should return nil if the replion does not exist', function()
+			local replion = ReplionServer:GetReplion('doesNotExist')
+
+			expect(replion).to.be.equal(nil)
+		end)
+
 		it('should error if there are multiple Replions with the same Channel', function()
 			ReplionServer.new({
 				Channel = newReplion.Channel,
@@ -86,6 +77,107 @@ return function()
 			expect(function()
 				ReplionServer:GetReplion(newReplion.Channel)
 			end).to.throw('There are multiple replions')
+		end)
+	end)
+
+	describe('ReplionServer:OnReplionAdded', function()
+		it('should fire when a Replion is added', function()
+			local addedChannel, addedReplion
+
+			ReplionServer:OnReplionAdded(function(channel: string, replion)
+				addedChannel, addedReplion = channel, replion
+			end)
+
+			local newReplion = ReplionServer.new({
+				Channel = 'onReplionAddedTest',
+				Data = { Coins = 20 },
+				ReplicateTo = 'All',
+			})
+
+			expect(addedChannel).to.be.equal(newReplion.Channel)
+			expect(addedReplion).to.be.equal(newReplion)
+		end)
+	end)
+
+	describe('ReplionServer:OnReplionRemoved', function()
+		it('should fire when a Replion is removed', function()
+			local removedChannel, removedReplion
+			local newReplion = ReplionServer.new({
+				Channel = 'onReplionRemovedTest',
+				Data = { Coins = 20 },
+				ReplicateTo = 'All',
+			})
+
+			ReplionServer:OnReplionRemoved(function(channel: string, replion)
+				removedChannel, removedReplion = channel, replion
+			end)
+
+			newReplion:Destroy()
+
+			expect(removedChannel).to.be.equal(newReplion.Channel)
+			expect(removedReplion).to.be.equal(newReplion)
+		end)
+	end)
+
+	describe('ReplionServer:AwaitReplion', function()
+		it('should be called', function()
+			local fooReplion
+			ReplionServer:AwaitReplion('Foo', function(newReplion)
+				fooReplion = newReplion
+			end)
+
+			expect(fooReplion).to.never.be.ok()
+
+			ReplionServer.new({
+				Channel = 'Foo',
+				Data = {},
+				ReplicateTo = 'All',
+			})
+
+			task.wait()
+
+			expect(fooReplion).to.be.ok()
+		end)
+
+		it('should never be called after timeout', function()
+			local fooReplion
+			ReplionServer:AwaitReplion('Timeout', function(newReplion)
+				fooReplion = newReplion
+			end, 0.1)
+
+			expect(fooReplion).to.never.be.ok()
+
+			task.wait(0.15)
+
+			ReplionServer.new({
+				Channel = 'Timeout',
+				Data = {},
+				ReplicateTo = 'All',
+			})
+
+			expect(fooReplion).to.never.be.ok()
+		end)
+	end)
+
+	describe('ReplionServer:WaitReplion', function()
+		it('should be called', function()
+			local fooReplion
+
+			task.defer(function()
+				fooReplion = ReplionServer:WaitReplion('WaitReplion')
+			end)
+
+			expect(fooReplion).to.never.be.ok()
+
+			ReplionServer.new({
+				Channel = 'WaitReplion',
+				Data = {},
+				ReplicateTo = 'All',
+			})
+
+			task.wait()
+
+			expect(fooReplion).to.be.ok()
 		end)
 	end)
 
@@ -150,68 +242,6 @@ return function()
 			})
 
 			expect(fooReplion).to.never.be.ok()
-		end)
-	end)
-
-	describe('ReplionServer:AwaitReplion', function()
-		it('should be called', function()
-			local fooReplion
-			ReplionServer:AwaitReplion('Foo', function(newReplion)
-				fooReplion = newReplion
-			end)
-
-			expect(fooReplion).to.never.be.ok()
-
-			ReplionServer.new({
-				Channel = 'Foo',
-				Data = {},
-				ReplicateTo = 'All',
-			})
-
-			task.wait()
-
-			expect(fooReplion).to.be.ok()
-		end)
-
-		it('should never be called after timeout', function()
-			local fooReplion
-			ReplionServer:AwaitReplion('Timeout', function(newReplion)
-				fooReplion = newReplion
-			end, 0.1)
-
-			expect(fooReplion).to.never.be.ok()
-
-			task.wait(0.15)
-
-			ReplionServer.new({
-				Channel = 'Timeout',
-				Data = {},
-				ReplicateTo = 'All',
-			})
-
-			expect(fooReplion).to.never.be.ok()
-		end)
-	end)
-
-	describe('ReplionServer:WaitReplion', function()
-		it('should be called', function()
-			local fooReplion
-
-			task.defer(function()
-				fooReplion = ReplionServer:WaitReplion('WaitReplion')
-			end)
-
-			expect(fooReplion).to.never.be.ok()
-
-			ReplionServer.new({
-				Channel = 'WaitReplion',
-				Data = {},
-				ReplicateTo = 'All',
-			})
-
-			task.wait()
-
-			expect(fooReplion).to.be.ok()
 		end)
 	end)
 end

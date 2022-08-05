@@ -39,7 +39,7 @@ local function get(id: string): RemoteEvent
 	newRemote.Name = id
 	newRemote.Parent = RemotesFolder
 
-	return newRemote :: any
+	return newRemote
 end
 
 local function create(events: { string })

@@ -5,7 +5,7 @@ local Replion = require(ReplicatedStorage.Packages.Replion)
 local ReplionServer = Replion.Server
 
 return function()
-	describe('ReplionServer.new', function()
+	describe('ServerReplion.new', function()
 		local newReplion = ReplionServer.new({
 			Data = {},
 			Channel = 'new',
@@ -38,7 +38,7 @@ return function()
 		end)
 	end)
 
-	describe('ReplionServer:Get', function()
+	describe('ServerReplion:Get', function()
 		local newReplion = ReplionServer.new({
 			Data = { Coins = 20, Other = { Value = {} } },
 			Channel = 'Get',
@@ -56,7 +56,7 @@ return function()
 		end)
 	end)
 
-	describe('ReplionServer:GetExpect', function()
+	describe('ServerReplion:GetExpect', function()
 		local newReplion = ReplionServer.new({
 			Data = { Coins = 20, Other = { Value = {} } },
 			Channel = 'GetExpect',
@@ -79,7 +79,7 @@ return function()
 		end)
 	end)
 
-	describe('ReplionServer:Set', function()
+	describe('ServerReplion:Set', function()
 		local newReplion = ReplionServer.new({
 			Data = { Coins = 20, Other = { Value = {} } },
 			Channel = 'Set',
@@ -91,9 +91,33 @@ return function()
 
 			expect(newReplion:Get('Coins')).to.equal(30)
 		end)
+
+		it('should call the OnChange signal', function()
+			local called = false
+
+			newReplion:OnChange('Coins', function()
+				called = true
+			end)
+
+			newReplion:Set('Coins', 50)
+
+			expect(called).to.equal(true)
+		end)
+
+		it('should call the OnDescendatChange signal', function()
+			local called = false
+
+			newReplion:OnDescendantChange('Other', function()
+				called = true
+			end)
+
+			newReplion:Set('Other.Value', { Foo = true })
+
+			expect(called).to.equal(true)
+		end)
 	end)
 
-	describe('ReplionServer:SetReplicateTo', function()
+	describe('ServerReplion:SetReplicateTo', function()
 		local newReplion = ReplionServer.new({
 			Data = { Coins = 20, Other = { Value = {} } },
 			Channel = 'SetReplicateTo',
@@ -115,7 +139,36 @@ return function()
 		end)
 	end)
 
-	describe('ReplionServer:Increase', function()
+	describe('ServerReplion:Clear', function()
+		local newReplion = ReplionServer.new({
+			Data = { Values = { 1, 2, 3 } },
+			Channel = 'Clear',
+			ReplicateTo = 'All',
+		})
+
+		it('should clear the array', function()
+			newReplion:Clear('Values')
+
+			local newValues = newReplion:Get('Values')
+			expect(#newValues).to.equal(0)
+		end)
+
+		it('should call the OnChange signal', function()
+			local called = false
+
+			newReplion:Set('Values', { 1, 2, 3 })
+
+			newReplion:OnChange('Values', function()
+				called = true
+			end)
+
+			newReplion:Clear('Values')
+
+			expect(called).to.equal(true)
+		end)
+	end)
+
+	describe('ServerReplion:Increase', function()
 		local newReplion = ReplionServer.new({
 			Data = { Coins = 20 },
 			Channel = 'Increase',
@@ -135,7 +188,7 @@ return function()
 		end)
 	end)
 
-	describe('ReplionServer:Insert', function()
+	describe('ServerReplion:Insert', function()
 		local newReplion = ReplionServer.new({
 			Data = { Values = {} },
 			Channel = 'Insert',
@@ -159,7 +212,7 @@ return function()
 		end)
 	end)
 
-	describe('ReplionServer:OnArrayInsert', function()
+	describe('ServerReplion:OnArrayInsert', function()
 		local newReplion = ReplionServer.new({
 			Data = { Values = { 1 } },
 			Channel = 'OnArrayInsert',
@@ -188,7 +241,7 @@ return function()
 		end)
 	end)
 
-	describe('ReplionServer:OnArrayRemove', function()
+	describe('ServerReplion:OnArrayRemove', function()
 		local newReplion = ReplionServer.new({
 			Data = { Values = { 1, 2, 3, 4 } },
 			Channel = 'OnArrayRemove',
@@ -216,7 +269,7 @@ return function()
 		end)
 	end)
 
-	describe('ReplionServer:OnChange', function()
+	describe('ServerReplion:OnChange', function()
 		it('should call the callback when the value changes', function()
 			local newReplion = ReplionServer.new({
 				Data = { Value = 0 },
@@ -263,7 +316,7 @@ return function()
 		end)
 	end)
 
-	describe('ReplionServer:OnDescendantChanged', function()
+	describe('ServerReplion:OnDescendantChanged', function()
 		local newReplion = ReplionServer.new({
 			Data = { Values = { A = true, B = false, C = { D = true } } },
 			Channel = 'OnDescendantChanged',
@@ -295,7 +348,7 @@ return function()
 		end)
 	end)
 
-	describe('ReplionServer:Update', function()
+	describe('ServerReplion:Update', function()
 		local newReplion = ReplionServer.new({
 			Data = { Values = {}, ToBeRemoved = true },
 			Channel = 'Update',
@@ -339,7 +392,7 @@ return function()
 		end)
 	end)
 
-	describe('ReplionServer:Execute', function()
+	describe('ServerReplion:Execute', function()
 		local newReplion = ReplionServer.new({
 			Data = { Items = {} },
 			Channel = 'Execute',

@@ -56,9 +56,15 @@ local availableIds: { number } = {}
 ]=]
 
 --[=[
-	@type SerializedReplion { Data: {[any]: any}, Channel: string, Tags: {string}?, Extensions: ModuleScript? }
-
+	@type SerializedReplion { Data: Dictionary, Channel: string, Tags: {string}?, Extensions: ModuleScript? }
+	
 	@within ServerReplion
+]=]
+
+--[=[
+		@type Dictionary { [any]: any }
+		
+		@within ServerReplion
 ]=]
 
 --[=[
@@ -177,7 +183,7 @@ function ServerReplion.SetReplicateTo(self: ServerReplion, replicateTo: Replicat
 end
 
 --[=[
-	Executes an extension function if it exists.
+	Executes an extension function, if it doesn't exist, it will throw an error.
 ]=]
 function ServerReplion.Execute(self: ServerReplion, name: string, ...: any): ...any
 	local extensions = assert(self.Extensions, tostring(self) .. ' has not extensions.')
@@ -196,6 +202,8 @@ function ServerReplion.Execute(self: ServerReplion, name: string, ...: any): ...
 end
 
 --[=[
+	@return RBXScriptConnection
+
 	Connects to a signal that is fired when the :Destroy() method is called.
 ]=]
 function ServerReplion.BeforeDestroy(self: ServerReplion, callback: (ServerReplion) -> ()): _T.Connection
@@ -203,6 +211,8 @@ function ServerReplion.BeforeDestroy(self: ServerReplion, callback: (ServerRepli
 end
 
 --[=[
+	@return RBXScriptConnection
+
 	Connects to a signal that is fired when the value at the given path is changed.
 ]=]
 function ServerReplion.OnChange(self: ServerReplion, path: Path, callback: _T.ChangeCallback): _T.Connection
@@ -210,6 +220,10 @@ function ServerReplion.OnChange(self: ServerReplion, path: Path, callback: _T.Ch
 end
 
 --[=[
+	@param callback (index: number, value: any) -> ()
+
+	@return RBXScriptConnection
+
 	Connects to a signal that is fired when a value is inserted in the array at the given path.
 ]=]
 function ServerReplion.OnArrayInsert(self: ServerReplion, path: Path, callback: _T.ArrayCallback): _T.Connection
@@ -217,6 +231,10 @@ function ServerReplion.OnArrayInsert(self: ServerReplion, path: Path, callback: 
 end
 
 --[=[
+	@param callback (index: number, value: any) -> ()
+
+	@return RBXScriptConnection
+
 	Connects to a signal that is fired when a value is removed in the array at the given path.
 ]=]
 function ServerReplion.OnArrayRemove(self: ServerReplion, path: Path, callback: _T.ArrayCallback): _T.Connection
@@ -226,21 +244,23 @@ end
 type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
 
 --[=[
+	@param callback (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
+
+	@return RBXScriptConnection
+
 	Connects to a signal that is fired when a descendant value is changed.
 ]=]
-function ServerReplion.OnDescendantChange(
-	self: ServerReplion,
-	path: _T.Path,
-	callback: DescendantCallback
-): _T.Connection
+function ServerReplion.OnDescendantChange(self: ServerReplion, path: Path, callback: DescendantCallback): _T.Connection
 	return self._signals:Get('onDescendantChange', path):Connect(callback)
 end
 
 --[=[
 	```lua
 	local newCoins: number = Replion:Set('Coins', 79)
-	print(newCoins) -> 79
+	print(newCoins) --> 79
 	```
+
+	Sets the value at the given path to the given value.
 ]=]
 function ServerReplion.Set(self: ServerReplion, path: Path, newValue: any): any
 	local pathTable = Utils.getPathTable(path)
@@ -268,7 +288,26 @@ function ServerReplion.Set(self: ServerReplion, path: Path, newValue: any): any
 end
 
 --[=[
-	Updates the data with the given table.
+	```lua
+	local newReplion = ReplionServer.new({
+		Channel = 'Data',
+		ReplicateTo = 'All',
+		Data = {
+			Items = {
+				Bow = true,
+			}
+		},
+	})
+
+	local newItems = newReplion:Update('Items', {
+		Sword = true,
+		Bow = Replion.None
+	})
+
+	print(newItems) --> { Sword = true }
+	```
+
+	Updates the data with the given table. Only the keys that are different will be sent to the client.
 ]=]
 function ServerReplion.Update(self: ServerReplion, path: Path | Dictionary, toUpdate: Dictionary?): Dictionary?
 	local newValue, oldValue
@@ -282,14 +321,14 @@ function ServerReplion.Update(self: ServerReplion, path: Path | Dictionary, toUp
 
 		oldValue = self.Data
 
-		for index, value in path :: Dictionary do
-			self._signals:Fire('onChange', index, value, oldValue[index])
-		end
-
 		local newData: Dictionary = merge(self.Data, path :: Dictionary)
 		self.Data = newData
 
 		newValue = newData
+
+		for index, value in path :: Dictionary do
+			self._signals:Fire('onChange', index, value, oldValue[index])
+		end
 	else
 		local pathTable = Utils.getPathTable(path)
 		local currentValue, key = Utils.getFromPath(path, self.Data)
@@ -347,6 +386,8 @@ end
 	```lua
 	local newCoins: number = Replion:Increase('Coins', 20)
 	```
+
+	Increases the value at the given path by the given amount.
 ]=]
 function ServerReplion.Increase(self: ServerReplion, path: Path, amount: number): number
 	if type(amount) ~= 'number' then
@@ -362,6 +403,8 @@ end
 	```lua
 	local newCoins: number = Replion:Decrease('Coins', 20)
 	```
+
+	Decreases the value at the given path by the given amount.
 ]=]
 function ServerReplion.Decrease(self: ServerReplion, path: Path, amount: number): number
 	return self:Increase(path, -amount)
@@ -369,8 +412,25 @@ end
 
 --[=[
 	```lua
-	local newCoins: number = Replion:Insert('Coins', 20)
+	local newReplion = ReplionServer.new({
+		Channel = 'Data',
+		ReplicateTo = player,
+		Data = {
+			Items = {
+				'Bow'
+			}
+		}
+	})
+
+	local index: number, item: string = newReplion:Insert('Items', 'Sword')
+	print(index, item) --> 2, 'Sword'
 	```
+
+	:::note Arrays only
+	This only works on Arrays.
+
+	Inserts a value into the array at the given path, and returns the index and value. 
+	If no index is given, it will insert the value at the end of the array.
 ]=]
 function ServerReplion.Insert(self: ServerReplion, path: Path, value: any, index: number?): (number, any)
 	local data, last = Utils.getFromPath(path, self.Data)
@@ -384,14 +444,17 @@ function ServerReplion.Insert(self: ServerReplion, path: Path, value: any, index
 		if not self._signals:IsPaused() then
 			self._signals:Fire('onArrayInsert', path, index, value)
 
+			-- TODO:
+			-- Maybe I can remove the index if it's the last one, but I don't know if it's gonna
+			-- cause any desync issues.
 			Network.sendTo(
 				self._replicateTo,
 				'ArrayUpdate',
 				self._packedId,
 				'i',
 				Utils.getStringPath(path),
-				index,
-				value
+				value,
+				index
 			)
 		end
 
@@ -401,27 +464,42 @@ function ServerReplion.Insert(self: ServerReplion, path: Path, value: any, index
 	end
 end
 
+--[=[
+	```lua
+	local newReplion = ReplionServer.new({
+		Channel = 'Data',
+		ReplicateTo = player,
+		Data = {
+			Items = {
+				'Bow'
+			}
+		}
+	})
+
+	local item: string = newReplion:Remove('Items')
+	print(item) --> 'Bow'
+	```
+
+	:::note Arrays only
+	This only works on Arrays.
+
+	Removes a value from the array at the given path, and returns the value.
+	If no index is given, it will remove the value at the end of the array.
+]=]
 function ServerReplion.Remove(self: ServerReplion, path: Path, index: number?): any
 	local data, last = Utils.getFromPath(path, self.Data)
 
 	local array = data[last]
 	if type(array) == 'table' then
-		index = if index then index else #array + 1
+		index = if index then index else #array
 
 		local value = table.remove(array, index :: number)
 
 		if not self._signals:IsPaused() then
 			self._signals:Fire('onArrayRemove', path, index, value)
 
-			Network.sendTo(
-				self._replicateTo,
-				'ArrayUpdate',
-				self._packedId,
-				'r',
-				Utils.getStringPath(path),
-				index,
-				value
-			)
+			-- TODO: see line 426.
+			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'r', Utils.getStringPath(path), index)
 		end
 
 		return value
@@ -430,6 +508,27 @@ function ServerReplion.Remove(self: ServerReplion, path: Path, index: number?): 
 	end
 end
 
+--[=[
+	```lua
+	local newReplion = ReplionServer.new({
+		Channel = 'Data',
+		ReplicateTo = player,
+		Data = {
+			Items = {
+				'Bow'
+			}
+		}
+	})
+
+	local index: number?, item: string? = newReplion:Find('Items', 'Bow')
+	print(index, item) --> 1, 'Bow'
+	```
+
+	:::note Arrays only
+	This only works on Arrays.
+
+	Try to find the value in the array at the given path, and returns the index and value.
+]=]
 function ServerReplion.Find(self: ServerReplion, path: Path, value: any): (number?, any)
 	local array: { any } = self:GetExpect(path)
 	local index: number? = table.find(array, value)
@@ -441,6 +540,28 @@ function ServerReplion.Find(self: ServerReplion, path: Path, value: any): (numbe
 	end
 end
 
+--[=[
+	```lua
+	local newReplion = ReplionServer.new({
+		Channel = 'Data',
+		ReplicateTo = player,
+		Data = {
+			Items = {
+				'Bow'
+			}
+		}
+	})
+
+	newReplion:Clear('Items')
+
+	print(newReplion:Get('Items')) --> {}
+	```
+
+	:::note Arrays only
+	This only works on Arrays.
+
+	Clears the array at the given path, using the `table.clear`.
+]=]
 function ServerReplion.Clear(self: ServerReplion, path: Path)
 	local data, last = Utils.getFromPath(path, self.Data)
 
@@ -449,9 +570,9 @@ function ServerReplion.Clear(self: ServerReplion, path: Path)
 		table.clear(array)
 
 		if not self._signals:IsPaused() then
-			self._signals:Fire('onClear', path, data[last], array)
+			self._signals:Fire('onChange', path, data[last], array)
 
-			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'c', path)
+			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'c', Utils.getStringPath(path))
 		end
 	else
 		error('[Replion] - Cannot clear from a non-array.')
@@ -463,6 +584,8 @@ end
 	local coins: number = Replion:Get('Coins')
 	local data = Replion:Get()
 	```
+
+	Returns the value at the given path, or the entire data if no path is given.
 ]=]
 function ServerReplion.Get(self: ServerReplion, path: Path?): any
 	if path then
@@ -476,11 +599,15 @@ end
 
 --[=[
 	```lua
-	local coins: number = Replion:Get('Coins')
+	local coins: number = Replion:GetExpect('Coins')
+	local gems: number = Replion:GetExpect('Gems', 'Gems does not exist!')
 	```
 
 	@param message string
 	@error "Invalid path" -- This error is thrown when the path does not have a value.
+
+	Same as `Replion:Get`, but throws an error if the path does not have a value.
+	You can set a custom error message by passing it as the second argument.
 ]=]
 function ServerReplion.GetExpect(self: ServerReplion, path: Path, message: string?): any
 	local data: any, last = Utils.getFromPath(path, self.Data)

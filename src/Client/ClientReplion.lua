@@ -9,6 +9,7 @@ type ChangeCallback = (newValue: any, oldValue: any) -> ()
 type ArrayCallback = (index: number, value: any) -> ()
 type ExtensionCallback = _T.ExtensionCallback<ClientReplion>
 type Dictionary = _T.Dictionary
+type Path = _T.Path
 
 type ClientReplionProps = {
 	Data: Dictionary,
@@ -18,8 +19,6 @@ type ClientReplionProps = {
 	_channel: string,
 	_signals: typeof(Signals.new()),
 	_beforeDestroy: _T.Signal,
-
-	_id: string,
 }
 
 local merge = Utils.merge
@@ -49,7 +48,7 @@ ClientReplion.__index = ClientReplion
 
 function ClientReplion.new(serializedReplion: _T.SerializedReplion): ClientReplion
 	local extensions
-	if typeof(serializedReplion.Extensions) == 'Instance' then
+	if serializedReplion.Extensions then
 		extensions = require(serializedReplion.Extensions) :: any
 	end
 
@@ -59,7 +58,6 @@ function ClientReplion.new(serializedReplion: _T.SerializedReplion): ClientRepli
 		Extensions = extensions,
 
 		_channel = serializedReplion.Channel,
-		_id = serializedReplion.Id,
 
 		_beforeDestroy = Signal.new(),
 		_signals = Signals.new(),
@@ -72,19 +70,100 @@ function ClientReplion.__tostring(self: ClientReplion)
 	return 'Replion<' .. self._channel .. '>'
 end
 
-function ClientReplion.BeforeDestroy(self: ClientReplion, callback: (replion: ClientReplion) -> ())
+--[=[
+	@return RBXScriptConnection
+
+	Connects to a signal that is fired when the :Destroy() method is called.
+]=]
+function ClientReplion.BeforeDestroy(self: ClientReplion, callback: (replion: ClientReplion) -> ()): _T.Connection
 	return self._beforeDestroy:Connect(callback)
+end
+
+--[=[
+	@return RBXScriptConnection
+
+	This event is fired when a Extension is executed. The callback will be called with the return values of the Extension.
+]=]
+function ClientReplion.OnExecute(self: ClientReplion, name: string, callback: ExtensionCallback): _T.Connection
+	assert(self.Extensions, '[Replion] - No Extensions found!')
+
+	return self._signals:Get('onExecute', name):Connect(callback)
+end
+--[=[
+	```lua
+	replion:OnChange('Coins', function(newValue: any, oldValue: any)
+		print(newValue, oldValue)
+	end)
+	```
+
+	@param path Path
+	@param callback ChangeCallback
+
+	@return RBXScriptConnection
+
+	This function is called when the value of the path changes.
+]=]
+function ClientReplion.OnChange(self: ClientReplion, path: Path, callback: ChangeCallback): _T.Connection
+	return self._signals:Get('onChange', path):Connect(callback)
+end
+
+type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
+--[=[
+	```lua
+	-- On the server
+	replion:Set({'Areas', 'Ice'}, true)
+	```
+
+	```lua
+	replion:OnDescendantChange('Areas', function(path: { string }, newValue: any, oldValue: any)
+		print(path, newValue, oldValue)
+	end)
+	```
+
+	@param path Path
+	@param callback (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
+
+	@return RBXScriptConnection
+
+	This event will be fired when any descendant of the path is changed.
+]=]
+function ClientReplion.OnDescendantChange(self: ClientReplion, path: Path, callback: DescendantCallback): _T.Connection
+	return self._signals:Get('onDescendantChange', path):Connect(callback)
+end
+
+--[=[
+	@param callback (index: number, value: any) -> ()
+
+	@return RBXScriptConnection
+
+	Connects to a signal that is fired when a value is inserted in the array at the given path.
+]=]
+function ClientReplion.OnArrayInsert(self: ClientReplion, path: Path, callback: _T.ArrayCallback): _T.Connection
+	return self._signals:Get('onArrayInsert', path):Connect(callback)
+end
+
+--[=[
+	@param callback (index: number, value: any) -> ()
+
+	@return RBXScriptConnection
+
+	Connects to a signal that is fired when a value is removed in the array at the given path.
+]=]
+function ClientReplion.OnArrayRemove(self: ClientReplion, path: Path, callback: _T.ArrayCallback): _T.Connection
+	return self._signals:Get('onArrayRemove', path):Connect(callback)
 end
 
 --[=[
 	```lua
 	local coins: number = newReplion:Get('Coins')
-	local data = newReplion:Get()
+	local data = newReplion:Get() --> Returns the entire data
 	```
+
+	Returns the value at the given path. If no path is given, returns the entire data table.
 ]=]
-function ClientReplion.Get(self: ClientReplion, path: _T.Path?): any
+function ClientReplion.Get(self: ClientReplion, path: Path?): any
 	if path then
-		local data: any, last = Utils.getFromPath(path :: _T.Path, self.Data)
+		local data: any, last = Utils.getFromPath(path :: Path, self.Data)
 
 		return data[last]
 	else
@@ -98,7 +177,7 @@ end
 	@param path Path
 	@param newValue any
 ]=]
-function ClientReplion.Set(self: ClientReplion, path: _T.Path, newValue: any)
+function ClientReplion.Set(self: ClientReplion, path: Path, newValue: any)
 	local pathTable = Utils.getPathTable(path)
 	local currentValue, key = Utils.getFromPath(pathTable, self.Data)
 
@@ -122,15 +201,16 @@ end
 	@param path Path | {[any]: any}]}
 	@param toUpdate {[any]: any}?
 ]=]
-function ClientReplion.Update(self: ClientReplion, path: _T.Path | Dictionary, toUpdate: Dictionary?)
+function ClientReplion.Update(self: ClientReplion, path: Path | Dictionary, toUpdate: Dictionary?): Dictionary?
 	local newValue, oldValue
 
 	if toUpdate == nil then
 		oldValue = self.Data
 
-		self.Data = merge(self.Data, path :: Dictionary)
+		local newData: Dictionary = merge(self.Data, path :: Dictionary)
+		self.Data = newData
 
-		newValue = path
+		newValue = newData
 
 		for index, value in path :: Dictionary do
 			self._signals:Fire('onChange', index, value, oldValue[index])
@@ -156,18 +236,18 @@ function ClientReplion.Update(self: ClientReplion, path: _T.Path | Dictionary, t
 			self._signals:Fire('onChange', index, value, oldValue[index])
 		end
 
-		newValue = toUpdate
+		newValue = currentValue[key]
 	end
 
 	self._signals:Fire('onChange', path, newValue, oldValue)
 
-	return newValue, oldValue
+	return newValue :: any
 end
 
 --[=[
 	@private
 ]=]
-function ClientReplion.Increase(self: ClientReplion, path: _T.Path, amount: number)
+function ClientReplion.Increase(self: ClientReplion, path: Path, amount: number)
 	local currentValue: number = self:Get(path)
 
 	return self:Set(path, currentValue + amount)
@@ -176,23 +256,26 @@ end
 --[=[
 	@private
 
-	@param path Path
 	@param amount number
 ]=]
-function ClientReplion.Decrease(self: ClientReplion, path: _T.Path, amount: number)
+function ClientReplion.Decrease(self: ClientReplion, path: Path, amount: number)
 	return self:Increase(path, -amount)
 end
 
 --[=[
 	@private
 ]=]
-function ClientReplion.Insert(self: ClientReplion, path: _T.Path, value: any, index: number): (number, any)
+function ClientReplion.Insert(self: ClientReplion, path: Path, value: any, index: number): (number, any)
 	local data, last = Utils.getFromPath(path, self.Data)
-	local newArray = table.clone(data[last])
+
+	local oldArray = data[last]
+	local newArray = table.clone(oldArray)
 
 	table.insert(newArray, index, value)
 
 	data[last] = newArray
+
+	self._signals:Fire('onArrayInsert', path, index, value)
 
 	return index, value
 end
@@ -200,13 +283,17 @@ end
 --[=[
 	@private
 ]=]
-function ClientReplion.Remove(self: ClientReplion, path: _T.Path, index: number): (any)
+function ClientReplion.Remove(self: ClientReplion, path: Path, index: number): (any)
 	local data, last = Utils.getFromPath(path, self.Data)
-	local newArray = table.clone(data[last])
+
+	local oldArray = data[last]
+	local newArray = table.clone(oldArray)
 
 	local value = table.remove(newArray, index)
 
 	data[last] = newArray
+
+	self._signals:Fire('onArrayRemove', path, index, value)
 
 	return value
 end
@@ -214,11 +301,16 @@ end
 --[=[
 	@private
 ]=]
-function ClientReplion.Clear(self: ClientReplion, path: _T.Path)
+function ClientReplion.Clear(self: ClientReplion, path: Path)
 	local data, last = Utils.getFromPath(path, self.Data)
 
+	local oldArray = data[last]
+
 	-- We could use the `table.clear`, but I don't see any reason to do that.
-	data[last] = {}
+	local newArray = {}
+	data[last] = newArray
+
+	self._signals:Fire('onChange', path, newArray, oldArray)
 end
 
 --[=[
@@ -242,64 +334,6 @@ function ClientReplion.Execute(self: ClientReplion, name: string, ...: any)
 			signal:Fire(table.unpack(values))
 		end
 	end
-end
-
---[=[
-	This event is fired when a Extension is executed. The callback will be called with the return values of the Extension.
-]=]
-function ClientReplion.OnExecute(self: ClientReplion, name: string, callback: ExtensionCallback): _T.Connection
-	assert(self.Extensions, '[Replion] - No Extensions found!')
-
-	return self._signals:Get('onExecute', name):Connect(callback)
-end
---[=[
-	```lua
-	replion:OnChange('Coins', function(newValue: any, oldValue: any)
-		print(newValue, oldValue)
-	end)
-	```
-
-	@param path Path
-	@param callback ChangeCallback
-
-	This function is called when the value of the path changes.
-]=]
-function ClientReplion.OnChange(self: ClientReplion, path: _T.Path, callback: ChangeCallback): _T.Connection
-	return self._signals:Get('onChange', path):Connect(callback)
-end
-
-type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
---[=[
-	```lua
-		-- On the server
-		replion:Set({'Areas', 'Ice'}, true)
-	```
-
-	```lua
-	replion:OnDescendantChange('Areas', function(path: { string }, newValue: any, oldValue: any)
-		print(path, newValue, oldValue)
-	end)
-	```
-
-	@param path Path
-	@param callback (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
-
-	This event will be fired when any descendant of the path is changed.
-]=]
-function ClientReplion.OnDescendantChange(
-	self: ClientReplion,
-	path: _T.Path,
-	callback: DescendantCallback
-): _T.Connection
-	return self._signals:Get('onDescendantChange', path):Connect(callback)
-end
-
-function ClientReplion.OnArrayInsert(self: ClientReplion, path: _T.Path, callback): _T.Connection
-	return self._signals:Get('onArrayInsert', path):Connect(callback)
-end
-
-function ClientReplion.OnArrayRemove(self: ClientReplion, path: _T.Path, callback): _T.Connection
-	return self._signals:Get('onArrayRemove', path):Connect(callback)
 end
 
 function ClientReplion.Destroy(self: ClientReplion)

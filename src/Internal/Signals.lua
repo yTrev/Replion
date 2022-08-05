@@ -1,11 +1,11 @@
--- --!strict
+--!strict
 local Signal = require(script.Parent.Parent.Parent.Signal)
 
 local _T = require(script.Parent.Types)
 local Utils = require(script.Parent.Utils)
 
 type Signals = {
-	[string]: _T.Signal?,
+	[string]: _T.Signal,
 }
 
 type Container = {
@@ -16,9 +16,7 @@ local Signals = {}
 Signals.__index = Signals
 
 function Signals.new()
-	local self = setmetatable({}, Signals)
-
-	return self
+	return setmetatable({}, Signals)
 end
 
 function Signals:_getContainer(name: string)

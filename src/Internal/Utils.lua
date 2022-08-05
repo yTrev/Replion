@@ -49,7 +49,7 @@ local function merge(t: _T.Dictionary, t2: _T.Dictionary): _T.Dictionary
 	local result = table.clone(t)
 
 	for index, value in t2 do
-		local isNone: boolean = if value == None or value == SerializedNone then true else false
+		local isNone: boolean = value == None or value == SerializedNone
 
 		result[index] = if isNone then nil else value
 	end

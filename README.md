@@ -68,12 +68,7 @@ ReplionClient:AwaitReplion('Data', function(dataReplion)
 	print('Coins:', ReplionClient:Get('Coins'))
 
 	local connection = dataReplion:OnChange('Coins', function(newCoins: number, _oldCoins: number)
-		print('Coins:', coins)
+		print('Coins:', newCoins)
 	end)
-
-	-- We can disconnect listeners from Replion!
-	task.delay(5, connection.Disconnect, connection)
 end)
-
-ReplionClient.Start()
 ```
