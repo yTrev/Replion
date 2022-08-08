@@ -100,8 +100,8 @@ end
 ]=]
 
 --[=[
-		@type ReplionConfig {Channel: string, Data: {[any]: any}, Tags: {string}?, Extensions: ModuleScript?}
-		@within Server
+	@type ReplionConfig {Channel: string, Data: {[any]: any}, Tags: {string}?, Extensions: ModuleScript?}
+	@within Server
 ]=]
 
 --[=[
@@ -189,9 +189,6 @@ function Server.new(config: ReplionConfig): ServerReplion
 end
 
 --[=[
-	@param channel
-	@return Replion?
-
 	Gets a Replion with the given channel. If multiple Replions exist with the same channel, it will throw an error.
 ]=]
 function Server:GetReplion(channel: Channel): ServerReplion?
@@ -211,9 +208,6 @@ function Server:GetReplion(channel: Channel): ServerReplion?
 end
 
 --[=[
-	@param channel
-	@return Replion?
-
 	Returns the first Replion that matches the channel.
 ]=]
 function Server:GetReplionFor(player: Player, channel: Channel): ServerReplion?
@@ -230,9 +224,6 @@ function Server:GetReplionFor(player: Player, channel: Channel): ServerReplion?
 end
 
 --[=[
-	@param player
-	@return { Replion }
-
 	Returns all replions for the given player. Includes replions that are replicated to "All".
 ]=]
 function Server:GetReplionsFor(player: Player): { ServerReplion }
@@ -261,10 +252,6 @@ function Server:GetReplionsFor(player: Player): { ServerReplion }
 end
 
 --[=[
-	@param channel
-	@param timeout
-	@return Replion?
-
 	@yields
 
 	Wait for a replion with the given channel to be created.
@@ -288,10 +275,6 @@ function Server:WaitReplion(channel: Channel, timeout: number?): ServerReplion?
 end
 
 --[=[
-	@param channel
-	@param timeout
-	@return Replion?
-
 	@yields
 
 	Wait for a replion to be created for the player.
@@ -315,10 +298,6 @@ function Server:WaitReplionFor(player: Player, channel: Channel, timeout: number
 end
 
 --[=[
-	@param channel
-	@param callback
-	@param timeout
-
 	The callback will be called when the replion with the given id is added.
 ]=]
 function Server:AwaitReplion(channel: Channel, callback: (ServerReplion) -> (), timeout: number?)
@@ -333,9 +312,6 @@ function Server:AwaitReplion(channel: Channel, callback: (ServerReplion) -> (), 
 end
 
 --[=[
-	@param channel
-	@param callback
-
 	The callback will be called when the replion with the given id for the given player is added.
 ]=]
 function Server:AwaitReplionFor(player: Player, channel: Channel, callback: (ServerReplion) -> (), timeout: number?)
@@ -350,8 +326,7 @@ function Server:AwaitReplionFor(player: Player, channel: Channel, callback: (Ser
 end
 
 --[=[
-	@param callback
-	@return Connection
+	@return RBXScriptConnection
 
 	The callback will be called when a replion is added.
 ]=]
@@ -360,8 +335,7 @@ function Server:OnReplionAdded(callback: (channel: Channel, newReplion: ServerRe
 end
 
 --[=[
-	@param callback
-	@return Connection
+	@return RBXScriptConnection
 
 	The callback will be called when a replion is removed.
 ]=]

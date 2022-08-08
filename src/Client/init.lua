@@ -79,6 +79,8 @@ end
 local Client: ReplionClient = {} :: any
 
 --[=[
+	@return RBXScriptConnection
+
 	Calls the callback when a replion is added.
 ]=]
 function Client:OnReplionAdded(callback: (addedReplion: ClientReplion) -> ()): _T.Connection
@@ -86,6 +88,8 @@ function Client:OnReplionAdded(callback: (addedReplion: ClientReplion) -> ()): _
 end
 
 --[=[
+	@return RBXScriptConnection
+
 	Calls the callback when a replion is removed.
 ]=]
 function Client:OnReplionRemoved(callback: (removedReplion: ClientReplion) -> ()): _T.Connection
@@ -93,6 +97,8 @@ function Client:OnReplionRemoved(callback: (removedReplion: ClientReplion) -> ()
 end
 
 --[=[
+	@return RBXScriptConnection
+
 	Calls the callback when a replion with the given tag is added.
 ]=]
 function Client:OnReplionAddedWithTag(tag: string, callback: (ClientReplion) -> ()): _T.Connection
@@ -106,6 +112,8 @@ function Client:OnReplionAddedWithTag(tag: string, callback: (ClientReplion) -> 
 end
 
 --[=[
+	@return RBXScriptConnection
+
 	Calls the callback when a replion with the given tag is removed.
 ]=]
 function Client:OnReplionRemovedWithTag(tag: string, callback: (ClientReplion) -> ()): _T.Connection

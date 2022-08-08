@@ -137,6 +137,7 @@ function ServerReplion.__tostring(self: ServerReplion)
 end
 
 --[=[
+	@return SerializedReplion
 	@private
 
 	Serializes the data to be sent to the client.
@@ -165,6 +166,7 @@ function ServerReplion.BeforeDestroy(self: ServerReplion, callback: (ServerRepli
 end
 
 --[=[
+	@param callback (newValue: any, oldValue: any) -> ()
 	@return RBXScriptConnection
 
 	Connects to a signal that is fired when the value at the given path is changed.
@@ -305,9 +307,19 @@ end
 	})
 
 	print(newItems) --> { Sword = true }
+
+	local newData = newReplion:Update({
+		Level = 20,
+	})
+
+	print(newData) --> { Items = { Sword = true }, Level = 20 }
 	```
 
 	Updates the data with the given table. Only the keys that are different will be sent to the client.
+
+	You can update the root data by passing a table as the first argument.
+
+	If you want to remove a key, set it to `Replion.None`.
 ]=]
 function ServerReplion.Update(self: ServerReplion, path: Path | Dictionary, toUpdate: Dictionary?): Dictionary?
 	local newValue, oldValue
@@ -376,7 +388,7 @@ function ServerReplion.Update(self: ServerReplion, path: Path | Dictionary, toUp
 			end
 		end
 
-		Network.sendTo(self._replicateTo, 'Update', self._packedId, Utils.getStringPath(path), toUpdate)
+		Network.sendTo(self._replicateTo, 'Update', self._packedId, path, toUpdate)
 	end
 
 	return newValue
