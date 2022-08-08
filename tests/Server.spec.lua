@@ -12,7 +12,7 @@ return function()
 
 	describe('ReplionServer.new', function()
 		local newReplion = ReplionServer.new({
-			Channel = 'newTest',
+			Channel = 'new',
 			Data = { Coins = 20 },
 			ReplicateTo = 'All',
 		})
@@ -42,17 +42,17 @@ return function()
 		it('should error if trying to create a Replion with the same channel and ReplicateTo', function()
 			expect(function()
 				ReplionServer.new({
-					Channel = 'newTest',
+					Channel = 'new',
 					Data = { Coins = 20 },
 					ReplicateTo = 'All',
 				})
-			end).to.throw('[Replion] - Channel "newTest" already exists! for "All"')
+			end).to.throw('[Replion] - Channel "new" already exists! for "All"')
 		end)
 	end)
 
 	describe('ReplionServer:GetReplion', function()
 		local newReplion = ReplionServer.new({
-			Channel = 'getReplionTest',
+			Channel = 'GetReplion',
 			Data = { Coins = 20 },
 			ReplicateTo = 'All',
 		})
@@ -89,7 +89,7 @@ return function()
 			end)
 
 			local newReplion = ReplionServer.new({
-				Channel = 'onReplionAddedTest',
+				Channel = 'OnReplionAdded',
 				Data = { Coins = 20 },
 				ReplicateTo = 'All',
 			})
@@ -103,7 +103,7 @@ return function()
 		it('should fire when a Replion is removed', function()
 			local removedChannel, removedReplion
 			local newReplion = ReplionServer.new({
-				Channel = 'onReplionRemovedTest',
+				Channel = 'OnReplionRemoved',
 				Data = { Coins = 20 },
 				ReplicateTo = 'All',
 			})
@@ -122,14 +122,14 @@ return function()
 	describe('ReplionServer:AwaitReplion', function()
 		it('should be called', function()
 			local fooReplion
-			ReplionServer:AwaitReplion('Foo', function(newReplion)
+			ReplionServer:AwaitReplion('AwaitReplion', function(newReplion)
 				fooReplion = newReplion
 			end)
 
 			expect(fooReplion).to.never.be.ok()
 
 			ReplionServer.new({
-				Channel = 'Foo',
+				Channel = 'AwaitReplion',
 				Data = {},
 				ReplicateTo = 'All',
 			})
@@ -183,7 +183,7 @@ return function()
 
 	describe('ReplionServer:GetReplionsFor', function()
 		ReplionServer.new({
-			Channel = 'getReplionsForTest',
+			Channel = 'GetReplionsFor',
 			Data = { Coins = 20 },
 			ReplicateTo = fakePlayer,
 		})
@@ -195,7 +195,7 @@ return function()
 
 	describe('ReplionServer:GetReplionFor', function()
 		local newReplion = ReplionServer.new({
-			Channel = 'getReplionForTest',
+			Channel = 'GetReplionFor',
 			Data = { Coins = 20 },
 			ReplicateTo = fakePlayer,
 		})
@@ -208,14 +208,14 @@ return function()
 	describe('ReplionServer:AwaitReplionFor', function()
 		it('should be called', function()
 			local fooReplion
-			ReplionServer:AwaitReplion('AwaitFor', function(newReplion)
+			ReplionServer:AwaitReplion('AwaitReplionFor', function(newReplion)
 				fooReplion = newReplion
 			end)
 
 			expect(fooReplion).to.never.be.ok()
 
 			ReplionServer.new({
-				Channel = 'AwaitFor',
+				Channel = 'AwaitReplionFor',
 				Data = {},
 				ReplicateTo = fakePlayer,
 			})

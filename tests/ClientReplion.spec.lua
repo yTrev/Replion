@@ -8,7 +8,7 @@ return function()
 	describe('ClientReplion.new', function()
 		local newReplion = ClientReplion.new({
 			Data = { Coins = 20 },
-			Channel = 'newTest',
+			Channel = 'new',
 			Id = '',
 		})
 
@@ -21,7 +21,7 @@ return function()
 		it('should be called when the replion is destroyed', function()
 			local newReplion = ClientReplion.new({
 				Data = { Coins = 20 },
-				Channel = 'newTest',
+				Channel = 'BeforeDestroy',
 				Id = '',
 			})
 
@@ -32,6 +32,7 @@ return function()
 			end)
 
 			newReplion:Destroy()
+
 			expect(called).to.equal(true)
 		end)
 	end)
@@ -144,7 +145,7 @@ return function()
 		})
 
 		it('should insert the value in the given array', function()
-			local fooIndex, fooValue = newReplion:Insert('Values', 'Foo', 1)
+			local fooIndex, fooValue = newReplion:Insert('Values', 'Foo')
 			local barIndex, barValue = newReplion:Insert('Values', 'Bar', 1)
 
 			local newValues = newReplion:Get('Values')
@@ -187,6 +188,27 @@ return function()
 			expect(newReplion.Data.Values[1]).to.be.equal(6)
 			expect(newReplion.Data.Values[2]).to.be.equal(1)
 			expect(newReplion.Data.Values[3]).to.be.equal(4)
+		end)
+	end)
+
+	describe('ClientReplion:Remove', function()
+		local newReplion = ClientReplion.new({
+			Data = { Values = { 1, 2, 3 } },
+			Channel = 'Remove',
+			Id = '',
+		})
+
+		it('should remove the value in the given array', function()
+			local oneValue = newReplion:Remove('Values', 1)
+			local threeValue = newReplion:Remove('Values')
+
+			local newValues = newReplion:Get('Values')
+
+			expect(oneValue).to.be.equal(1)
+			expect(threeValue).to.be.equal(3)
+
+			expect(#newValues).to.be.equal(1)
+			expect(newValues[1]).to.be.equal(2)
 		end)
 	end)
 

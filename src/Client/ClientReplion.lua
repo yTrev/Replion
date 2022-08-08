@@ -173,11 +173,8 @@ end
 
 --[=[
 	@private
-
-	@param path Path
-	@param newValue any
 ]=]
-function ClientReplion.Set(self: ClientReplion, path: Path, newValue: any)
+function ClientReplion.Set<T>(self: ClientReplion, path: Path, newValue: T): T
 	local pathTable = Utils.getPathTable(path)
 	local currentValue, key = Utils.getFromPath(pathTable, self.Data)
 
@@ -192,14 +189,11 @@ function ClientReplion.Set(self: ClientReplion, path: Path, newValue: any)
 
 	self._signals:Fire('onChange', path, newValue, oldValue)
 
-	return newValue, oldValue
+	return newValue
 end
 
 --[=[
 	@private
-
-	@param path Path | {[any]: any}]}
-	@param toUpdate {[any]: any}?
 ]=]
 function ClientReplion.Update(self: ClientReplion, path: Path | Dictionary, toUpdate: Dictionary?): Dictionary?
 	local newValue, oldValue
@@ -241,13 +235,13 @@ function ClientReplion.Update(self: ClientReplion, path: Path | Dictionary, toUp
 
 	self._signals:Fire('onChange', path, newValue, oldValue)
 
-	return newValue :: any
+	return newValue
 end
 
 --[=[
 	@private
 ]=]
-function ClientReplion.Increase(self: ClientReplion, path: Path, amount: number)
+function ClientReplion.Increase(self: ClientReplion, path: Path, amount: number): number
 	local currentValue: number = self:Get(path)
 
 	return self:Set(path, currentValue + amount)
@@ -255,45 +249,49 @@ end
 
 --[=[
 	@private
-
-	@param amount number
 ]=]
-function ClientReplion.Decrease(self: ClientReplion, path: Path, amount: number)
+function ClientReplion.Decrease(self: ClientReplion, path: Path, amount: number): number
 	return self:Increase(path, -amount)
 end
 
 --[=[
 	@private
 ]=]
-function ClientReplion.Insert(self: ClientReplion, path: Path, value: any, index: number): (number, any)
+function ClientReplion.Insert<T>(self: ClientReplion, path: Path, value: T, index: number?): (number, T)
 	local data, last = Utils.getFromPath(path, self.Data)
 
 	local oldArray = data[last]
 	local newArray = table.clone(oldArray)
 
-	table.insert(newArray, index, value)
+	local targetIndex: number = if index then index else #newArray + 1
+
+	table.insert(newArray, targetIndex, value)
 
 	data[last] = newArray
 
-	self._signals:Fire('onArrayInsert', path, index, value)
+	self._signals:Fire('onArrayInsert', path, targetIndex, value)
+	self._signals:Fire('onChange', path, newArray, oldArray)
 
-	return index, value
+	return targetIndex, value
 end
 
 --[=[
 	@private
 ]=]
-function ClientReplion.Remove(self: ClientReplion, path: Path, index: number): (any)
+function ClientReplion.Remove(self: ClientReplion, path: Path, index: number?): (any)
 	local data, last = Utils.getFromPath(path, self.Data)
 
 	local oldArray = data[last]
 	local newArray = table.clone(oldArray)
+
+	index = if index then index else #newArray
 
 	local value = table.remove(newArray, index)
 
 	data[last] = newArray
 
 	self._signals:Fire('onArrayRemove', path, index, value)
+	self._signals:Fire('onChange', path, newArray, oldArray)
 
 	return value
 end

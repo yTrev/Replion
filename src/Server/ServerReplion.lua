@@ -51,25 +51,25 @@ local availableIds: { number } = {}
 
 --[=[
 	@type ReplicateTo Player | { Player } | 'All'
-	
+
 	@within ServerReplion
 ]=]
 
 --[=[
 	@type SerializedReplion { Data: Dictionary, Channel: string, Tags: {string}?, Extensions: ModuleScript? }
-	
+
 	@within ServerReplion
 ]=]
 
 --[=[
-		@type Dictionary { [any]: any }
-		
-		@within ServerReplion
+	@type Dictionary { [any]: any }
+
+	@within ServerReplion
 ]=]
 
 --[=[
 	@class ServerReplion	
-	
+
 	@server
 ]=]
 local ServerReplion = {}
@@ -156,52 +156,6 @@ function ServerReplion._serialize(self: ServerReplion): _T.SerializedReplion
 end
 
 --[=[
-	Sets the players to which the data should be replicated.
-]=]
-function ServerReplion.SetReplicateTo(self: ServerReplion, replicateTo: ReplicateTo)
-	local isAll: boolean = replicateTo == 'All'
-	local isATable: boolean = type(replicateTo) == 'table'
-	local isAPlayer: boolean = typeof(replicateTo) == 'Instance' and replicateTo:IsA('Player')
-
-	assert(isAll or isATable or isAPlayer, '[Replion] - ReplicateTo must be a Player, a table of Players, or "All"')
-
-	local oldReplicateTo = self._replicateTo
-	local oldType: string = typeof(oldReplicateTo)
-
-	-- We need to send to the Removed event to the old players.
-	if oldType == 'Instance' then
-		Network.sendTo(oldReplicateTo, 'Removed', self._packedId)
-	elseif oldType == 'table' then
-		for _, player in oldReplicateTo :: { Player } do
-			Network.sendTo(player, 'Removed', self._packedId)
-		end
-	elseif oldType == 'string' then
-		Network.sendTo('All', 'Removed', self._packedId)
-	end
-
-	self._replicateTo = replicateTo
-end
-
---[=[
-	Executes an extension function, if it doesn't exist, it will throw an error.
-]=]
-function ServerReplion.Execute(self: ServerReplion, name: string, ...: any): ...any
-	local extensions = assert(self.Extensions, tostring(self) .. ' has not extensions.')
-	local extension = assert(extensions[name], tostring(self) .. ' has no extension named ' .. name)
-
-	self._signals:Pause()
-
-	local result = table.pack(extension(self, ...))
-
-	self._signals:Resume()
-
-	-- We could optimize this by creating and ID for each function, but I don't think it's worth it.
-	Network.sendTo(self._replicateTo, 'RunExtension', self._packedId, name, ...)
-
-	return table.unpack(result)
-end
-
---[=[
 	@return RBXScriptConnection
 
 	Connects to a signal that is fired when the :Destroy() method is called.
@@ -255,6 +209,52 @@ function ServerReplion.OnDescendantChange(self: ServerReplion, path: Path, callb
 end
 
 --[=[
+	Sets the players to which the data should be replicated.
+]=]
+function ServerReplion.SetReplicateTo(self: ServerReplion, replicateTo: ReplicateTo)
+	local isAll: boolean = replicateTo == 'All'
+	local isATable: boolean = type(replicateTo) == 'table'
+	local isAPlayer: boolean = typeof(replicateTo) == 'Instance' and replicateTo:IsA('Player')
+
+	assert(isAll or isATable or isAPlayer, '[Replion] - ReplicateTo must be a Player, a table of Players, or "All"')
+
+	local oldReplicateTo = self._replicateTo
+	local oldType: string = typeof(oldReplicateTo)
+
+	-- We need to send to the Removed event to the old players.
+	if oldType == 'Instance' then
+		Network.sendTo(oldReplicateTo, 'Removed', self._packedId)
+	elseif oldType == 'table' then
+		for _, player in oldReplicateTo :: { Player } do
+			Network.sendTo(player, 'Removed', self._packedId)
+		end
+	elseif oldType == 'string' then
+		Network.sendTo('All', 'Removed', self._packedId)
+	end
+
+	self._replicateTo = replicateTo
+end
+
+--[=[
+	Executes an extension function, if it doesn't exist, it will throw an error.
+]=]
+function ServerReplion.Execute(self: ServerReplion, name: string, ...: any): ...any
+	local extensions = assert(self.Extensions, tostring(self) .. ' has not extensions.')
+	local extension = assert(extensions[name], tostring(self) .. ' has no extension named ' .. name)
+
+	self._signals:Pause()
+
+	local result = table.pack(extension(self, ...))
+
+	self._signals:Resume()
+
+	-- We could optimize this by creating and ID for each function, but I don't think it's worth it.
+	Network.sendTo(self._replicateTo, 'RunExtension', self._packedId, name, ...)
+
+	return table.unpack(result)
+end
+
+--[=[
 	```lua
 	local newCoins: number = Replion:Set('Coins', 79)
 	print(newCoins) --> 79
@@ -262,13 +262,13 @@ end
 
 	Sets the value at the given path to the given value.
 ]=]
-function ServerReplion.Set(self: ServerReplion, path: Path, newValue: any): any
+function ServerReplion.Set<T>(self: ServerReplion, path: Path, newValue: T): T
 	local pathTable = Utils.getPathTable(path)
 	local currentValue, key = Utils.getFromPath(pathTable, self.Data)
 	local oldValue = currentValue[key]
 
-	if equals(oldValue, newValue) then
-		return
+	if equals(oldValue, newValue :: any) then
+		return oldValue
 	end
 
 	local oldParentValue = if #pathTable > 1 then table.clone(currentValue) else nil
@@ -432,21 +432,18 @@ end
 	Inserts a value into the array at the given path, and returns the index and value. 
 	If no index is given, it will insert the value at the end of the array.
 ]=]
-function ServerReplion.Insert(self: ServerReplion, path: Path, value: any, index: number?): (number, any)
+function ServerReplion.Insert<T>(self: ServerReplion, path: Path, value: T, index: number?): (number, T)
 	local data, last = Utils.getFromPath(path, self.Data)
 
 	local array = data[last]
 	if type(array) == 'table' then
-		index = if index then index else #array + 1
+		local targetIndex: number = if index then index else #array + 1
 
-		table.insert(array, index :: number, value)
+		table.insert(array, targetIndex, value)
 
 		if not self._signals:IsPaused() then
-			self._signals:Fire('onArrayInsert', path, index, value)
+			self._signals:Fire('onArrayInsert', path, targetIndex, value)
 
-			-- TODO:
-			-- Maybe I can remove the index if it's the last one, but I don't know if it's gonna
-			-- cause any desync issues.
 			Network.sendTo(
 				self._replicateTo,
 				'ArrayUpdate',
@@ -458,7 +455,7 @@ function ServerReplion.Insert(self: ServerReplion, path: Path, value: any, index
 			)
 		end
 
-		return index :: number, value
+		return targetIndex, value
 	else
 		error('[Replion] - Cannot insert into a non-array.')
 	end
@@ -491,14 +488,12 @@ function ServerReplion.Remove(self: ServerReplion, path: Path, index: number?): 
 
 	local array = data[last]
 	if type(array) == 'table' then
-		index = if index then index else #array
-
-		local value = table.remove(array, index :: number)
+		local targetIndex: number = if index then index else #array
+		local value = table.remove(array, targetIndex)
 
 		if not self._signals:IsPaused() then
-			self._signals:Fire('onArrayRemove', path, index, value)
+			self._signals:Fire('onArrayRemove', path, targetIndex, value)
 
-			-- TODO: see line 426.
 			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'r', Utils.getStringPath(path), index)
 		end
 
@@ -603,7 +598,6 @@ end
 	local gems: number = Replion:GetExpect('Gems', 'Gems does not exist!')
 	```
 
-	@param message string
 	@error "Invalid path" -- This error is thrown when the path does not have a value.
 
 	Same as `Replion:Get`, but throws an error if the path does not have a value.

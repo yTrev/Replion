@@ -8,7 +8,7 @@ return function()
 	describe('ServerReplion.new', function()
 		local newReplion = ReplionServer.new({
 			Data = {},
-			Channel = 'new',
+			Channel = 'serverNew',
 			ReplicateTo = 'All',
 		})
 
@@ -24,17 +24,43 @@ return function()
 				})
 			end).to.throw()
 		end)
+	end)
 
-		it('should have a nice tostring', function()
-			expect(tostring(newReplion)).to.be.equal('Replion<new:All>')
-		end)
+	describe('ServerReplion:_serialize', function()
+		local newReplion = ReplionServer.new({
+			Data = {},
+			Channel = '_serialize',
+			ReplicateTo = 'All',
+			Tags = { 'Foo' },
+		})
 
-		it('should be serialized', function()
+		it('should serialize the Replion', function()
 			local serialized = newReplion:_serialize()
 
-			expect(serialized).to.be.ok()
+			expect(serialized).to.be.a('table')
+			expect(serialized.Channel).to.be.equal('_serialize')
 			expect(serialized.Data).to.be.a('table')
-			expect(serialized.Channel).to.be.a('string')
+			expect(serialized.Tags).to.be.a('table')
+			expect(serialized.Id).to.be.a('string')
+		end)
+	end)
+
+	describe('ServerReplion:BeforeDestroy', function()
+		it('should fire when the Replion is destroyed', function()
+			local newReplion = ReplionServer.new({
+				Data = {},
+				Channel = 'BeforeDestroy',
+				ReplicateTo = 'All',
+			})
+
+			local fired = false
+			newReplion:BeforeDestroy(function()
+				fired = true
+			end)
+
+			newReplion:Destroy()
+
+			expect(fired).to.equal(true)
 		end)
 	end)
 
@@ -241,6 +267,27 @@ return function()
 		end)
 	end)
 
+	describe('ServerReplion:Remove', function()
+		local newReplion = ReplionServer.new({
+			Data = { Values = { 1, 2, 3 } },
+			Channel = 'Remove',
+			ReplicateTo = 'All',
+		})
+
+		it('should remove the value in the given array', function()
+			local oneValue = newReplion:Remove('Values', 1)
+			local threeValue = newReplion:Remove('Values')
+
+			local newValues = newReplion:Get('Values')
+
+			expect(oneValue).to.be.equal(1)
+			expect(threeValue).to.be.equal(3)
+
+			expect(#newValues).to.be.equal(1)
+			expect(newValues[1]).to.be.equal(2)
+		end)
+	end)
+
 	describe('ServerReplion:OnArrayRemove', function()
 		local newReplion = ReplionServer.new({
 			Data = { Values = { 1, 2, 3, 4 } },
@@ -316,7 +363,7 @@ return function()
 		end)
 	end)
 
-	describe('ServerReplion:OnDescendantChanged', function()
+	describe('ServerReplion:OnDescendantChange', function()
 		local newReplion = ReplionServer.new({
 			Data = { Values = { A = true, B = false, C = { D = true } } },
 			Channel = 'OnDescendantChanged',

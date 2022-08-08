@@ -126,9 +126,9 @@ function Client:GetReplion(channel: string): ClientReplion?
 end
 
 --[=[
-	Yields until the replion with the given channel is added.
-
 	@yields
+
+	Yields until the replion with the given channel is added.
 ]=]
 function Client:WaitReplion(channel: string): ClientReplion
 	local replion = cache[channel]
