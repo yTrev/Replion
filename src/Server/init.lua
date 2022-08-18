@@ -118,12 +118,15 @@ function Server.new(config: ReplionConfig): ServerReplion
 
 	-- Check if a Replion with the same Channel and ReplicateTo is already created.
 	local channelCache = getChannelCache(channel)
-	for _, replion in channelCache do
-		local isEqual: boolean = replion._replicateTo == config.ReplicateTo
+	local newReplicateTo = config.ReplicateTo
 
-		if not isEqual then
-			for _, player in config.ReplicateTo :: { Player } do
-				isEqual = table.find(replion._replicateTo :: { Player }, player) ~= nil
+	for _, replion in channelCache do
+		local replicateTo = replion._replicateTo
+		local isEqual = replicateTo == newReplicateTo
+
+		if not isEqual and type(replicateTo) == 'table' and type(newReplicateTo) == 'table' then
+			for _, player in replicateTo do
+				isEqual = table.find(replicateTo, player) ~= nil
 
 				if isEqual then
 					break

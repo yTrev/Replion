@@ -48,6 +48,16 @@ return function()
 				})
 			end).to.throw('[Replion] - Channel "new" already exists! for "All"')
 		end)
+
+		it('should not error if trying to create a Replion with the same channel', function()
+			local new = ReplionServer.new({
+				Channel = 'new',
+				Data = { Coins = 20 },
+				ReplicateTo = fakePlayer,
+			})
+
+			expect(new).to.be.a('table')
+		end)
 	end)
 
 	describe('ReplionServer:GetReplion', function()
