@@ -126,7 +126,7 @@ function Server.new(config: ReplionConfig): ServerReplion
 
 		if not isEqual and type(replicateTo) == 'table' and type(newReplicateTo) == 'table' then
 			for _, player in replicateTo do
-				isEqual = table.find(replicateTo, player) ~= nil
+				isEqual = table.find(newReplicateTo, player) ~= nil
 
 				if isEqual then
 					break
