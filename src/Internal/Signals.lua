@@ -21,7 +21,7 @@ function Signals.new()
 	}, Signals)
 end
 
-function Signals:_getContainer(name: string): Container?
+function Signals._getContainer(self: Signals, name: string): Container?
 	if self._containers then
 		local container = self._containers[name]
 		if not container then
