@@ -31,7 +31,7 @@ type ServerReplionProps = {
 	_replicateTo: ReplicateTo,
 	_extensionModule: ModuleScript?,
 	_beforeDestroy: _T.Signal,
-	_signals: typeof(Signals.new()),
+	_signals: Signals.Signals,
 	_runningExtension: boolean?,
 
 	_id: number,
@@ -171,8 +171,13 @@ end
 
 	Connects to a signal that is fired when the value at the given path is changed.
 ]=]
-function ServerReplion.OnChange(self: ServerReplion, path: Path, callback: _T.ChangeCallback): _T.Connection
-	return self._signals:Get('onChange', path):Connect(callback)
+function ServerReplion.OnChange(self: ServerReplion, path: Path, callback: _T.ChangeCallback): _T.Connection?
+	local onChange = self._signals:Get('onChange', path)
+	if onChange then
+		return onChange:Connect(callback)
+	else
+		return nil
+	end
 end
 
 --[=[
@@ -182,8 +187,13 @@ end
 
 	Connects to a signal that is fired when a value is inserted in the array at the given path.
 ]=]
-function ServerReplion.OnArrayInsert(self: ServerReplion, path: Path, callback: _T.ArrayCallback): _T.Connection
-	return self._signals:Get('onArrayInsert', path):Connect(callback)
+function ServerReplion.OnArrayInsert(self: ServerReplion, path: Path, callback: _T.ArrayCallback): _T.Connection?
+	local onArrayInsert = self._signals:Get('onArrayInsert', path)
+	if onArrayInsert then
+		return onArrayInsert:Connect(callback)
+	else
+		return nil
+	end
 end
 
 --[=[
@@ -193,8 +203,13 @@ end
 
 	Connects to a signal that is fired when a value is removed in the array at the given path.
 ]=]
-function ServerReplion.OnArrayRemove(self: ServerReplion, path: Path, callback: _T.ArrayCallback): _T.Connection
-	return self._signals:Get('onArrayRemove', path):Connect(callback)
+function ServerReplion.OnArrayRemove(self: ServerReplion, path: Path, callback: _T.ArrayCallback): _T.Connection?
+	local onArrayRemove = self._signals:Get('onArrayRemove', path)
+	if onArrayRemove then
+		return onArrayRemove:Connect(callback)
+	else
+		return nil
+	end
 end
 
 type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
@@ -206,8 +221,13 @@ type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescend
 
 	Connects to a signal that is fired when a descendant value is changed.
 ]=]
-function ServerReplion.OnDescendantChange(self: ServerReplion, path: Path, callback: DescendantCallback): _T.Connection
-	return self._signals:Get('onDescendantChange', path):Connect(callback)
+function ServerReplion.OnDescendantChange(self: ServerReplion, path: Path, callback: DescendantCallback): _T.Connection?
+	local onDescendantChange = self._signals:Get('onDescendantChange', path)
+	if onDescendantChange then
+		return onDescendantChange:Connect(callback)
+	else
+		return nil
+	end
 end
 
 --[=[
@@ -235,6 +255,13 @@ function ServerReplion.SetReplicateTo(self: ServerReplion, replicateTo: Replicat
 	end
 
 	self._replicateTo = replicateTo
+end
+
+--[=[
+	@return ReplicateTo
+]=]
+function ServerReplion.GetReplicateTo(self: ServerReplion): ReplicateTo
+	return self._replicateTo
 end
 
 --[=[
@@ -621,6 +648,10 @@ function ServerReplion.GetExpect(self: ServerReplion, path: Path, message: strin
 	return assert(data[last], if message then message else 'Invalid path.')
 end
 
+--[=[
+	Disconnects all signals and send a Destroy event to the ReplicateTo.
+	You cannot use a Replion after destroying it, this will throw an error.
+]=]
 function ServerReplion.Destroy(self: ServerReplion)
 	self._beforeDestroy:Fire()
 	self._beforeDestroy:DisconnectAll()

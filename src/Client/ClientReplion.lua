@@ -17,7 +17,7 @@ type ClientReplionProps = {
 	Extensions: { [string]: ExtensionCallback }?,
 
 	_channel: string,
-	_signals: typeof(Signals.new()),
+	_signals: Signals.Signals,
 	_beforeDestroy: _T.Signal,
 }
 
@@ -84,11 +84,17 @@ end
 
 	This event is fired when a Extension is executed. The callback will be called with the return values of the Extension.
 ]=]
-function ClientReplion.OnExecute(self: ClientReplion, name: string, callback: ExtensionCallback): _T.Connection
+function ClientReplion.OnExecute(self: ClientReplion, name: string, callback: ExtensionCallback): _T.Connection?
 	assert(self.Extensions, '[Replion] - No Extensions found!')
 
-	return self._signals:Get('onExecute', name):Connect(callback)
+	local onExecute = self._signals:Get('onExecute', name)
+	if onExecute then
+		return onExecute:Connect(callback)
+	else
+		return nil
+	end
 end
+
 --[=[
 	```lua
 	replion:OnChange('Coins', function(newValue: any, oldValue: any)
@@ -103,8 +109,13 @@ end
 
 	This function is called when the value of the path changes.
 ]=]
-function ClientReplion.OnChange(self: ClientReplion, path: Path, callback: ChangeCallback): _T.Connection
-	return self._signals:Get('onChange', path):Connect(callback)
+function ClientReplion.OnChange(self: ClientReplion, path: Path, callback: ChangeCallback): _T.Connection?
+	local onChange = self._signals:Get('onChange', path)
+	if onChange then
+		return onChange:Connect(callback)
+	else
+		return nil
+	end
 end
 
 type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
@@ -127,8 +138,13 @@ type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescend
 
 	This event will be fired when any descendant of the path is changed.
 ]=]
-function ClientReplion.OnDescendantChange(self: ClientReplion, path: Path, callback: DescendantCallback): _T.Connection
-	return self._signals:Get('onDescendantChange', path):Connect(callback)
+function ClientReplion.OnDescendantChange(self: ClientReplion, path: Path, callback: DescendantCallback): _T.Connection?
+	local onDescendantChange = self._signals:Get('onDescendantChange', path)
+	if onDescendantChange then
+		return onDescendantChange:Connect(callback)
+	else
+		return nil
+	end
 end
 
 --[=[
@@ -138,8 +154,13 @@ end
 
 	Connects to a signal that is fired when a value is inserted in the array at the given path.
 ]=]
-function ClientReplion.OnArrayInsert(self: ClientReplion, path: Path, callback: _T.ArrayCallback): _T.Connection
-	return self._signals:Get('onArrayInsert', path):Connect(callback)
+function ClientReplion.OnArrayInsert(self: ClientReplion, path: Path, callback: _T.ArrayCallback): _T.Connection?
+	local onArrayInsert = self._signals:Get('onArrayInsert', path)
+	if onArrayInsert then
+		return onArrayInsert:Connect(callback)
+	else
+		return nil
+	end
 end
 
 --[=[
@@ -149,8 +170,13 @@ end
 
 	Connects to a signal that is fired when a value is removed in the array at the given path.
 ]=]
-function ClientReplion.OnArrayRemove(self: ClientReplion, path: Path, callback: _T.ArrayCallback): _T.Connection
-	return self._signals:Get('onArrayRemove', path):Connect(callback)
+function ClientReplion.OnArrayRemove(self: ClientReplion, path: Path, callback: _T.ArrayCallback): _T.Connection?
+	local onArrayRemove = self._signals:Get('onArrayRemove', path)
+	if onArrayRemove then
+		return onArrayRemove:Connect(callback)
+	else
+		return nil
+	end
 end
 
 --[=[
@@ -336,6 +362,7 @@ end
 
 function ClientReplion.Destroy(self: ClientReplion)
 	self._beforeDestroy:Fire()
+	self._beforeDestroy:DisconnectAll()
 
 	self._signals:Destroy()
 end

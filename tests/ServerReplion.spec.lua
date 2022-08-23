@@ -64,6 +64,22 @@ return function()
 		end)
 	end)
 
+	describe('ServerReplion:Destroy', function()
+		it('should error when using a destroyed replion', function()
+			expect(function()
+				local newReplion = ReplionServer.new({
+					Data = { Foo = false },
+					Channel = 'BeforeDestroy',
+					ReplicateTo = 'All',
+				})
+
+				newReplion:Destroy()
+
+				newReplion:Set('Foo', true)
+			end).to.throw("[Replion] You're trying to use a Replion that has been destroyed")
+		end)
+	end)
+
 	describe('ServerReplion:Get', function()
 		local newReplion = ReplionServer.new({
 			Data = { Coins = 20, Other = { Value = {} } },
