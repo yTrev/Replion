@@ -7,7 +7,7 @@ local Utils = require(script.Parent.Utils)
 type Container = { [string]: _T.Signal }
 
 type SignalProps = {
-	_containers: { [string]: Container? }?,
+	_containers: { [string]: Container }?,
 	_paused: boolean,
 }
 
@@ -134,13 +134,16 @@ function Signals.FireParent(self: Signals, name: string, path: _T.Path, ...: any
 	end
 end
 
-function Signals:Destroy()
-	for name, signals in self._containers do
-		for _, signal in signals do
-			signal:DisconnectAll()
-		end
+function Signals.Destroy(self: Signals)
+	local containers = self._containers
+	if containers then
+		for name, container in containers do
+			for _, signal in container do
+				signal:DisconnectAll()
+			end
 
-		self._containers[name] = nil
+			containers[name] = nil
+		end
 	end
 
 	self._containers = nil :: any

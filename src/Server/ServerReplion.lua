@@ -358,12 +358,14 @@ function ServerReplion.Update(self: ServerReplion, path: Path | Dictionary, toUp
 			return nil
 		end
 
-		oldValue = self.Data
+		oldValue = table.clone(self.Data)
 
-		local newData: Dictionary = merge(self.Data, path :: Dictionary)
-		self.Data = newData
+		-- We can't use merge because we need to change the original data instead of a copy.
+		for key, value in path :: Dictionary do
+			self.Data[key] = if value == Utils.None then nil else value
+		end
 
-		newValue = newData
+		newValue = self.Data
 
 		for index, value in path :: Dictionary do
 			self._signals:Fire('onChange', index, value, oldValue[index])
