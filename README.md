@@ -65,7 +65,7 @@ local Replion = require(ReplicatedStorage.Packages.Replion)
 local ReplionClient = Replion.Client
 
 ReplionClient:AwaitReplion('Data', function(dataReplion)
-	print('Coins:', ReplionClient:Get('Coins'))
+	print('Coins:', dataReplion:Get('Coins'))
 
 	local connection = dataReplion:OnChange('Coins', function(newCoins: number, _oldCoins: number)
 		print('Coins:', newCoins)

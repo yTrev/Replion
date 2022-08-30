@@ -478,12 +478,16 @@ function ServerReplion.Insert<T>(self: ServerReplion, path: Path, value: T, inde
 
 	local array = data[last]
 	if type(array) == 'table' then
-		local targetIndex: number = if index then index else #array + 1
+		local newArray = table.clone(array)
+		local targetIndex: number = if index then index else #newArray + 1
 
-		table.insert(array, targetIndex, value)
+		table.insert(newArray, targetIndex, value)
+
+		data[last] = newArray
 
 		if not self._signals:IsPaused() then
 			self._signals:Fire('onArrayInsert', path, targetIndex, value)
+			self._signals:Fire('onChange', path, newArray, array)
 
 			Network.sendTo(
 				self._replicateTo,
@@ -529,11 +533,16 @@ function ServerReplion.Remove(self: ServerReplion, path: Path, index: number?): 
 
 	local array = data[last]
 	if type(array) == 'table' then
-		local targetIndex: number = if index then index else #array
-		local value = table.remove(array, targetIndex)
+		local newArray = table.clone(array)
+
+		local targetIndex: number = if index then index else #newArray
+		local value = table.remove(newArray, targetIndex)
+
+		data[last] = newArray
 
 		if not self._signals:IsPaused() then
 			self._signals:Fire('onArrayRemove', path, targetIndex, value)
+			self._signals:Fire('onChange', path, newArray, array)
 
 			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'r', Utils.getStringPath(path), index)
 		end
@@ -603,10 +612,12 @@ function ServerReplion.Clear(self: ServerReplion, path: Path)
 
 	local array = data[last]
 	if array then
+		local oldArray = table.clone(array)
+
 		table.clear(array)
 
 		if not self._signals:IsPaused() then
-			self._signals:Fire('onChange', path, data[last], array)
+			self._signals:Fire('onChange', path, array, oldArray)
 
 			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'c', Utils.getStringPath(path))
 		end

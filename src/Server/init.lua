@@ -157,7 +157,9 @@ function Server.new(config: ReplionConfig): ServerReplion
 
 	local waitList = waitingList[channel]
 	if waitList then
-		for index, info in waitList do
+		for i = #waitList, 1, -1 do
+			local info = waitList[i]
+
 			local thread = info.thread
 			local player = info.player
 
@@ -175,7 +177,7 @@ function Server.new(config: ReplionConfig): ServerReplion
 
 			task.spawn(thread, newReplion)
 
-			table.remove(waitList, index)
+			table.remove(waitList, i)
 		end
 	end
 
