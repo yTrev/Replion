@@ -13,23 +13,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Aftman
-        run: |
-          curl -L -o aftman-release.zip https://github.com/LPGhatguy/aftman/releases/download/v0.2.5/aftman-0.2.5-linux-x86_64.zip
-          unzip aftman-release.zip
-          ./aftman self-install
-          echo "$HOME/.aftman/bin" >> $GITHUB_PATH
+      - name: Setup Aftman
+        uses: ok-nick/setup-aftman@v0.3.0
 
-      - name: Tooling instalation
+      - name: Code quality
         run: |
-          aftman install --no-trust-check
-
-      - name: Lint
-        run: |
-          selene --config selene.toml ./src
-
-      - name: StyLua formatting
-        uses: JohnnyMorganz/stylua-action@1.0.0
-        with:
-          token: ${{ SECRETS.GITHUB_TOKEN }}
-          args: --check ./src
+          selene src/
+          stylua -c src/
