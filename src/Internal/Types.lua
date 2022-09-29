@@ -19,5 +19,6 @@ export type SerializedReplion = {
 
 export type ChangeCallback = (newValue: any, oldValue: any) -> ()
 export type ArrayCallback = (index: number, value: any) -> ()
+export type BeforeDestroy<T> = (replion: T, ...any) -> ()
 
 return nil

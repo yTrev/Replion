@@ -53,7 +53,7 @@ local waitingList: Cache<WaitList> = {}
 
 local timeouts: { [thread]: thread } = {}
 
-local function getCache<S>(cache: Cache<S>, channel: string): S
+local function getCache<T>(cache: Cache<T>, channel: string): T
 	local channelCache = cache[channel]
 
 	if not channelCache then
@@ -164,8 +164,19 @@ function Server.new(config: ReplionConfig): ServerReplion
 			local player = info.player
 
 			local replicateTo = newReplion._replicateTo
-			if player and type(replicateTo) == 'table' and not table.find(replicateTo, player) then
-				continue
+
+			-- Need to make sure that the player is in the replicateTo list
+			if player then
+				local isReplicating = false
+				if typeof(replicateTo) == 'Instance' then
+					isReplicating = replicateTo == player
+				elseif type(replicateTo) == 'table' then
+					isReplicating = table.find(replicateTo, player) ~= nil
+				end
+
+				if not isReplicating then
+					continue
+				end
 			end
 
 			local timeoutThread: thread? = timeouts[thread]
@@ -297,6 +308,11 @@ end
 	The callback will be called when the replion with the given id is added.
 ]=]
 function Server:AwaitReplion(channel: string, callback: (ServerReplion) -> (), timeout: number?)
+	local replion = self:GetReplion(channel)
+	if replion then
+		return callback(replion)
+	end
+
 	local waitList = getCache(waitingList, channel)
 	local newThread = coroutine.create(callback)
 
@@ -311,6 +327,11 @@ end
 	The callback will be called when the replion with the given id for the given player is added.
 ]=]
 function Server:AwaitReplionFor(player: Player, channel: string, callback: (ServerReplion) -> (), timeout: number?)
+	local replion = self:GetReplionFor(player, channel)
+	if replion then
+		return callback(replion)
+	end
+
 	local waitList = getCache(waitingList, channel)
 	local newThread = coroutine.create(callback)
 
@@ -380,6 +401,28 @@ if RunService:IsServer() then
 					end
 				elseif replicateTo == player then
 					replion:Destroy()
+				end
+			end
+		end
+
+		-- Clean up the waiting list for this player.
+		for _, waitList in waitingList do
+			for i = #waitList, 1, -1 do
+				local info = waitList[i]
+
+				local thread = info.thread
+				local waitingPlayer = info.player
+
+				if waitingPlayer == player then
+					if info.async then
+						task.cancel(thread)
+					else
+						task.spawn(thread)
+					end
+
+					timeouts[thread] = nil
+
+					table.remove(waitList, i)
 				end
 			end
 		end

@@ -9,6 +9,8 @@ local _T = require(script.Parent.Parent.Internal.Types)
 
 type Path = _T.Path
 type ExtensionCallback = _T.ExtensionCallback<ServerReplion>
+type BeforeDestroyCallback = _T.BeforeDestroy<ServerReplion>
+type ArrayCallback = _T.ArrayCallback
 type Dictionary = _T.Dictionary
 type ReplicateTo = Player | { Player } | 'All'
 
@@ -187,7 +189,7 @@ end
 
 	Connects to a signal that is fired when a value is inserted in the array at the given path.
 ]=]
-function ServerReplion.OnArrayInsert(self: ServerReplion, path: Path, callback: _T.ArrayCallback): _T.Connection?
+function ServerReplion.OnArrayInsert(self: ServerReplion, path: Path, callback: ArrayCallback): _T.Connection?
 	local onArrayInsert = self._signals:Get('onArrayInsert', path)
 	if onArrayInsert then
 		return onArrayInsert:Connect(callback)
@@ -203,7 +205,7 @@ end
 
 	Connects to a signal that is fired when a value is removed in the array at the given path.
 ]=]
-function ServerReplion.OnArrayRemove(self: ServerReplion, path: Path, callback: _T.ArrayCallback): _T.Connection?
+function ServerReplion.OnArrayRemove(self: ServerReplion, path: Path, callback: ArrayCallback): _T.Connection?
 	local onArrayRemove = self._signals:Get('onArrayRemove', path)
 	if onArrayRemove then
 		return onArrayRemove:Connect(callback)
@@ -271,11 +273,11 @@ function ServerReplion.Execute(self: ServerReplion, name: string, ...: any): ...
 	local extensions = assert(self.Extensions, tostring(self) .. ' has not extensions.')
 	local extension = assert(extensions[name], tostring(self) .. ' has no extension named ' .. name)
 
-	self._signals:Pause()
+	self._runningExtension = true
 
 	local result = table.pack(extension(self, ...))
 
-	self._signals:Resume()
+	self._runningExtension = false
 
 	-- We could optimize this by creating and ID for each function, but I don't think it's worth it.
 	Network.sendTo(self._replicateTo, 'RunExtension', self._packedId, name, ...)
@@ -303,13 +305,13 @@ function ServerReplion.Set<T>(self: ServerReplion, path: Path, newValue: T): T
 	local oldParentValue = if #pathTable > 1 then table.clone(currentValue) else nil
 	currentValue[key] = newValue
 
-	if not self._signals:IsPaused() then
-		if oldParentValue then
-			self._signals:FireParent('onChange', pathTable, currentValue, oldParentValue)
-		end
+	if oldParentValue then
+		self._signals:FireParent('onChange', pathTable, currentValue, oldParentValue)
+	end
 
-		self._signals:Fire('onChange', path, newValue, oldValue)
+	self._signals:Fire('onChange', path, newValue, oldValue)
 
+	if not self._runningExtension then
 		Network.sendTo(self._replicateTo, 'Set', self._packedId, Utils.getStringPath(path), newValue)
 	end
 
@@ -368,7 +370,7 @@ function ServerReplion.Update(self: ServerReplion, path: Path | Dictionary, toUp
 		newValue = self.Data
 
 		for index, value in path :: Dictionary do
-			self._signals:Fire('onChange', index, value, oldValue[index])
+			self._signals:Fire('onChange', index, Utils.getValue(value), oldValue[index])
 		end
 	else
 		local pathTable = Utils.getPathTable(path)
@@ -392,16 +394,21 @@ function ServerReplion.Update(self: ServerReplion, path: Path | Dictionary, toUp
 			self._signals:FireParent('onChange', pathTable, currentValue, oldParentValue)
 		end
 
+		local newLast = #pathTable + 1
 		for index, value in toUpdate do
-			self._signals:Fire('onChange', index, value, if oldValue then oldValue[index] else nil)
+			pathTable[newLast] = index
+
+			self._signals:Fire('onChange', pathTable, Utils.getValue(value), if oldValue then oldValue[index] else nil)
 		end
+
+		pathTable[newLast] = nil
 
 		newValue = currentValue[key]
 	end
 
-	if not self._signals:IsPaused() then
-		self._signals:Fire('onChange', path, newValue, oldValue)
+	self._signals:Fire('onChange', path, newValue, oldValue)
 
+	if not self._runningExtension then
 		-- Serialize the None symbol.
 		if toUpdate then
 			for index, value in toUpdate do
@@ -485,10 +492,10 @@ function ServerReplion.Insert<T>(self: ServerReplion, path: Path, value: T, inde
 
 		data[last] = newArray
 
-		if not self._signals:IsPaused() then
-			self._signals:Fire('onArrayInsert', path, targetIndex, value)
-			self._signals:Fire('onChange', path, newArray, array)
+		self._signals:Fire('onArrayInsert', path, targetIndex, value)
+		self._signals:Fire('onChange', path, newArray, array)
 
+		if not self._runningExtension then
 			Network.sendTo(
 				self._replicateTo,
 				'ArrayUpdate',
@@ -540,10 +547,10 @@ function ServerReplion.Remove(self: ServerReplion, path: Path, index: number?): 
 
 		data[last] = newArray
 
-		if not self._signals:IsPaused() then
-			self._signals:Fire('onArrayRemove', path, targetIndex, value)
-			self._signals:Fire('onChange', path, newArray, array)
+		self._signals:Fire('onArrayRemove', path, targetIndex, value)
+		self._signals:Fire('onChange', path, newArray, array)
 
+		if not self._runningExtension then
 			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'r', Utils.getStringPath(path), index)
 		end
 
@@ -574,15 +581,17 @@ end
 
 	Try to find the value in the array at the given path, and returns the index and value.
 ]=]
-function ServerReplion.Find(self: ServerReplion, path: Path, value: any): (number?, any)
-	local array: { any } = self:GetExpect(path)
-	local index: number? = table.find(array, value)
+function ServerReplion.Find<T>(self: ServerReplion, path: Path, value: T): (number?, T?)
+	local array: { any } = self:Get(path)
+	if array then
+		local index: number? = table.find(array, value)
 
-	if index then
-		return index, value
-	else
-		return
+		if index then
+			return index, value
+		end
 	end
+
+	return
 end
 
 --[=[
@@ -616,9 +625,9 @@ function ServerReplion.Clear(self: ServerReplion, path: Path)
 
 		table.clear(array)
 
-		if not self._signals:IsPaused() then
-			self._signals:Fire('onChange', path, array, oldArray)
+		self._signals:Fire('onChange', path, array, oldArray)
 
+		if not self._runningExtension then
 			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'c', Utils.getStringPath(path))
 		end
 	else

@@ -45,11 +45,15 @@ local function removeDuplicated(main: _T.Dictionary, other: _T.Dictionary): _T.D
 	return result
 end
 
+local function getValue(value)
+	return if value == None or value == SerializedNone then nil else value
+end
+
 local function merge(t: _T.Dictionary, t2: _T.Dictionary): _T.Dictionary
 	local result = table.clone(t)
 
 	for index, value in t2 do
-		result[index] = if value == None or value == SerializedNone then nil else value
+		result[index] = getValue(value)
 	end
 
 	return result
@@ -82,6 +86,8 @@ end
 local Utils = {
 	None = None,
 	SerializedNone = SerializedNone,
+
+	getValue = getValue,
 
 	getPathTable = getPathTable,
 	getFromPath = getFromPath,

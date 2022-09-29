@@ -8,7 +8,6 @@ type Container = { [string]: _T.Signal }
 
 type SignalProps = {
 	_containers: { [string]: Container }?,
-	_paused: boolean,
 }
 
 local Signals = {}
@@ -16,7 +15,6 @@ Signals.__index = Signals
 
 function Signals.new()
 	return setmetatable({
-		_paused = false,
 		_containers = {},
 	}, Signals)
 end
@@ -34,18 +32,6 @@ function Signals._getContainer(self: Signals, name: string): Container?
 	else
 		return nil
 	end
-end
-
-function Signals.Pause(self: Signals)
-	self._paused = true
-end
-
-function Signals.Resume(self: Signals)
-	self._paused = false
-end
-
-function Signals.IsPaused(self: Signals)
-	return self._paused
 end
 
 function Signals.Get(self: Signals, name: string, path: _T.Path): _T.Signal?
@@ -87,10 +73,6 @@ function Signals.GetSignals(self: Signals, name: string): Container?
 end
 
 function Signals.Fire(self: Signals, name: string, path: _T.Path, ...: any)
-	if self._paused then
-		return
-	end
-
 	local signalsContainer: Container? = self:GetSignals(name)
 	if signalsContainer then
 		local pathInString: string = Utils.getStringPath(path)
@@ -117,10 +99,6 @@ function Signals.Fire(self: Signals, name: string, path: _T.Path, ...: any)
 end
 
 function Signals.FireParent(self: Signals, name: string, path: _T.Path, ...: any)
-	if self._paused then
-		return
-	end
-
 	local signalsContainer: Container? = self:GetSignals(name)
 	if signalsContainer then
 		local pathTable: { string } = Utils.getPathTable(path)

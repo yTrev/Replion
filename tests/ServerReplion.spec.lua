@@ -413,7 +413,7 @@ return function()
 
 	describe('ServerReplion:Update', function()
 		local newReplion = ReplionServer.new({
-			Data = { Values = {}, ToBeRemoved = true },
+			Data = { Values = {}, ToBeRemoved = true, Other = {} },
 			Channel = 'Update',
 			ReplicateTo = 'All',
 		})
@@ -425,11 +425,21 @@ return function()
 				oldValues = oldValue
 			end)
 
+			local barNew, barOld
+			newReplion:OnChange('Other.Bar', function(newValue, oldValue)
+				barNew = newValue
+				barOld = oldValue
+			end)
+
 			local returnedValue = newReplion:Update({ Values = { 1, 2, 3 } })
+			local otherValue = newReplion:Update('Other', { Bar = false })
 
 			expect(newValues[1]).to.be.equal(returnedValue.Values[1])
 			expect(newValues[2]).to.be.equal(returnedValue.Values[2])
 			expect(newValues[3]).to.be.equal(returnedValue.Values[3])
+
+			expect(barNew).to.be.equal(otherValue.Bar)
+			expect(barOld).never.to.be.ok()
 
 			expect(oldValues[1]).to.be.equal(nil)
 			expect(oldValues[2]).to.be.equal(nil)
@@ -449,9 +459,16 @@ return function()
 		end)
 
 		it('should remove values with the None symbol', function()
+			local updatedValue
+
+			newReplion:OnChange('ToBeRemoved', function(newValue)
+				updatedValue = newValue
+			end)
+
 			local returnedValue = newReplion:Update({ ToBeRemoved = Replion.None })
 
 			expect(returnedValue.ToBeRemoved).to.be.never.ok()
+			expect(updatedValue).to.be.never.ok()
 		end)
 	end)
 
@@ -463,7 +480,7 @@ return function()
 			Extensions = script.Parent.Extensions,
 		})
 
-		it('should not call the events', function()
+		it('should call the events', function()
 			local wasCalled = false
 
 			newReplion:OnDescendantChange('Items', function()
@@ -472,7 +489,7 @@ return function()
 
 			newReplion:Execute('AddItem', 'Sword')
 
-			expect(wasCalled).to.be.equal(false)
+			expect(wasCalled).to.be.equal(true)
 		end)
 
 		it('should return the extensions values', function()

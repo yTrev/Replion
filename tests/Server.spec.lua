@@ -149,6 +149,24 @@ return function()
 			expect(fooReplion).to.be.ok()
 		end)
 
+		it('should be called if the Replion exists', function()
+			local fooReplion
+
+			ReplionServer.new({
+				Channel = 'AwaitReplionCreated',
+				Data = {},
+				ReplicateTo = 'All',
+			})
+
+			ReplionServer:AwaitReplion('AwaitReplionCreated', function(newReplion)
+				fooReplion = newReplion
+			end)
+
+			task.wait()
+
+			expect(fooReplion).to.be.ok()
+		end)
+
 		it('should never be called after timeout', function()
 			local fooReplion
 			ReplionServer:AwaitReplion('Timeout', function(newReplion)
@@ -186,6 +204,18 @@ return function()
 			})
 
 			task.wait()
+
+			expect(fooReplion).to.be.ok()
+		end)
+
+		it('should be called if the Replion exists', function()
+			ReplionServer.new({
+				Channel = 'WaitReplionCreated',
+				Data = {},
+				ReplicateTo = 'All',
+			})
+
+			local fooReplion = ReplionServer:WaitReplion('WaitReplionCreated', 2)
 
 			expect(fooReplion).to.be.ok()
 		end)

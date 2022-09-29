@@ -7,6 +7,7 @@ local Signals = require(script.Parent.Parent.Internal.Signals)
 
 type ChangeCallback = (newValue: any, oldValue: any) -> ()
 type ArrayCallback = (index: number, value: any) -> ()
+type BeforeDestroyCallback = _T.BeforeDestroy<ClientReplion>
 type ExtensionCallback = _T.ExtensionCallback<ClientReplion>
 type Dictionary = _T.Dictionary
 type Path = _T.Path
@@ -84,7 +85,7 @@ end
 
 	This event is fired when a Extension is executed. The callback will be called with the return values of the Extension.
 ]=]
-function ClientReplion.OnExecute(self: ClientReplion, name: string, callback: ExtensionCallback): _T.Connection?
+function ClientReplion.OnExecute(self: ClientReplion, name: string, callback: (...any) -> (...any)): _T.Connection?
 	assert(self.Extensions, '[Replion] - No Extensions found!')
 
 	local onExecute = self._signals:Get('onExecute', name)
@@ -154,7 +155,7 @@ end
 
 	Connects to a signal that is fired when a value is inserted in the array at the given path.
 ]=]
-function ClientReplion.OnArrayInsert(self: ClientReplion, path: Path, callback: _T.ArrayCallback): _T.Connection?
+function ClientReplion.OnArrayInsert(self: ClientReplion, path: Path, callback: ArrayCallback): _T.Connection?
 	local onArrayInsert = self._signals:Get('onArrayInsert', path)
 	if onArrayInsert then
 		return onArrayInsert:Connect(callback)
@@ -170,7 +171,7 @@ end
 
 	Connects to a signal that is fired when a value is removed in the array at the given path.
 ]=]
-function ClientReplion.OnArrayRemove(self: ClientReplion, path: Path, callback: _T.ArrayCallback): _T.Connection?
+function ClientReplion.OnArrayRemove(self: ClientReplion, path: Path, callback: ArrayCallback): _T.Connection?
 	local onArrayRemove = self._signals:Get('onArrayRemove', path)
 	if onArrayRemove then
 		return onArrayRemove:Connect(callback)
@@ -252,9 +253,14 @@ function ClientReplion.Update(self: ClientReplion, path: Path | Dictionary, toUp
 			self._signals:FireParent('onChange', pathTable, currentValue, oldParentValue)
 		end
 
+		local newLast = #pathTable + 1
 		for index, value in toUpdate :: Dictionary do
-			self._signals:Fire('onChange', index, value, oldValue[index])
+			pathTable[newLast] = index
+
+			self._signals:Fire('onChange', pathTable, Utils.getValue(value), oldValue[index])
 		end
+
+		pathTable[newLast] = nil
 
 		newValue = currentValue[key]
 	end
@@ -322,6 +328,19 @@ function ClientReplion.Remove(self: ClientReplion, path: Path, index: number?): 
 	return value
 end
 
+function ClientReplion.Find<T>(self: ClientReplion, path: Path, value: T): (number?, T?)
+	local array: { any } = self:Get(path)
+	if array then
+		local index: number? = table.find(array, value)
+
+		if index then
+			return index, value
+		end
+	end
+
+	return
+end
+
 --[=[
 	@private
 ]=]
@@ -344,11 +363,7 @@ function ClientReplion.Execute(self: ClientReplion, name: string, ...: any)
 	local extensions = assert(self.Extensions, '[Replion] - Is your Extension module in a shared instance?')
 	local extension = extensions[name]
 
-	self._signals:Pause()
-
 	local values = table.pack(extension(self, ...))
-
-	self._signals:Resume()
 
 	local onExecuteSignals = self._signals:GetSignals('onExecute')
 	if onExecuteSignals then
