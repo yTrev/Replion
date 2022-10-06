@@ -69,7 +69,7 @@ return function()
 			expect(function()
 				local newReplion = ReplionServer.new({
 					Data = { Foo = false },
-					Channel = 'BeforeDestroy',
+					Channel = 'Destroy',
 					ReplicateTo = 'All',
 				})
 
@@ -77,6 +77,18 @@ return function()
 
 				newReplion:Set('Foo', true)
 			end).to.throw("[Replion] You're trying to use a Replion that has been destroyed")
+		end)
+
+		it('should mark the Replion as destroyed', function()
+			local newReplion = ReplionServer.new({
+				Data = {},
+				Channel = 'Destroyed',
+				ReplicateTo = 'All',
+			})
+
+			newReplion:Destroy()
+
+			expect(newReplion.Destroyed).to.equal(true)
 		end)
 	end)
 

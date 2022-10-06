@@ -30,6 +30,8 @@ type ServerReplionProps = {
 	Tags: { string }?,
 	Extensions: { [string]: ExtensionCallback }?,
 
+	Destroyed: boolean?,
+
 	_replicateTo: ReplicateTo,
 	_extensionModule: ModuleScript?,
 	_beforeDestroy: _T.Signal,
@@ -65,6 +67,32 @@ local availableIds: { number } = {}
 
 --[=[
 	@type Dictionary { [any]: any }
+
+	@within ServerReplion
+]=]
+
+--[=[
+	@prop Channel string
+	@readonly
+
+	@within ServerReplion
+]=]
+
+--[=[
+	@prop Data { [any]: any }
+	@within ServerReplion
+]=]
+
+--[=[
+	@prop Destroyed boolean?
+	@readonly
+
+	@within ServerReplion
+]=]
+
+--[=[
+	@prop Tags { string }?
+	@readonly
 
 	@within ServerReplion
 ]=]
@@ -675,6 +703,8 @@ end
 	You cannot use a Replion after destroying it, this will throw an error.
 ]=]
 function ServerReplion.Destroy(self: ServerReplion)
+	self.Destroyed = true
+
 	self._beforeDestroy:Fire()
 	self._beforeDestroy:DisconnectAll()
 

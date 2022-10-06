@@ -11,11 +11,14 @@ type BeforeDestroyCallback = _T.BeforeDestroy<ClientReplion>
 type ExtensionCallback = _T.ExtensionCallback<ClientReplion>
 type Dictionary = _T.Dictionary
 type Path = _T.Path
+type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
 
 type ClientReplionProps = {
 	Data: Dictionary,
 	Tags: _T.Tags,
 	Extensions: { [string]: ExtensionCallback }?,
+
+	Destroyed: boolean?,
 
 	_channel: string,
 	_signals: Signals.Signals,
@@ -36,6 +39,30 @@ local merge = Utils.merge
 
 --[=[
 	@type ExtensionCallback (replion: ClientReplion, ...any) -> ()
+	@within ClientReplion
+]=]
+
+--[=[
+	@prop Extensions { [string]: (...any) -> (...any) }?
+	@readonly
+	@within ClientReplion
+]=]
+
+--[=[
+	@prop Destroyed boolean?
+	@readonly
+	@within ClientReplion
+]=]
+
+--[=[
+	@prop Data { [any]: any }
+	@readonly
+	@within ClientReplion
+]=]
+
+--[=[
+	@prop Tags { string }?
+	@readonly
 	@within ClientReplion
 ]=]
 
@@ -119,7 +146,6 @@ function ClientReplion.OnChange(self: ClientReplion, path: Path, callback: Chang
 	end
 end
 
-type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
 --[=[
 	```lua
 	-- On the server
@@ -376,6 +402,8 @@ function ClientReplion.Execute(self: ClientReplion, name: string, ...: any)
 end
 
 function ClientReplion.Destroy(self: ClientReplion)
+	self.Destroyed = true
+
 	self._beforeDestroy:Fire()
 	self._beforeDestroy:DisconnectAll()
 

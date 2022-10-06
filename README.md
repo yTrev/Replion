@@ -11,7 +11,7 @@
 Add Replion as a dependency to your `wally.toml` file:
 
 ```
-Replion = "ytrev/replion@1.0.0"
+Replion = "ytrev/replion@1.0.0-rc1"
 ```
 
 # Usage
@@ -40,12 +40,12 @@ end
 
 Players.PlayerAdded:Connect(createReplion)
 
-for _: number, player: Player in ipairs(Players:GetPlayers()) do
-	createReplion(player)
+for _, player: Player in Players:GetPlayers() do
+	task.spawn(createReplion, player)
 end
 
 while true do
-	for _: number, player: Player in ipairs(Players:GetPlayers()) do
+	for _, player: Player in Players:GetPlayers() do
 		local playerReplion = ReplionService:GetReplionFor(player, 'Data')
 		if playerReplion then
 			playerReplion:Increase('Coins', 10)
