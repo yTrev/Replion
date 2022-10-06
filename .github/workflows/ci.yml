@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Aftman
+        uses: ok-nick/setup-aftman@v0.3.0
+
+      - name: Code quality
+        run: |
+          selene src/
+          stylua -c src/

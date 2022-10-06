@@ -1,14 +1,12 @@
 [package]
 name = "ytrev/replion"
 description = "A lightweight State Replicator."
-version = "0.3.4"
+version = "1.0.0-rc1"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 authors = ["yTrev"]
-exclude = ["Packages", ".moonwave", "build", "DevPackages", "tests"]
+exclude = ["**"]
+include = ["src", "src/**", "wally.toml", "default.project.json"]
 
 [dependencies]
-t = "osyrisrblx/t@3.0.0"
-Promise = "evaera/promise@4.0.0"
-llama = "freddylist/llama@1.1.1"
-Signal = "sleitnick/signal@1.1.0"
+Signal = "sleitnick/signal@1.2.1"

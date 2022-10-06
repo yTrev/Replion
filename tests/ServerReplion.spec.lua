@@ -1,411 +1,513 @@
+--!nonstrict
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
+local Replion = require(ReplicatedStorage.Packages.Replion)
 
-local Packages = ReplicatedStorage:FindFirstChild('Packages')
-local Replion = Packages.Replion
-
-local ReplionService = require(Replion)
-local Network = require(Replion.ReplionService.Network)
-Network.Testing = true
+local ReplionServer = Replion.Server
 
 return function()
-	describe('Replion.new', function()
-		it('should error if invalid params are passed', function()
-			expect(function()
-				ReplionService.new({})
-			end).to.be.throw()
-		end)
+	describe('ServerReplion.new', function()
+		local newReplion = ReplionServer.new({
+			Data = {},
+			Channel = 'serverNew',
+			ReplicateTo = 'All',
+		})
 
-		it('should create a new Replion', function()
-			local newReplion = ReplionService.new({
-				Player = { Name = 'John', UserId = 1 },
-				Name = 'Test',
-				Data = {
-					test = 'test',
-					test2 = 'test2',
-				},
-			})
-
+		it('should create a new ReplionServer', function()
 			expect(newReplion).to.be.ok()
+		end)
 
-			newReplion:Destroy()
+		it('should error if no Channel is provided', function()
+			expect(function()
+				ReplionServer.new({
+					Data = {},
+					ReplicateTo = 'All',
+				})
+			end).to.throw()
 		end)
 	end)
 
-	local basePlayer = {
-		Name = 'John',
-		UserId = 1,
-	}
-
-	local baseReplion = ReplionService.new({
-		Player = basePlayer,
-		Name = 'Base',
-		Data = {
-			Coins = 0,
-		},
-
-		Extensions = {
-			AddCoins = function(replion, amount: number)
-				replion:Increase('Coins', amount)
-			end,
-		},
-	})
-
-	describe('Replion:Execute', function()
-		it('should error if the replion does not have extensions', function()
-			local replionWithoutExtensions = ReplionService.new({
-				Player = basePlayer,
-				Name = 'NoExtensions',
-				Data = {},
-			})
-
-			expect(function()
-				replionWithoutExtensions:Execute('AddCoins', 100)
-			end).to.be.throw('has no extensions')
-
-			replionWithoutExtensions:Destroy()
-		end)
-
-		it('should error if the replion does not have an extension', function()
-			expect(function()
-				baseReplion:Execute('RemoveCoins', 100)
-			end).to.be.throw('has no extension named "RemoveCoins"')
-		end)
-
-		it('should execute the extension', function()
-			local coins = baseReplion:Get('Coins')
-
-			baseReplion:Execute('AddCoins', 100)
-
-			expect(baseReplion:Get('Coins')).to.be.equal(coins + 100)
-		end)
-
-		it('Replion:Write should be valid', function()
-			expect(baseReplion.Write).to.be.an('function')
-		end)
-	end)
-
-	describe('Replion:OnUpdate', function()
-		local newReplion = ReplionService.new({
-			Player = basePlayer,
-			Name = 'OnUpdate',
-			Data = {
-				A = 20,
-				Array = {},
-			},
+	describe('ServerReplion:_serialize', function()
+		local newReplion = ReplionServer.new({
+			Data = {},
+			Channel = '_serialize',
+			ReplicateTo = 'All',
+			Tags = { 'Foo' },
 		})
 
-		it('should error if the path is not valid', function()
-			expect(function()
-				baseReplion:OnUpdate(1)
-			end).to.be.throw('bad type for union')
-		end)
+		it('should serialize the Replion', function()
+			local serialized = newReplion:_serialize()
 
-		it('should error if the callback is not a function', function()
-			expect(function()
-				baseReplion:OnUpdate('foo')
-			end).to.be.throw('function expected')
-		end)
-
-		it('should be called when the replion is updated', function()
-			local isUpdated
-			newReplion:OnUpdate('A', function()
-				isUpdated = true
-			end)
-
-			newReplion:Set('A', 30)
-
-			expect(isUpdated).to.be.ok()
-		end)
-
-		it('when a array is updated it whould pass the index and the value', function()
-			local index, value
-			newReplion:OnUpdate('Array', function(_action, i, v)
-				index = i
-				value = v
-			end)
-
-			newReplion:Insert('Array', 'foo')
-
-			expect(index).to.be.equal(1)
-			expect(value).to.be.equal('foo')
+			expect(serialized).to.be.a('table')
+			expect(serialized.Channel).to.be.equal('_serialize')
+			expect(serialized.Data).to.be.a('table')
+			expect(serialized.Tags).to.be.a('table')
+			expect(serialized.Id).to.be.a('string')
 		end)
 	end)
 
-	describe('Replion:BeforeDestroy', function()
-		it('should error if the callback is not a function', function()
-			expect(function()
-				baseReplion:BeforeDestroy('foo')
-			end).to.be.throw('function expected')
-		end)
-
-		it('should be called before the replion is destroyed', function()
-			local newReplion = ReplionService.new({
-				Player = basePlayer,
-				Name = 'BeforeDestroy',
+	describe('ServerReplion:BeforeDestroy', function()
+		it('should fire when the Replion is destroyed', function()
+			local newReplion = ReplionServer.new({
 				Data = {},
+				Channel = 'BeforeDestroy',
+				ReplicateTo = 'All',
 			})
 
-			local isDestroyed
-
+			local fired = false
 			newReplion:BeforeDestroy(function()
-				isDestroyed = newReplion.Destroyed
+				fired = true
 			end)
 
 			newReplion:Destroy()
 
-			expect(isDestroyed).never.to.be.ok()
+			expect(fired).to.equal(true)
 		end)
 	end)
 
-	describe('Replion:Set', function()
-		it('should error if the path is not valid', function()
+	describe('ServerReplion:Destroy', function()
+		it('should error when using a destroyed replion', function()
 			expect(function()
-				baseReplion:Set(1, 'foo')
-			end).to.be.throw('bad type for union')
+				local newReplion = ReplionServer.new({
+					Data = { Foo = false },
+					Channel = 'Destroy',
+					ReplicateTo = 'All',
+				})
+
+				newReplion:Destroy()
+
+				newReplion:Set('Foo', true)
+			end).to.throw("[Replion] You're trying to use a Replion that has been destroyed")
 		end)
 
-		it('should set the value', function()
-			local newReplion = ReplionService.new({
-				Player = basePlayer,
-				Name = 'Set',
-				Data = {
-					A = 20,
-				},
+		it('should mark the Replion as destroyed', function()
+			local newReplion = ReplionServer.new({
+				Data = {},
+				Channel = 'Destroyed',
+				ReplicateTo = 'All',
 			})
 
-			newReplion:Set('A', 30)
+			newReplion:Destroy()
 
-			expect(newReplion:Get('A')).to.be.equal(30)
+			expect(newReplion.Destroyed).to.equal(true)
 		end)
 	end)
 
-	describe('Replion:Update', function()
-		it('should error if the path is not valid', function()
-			expect(function()
-				baseReplion:Update(1, 'foo')
-			end).to.be.throw('bad type for union')
-		end)
-
-		it('should update the values', function()
-			local newReplion = ReplionService.new({
-				Player = basePlayer,
-				Name = 'Update',
-				Data = {
-					Foo = {
-						Bar = true,
-					},
-				},
-			})
-
-			newReplion:Update('Foo', {
-				Bar = false,
-				Value = 20,
-			})
-
-			expect(newReplion:Get('Foo.Bar')).to.be.equal(false)
-			expect(newReplion:Get('Foo.Value')).to.be.equal(20)
-		end)
-	end)
-
-	describe('Replion:Get', function()
-		it('should error if the path is not valid', function()
-			expect(function()
-				baseReplion:Get(1)
-			end).to.be.throw('bad type for union')
-		end)
-
-		it('should get the value', function()
-			local newReplion = ReplionService.new({
-				Player = basePlayer,
-				Name = 'Get',
-				Data = {
-					A = 20,
-				},
-			})
-
-			expect(newReplion:Get('A')).to.be.equal(20)
-		end)
-	end)
-
-	describe('Replion:GetExpect', function()
-		local newReplion = ReplionService.new({
-			Player = basePlayer,
-			Name = 'GetExpect',
-			Data = {
-				A = 20,
-			},
+	describe('ServerReplion:Get', function()
+		local newReplion = ReplionServer.new({
+			Data = { Coins = 20, Other = { Value = {} } },
+			Channel = 'Get',
+			ReplicateTo = 'All',
 		})
 
-		it('should error if the path is not valid', function()
-			expect(function()
-				newReplion:GetExpect(1)
-			end).to.be.throw('bad type for union')
+		it('should return the value of the given key', function()
+			expect(newReplion:Get('Coins')).to.equal(20)
+			expect(newReplion:Get('Other.Value')).to.be.equal(newReplion.Data.Other.Value)
+			expect(newReplion:Get('Invalid')).never.to.be.ok()
 		end)
 
-		it('should get the value', function()
-			expect(newReplion:GetExpect('A')).to.be.equal(20)
+		it('should support table paths', function()
+			expect(newReplion:Get({ 'Other', 'Value' })).to.be.equal(newReplion.Data.Other.Value)
+		end)
+	end)
+
+	describe('ServerReplion:GetExpect', function()
+		local newReplion = ReplionServer.new({
+			Data = { Coins = 20, Other = { Value = {} } },
+			Channel = 'GetExpect',
+			ReplicateTo = 'All',
+		})
+
+		it('should return the value of the given key', function()
+			expect(newReplion:GetExpect('Coins')).to.equal(20)
+			expect(newReplion:GetExpect('Other.Value')).to.be.equal(newReplion.Data.Other.Value)
 		end)
 
 		it('should error if the value does not exist', function()
 			expect(function()
-				newReplion:GetExpect('B')
-			end).to.throw("isn't a valid path!")
+				newReplion:GetExpect('Invalid')
+			end).to.throw()
 		end)
 
-		it('should support custom errors', function()
-			expect(function()
-				newReplion:GetExpect('B', 'B does not exist')
-			end).to.throw('B does not exist')
+		it('should support table paths', function()
+			expect(newReplion:Get({ 'Other', 'Value' })).to.be.equal(newReplion.Data.Other.Value)
 		end)
 	end)
 
-	describe('Replion:Increase', function()
-		it('should error if the path is not valid', function()
-			expect(function()
-				baseReplion:Increase(1, 10)
-			end).to.be.throw('bad type for union')
+	describe('ServerReplion:Set', function()
+		local newReplion = ReplionServer.new({
+			Data = { Coins = 20, Other = { Value = {} } },
+			Channel = 'Set',
+			ReplicateTo = 'All',
+		})
+
+		it('should set the value of the given key', function()
+			newReplion:Set('Coins', 30)
+
+			expect(newReplion:Get('Coins')).to.equal(30)
 		end)
 
-		it('should increase the value', function()
-			local newReplion = ReplionService.new({
-				Player = basePlayer,
-				Name = 'Increase',
-				Data = {
-					A = 20,
-				},
-			})
+		it('should call the OnChange signal', function()
+			local called = false
 
-			newReplion:Increase('A', 10)
+			newReplion:OnChange('Coins', function()
+				called = true
+			end)
 
-			expect(newReplion:Get('A')).to.be.equal(30)
-		end)
-	end)
+			newReplion:Set('Coins', 50)
 
-	describe('Replion:Decrease', function()
-		it('should error if the path is not valid', function()
-			expect(function()
-				baseReplion:Decrease(1, 10)
-			end).to.be.throw('bad type for union')
+			expect(called).to.equal(true)
 		end)
 
-		it('should decrease the value', function()
-			local newReplion = ReplionService.new({
-				Player = basePlayer,
-				Name = 'Decrease',
-				Data = {
-					A = 20,
-				},
-			})
+		it('should call the OnDescendatChange signal', function()
+			local called = false
 
-			newReplion:Decrease('A', 10)
+			newReplion:OnDescendantChange('Other', function()
+				called = true
+			end)
 
-			expect(newReplion:Get('A')).to.be.equal(10)
+			newReplion:Set('Other.Value', { Foo = true })
+
+			expect(called).to.equal(true)
 		end)
 	end)
 
-	describe('Replion:Insert', function()
-		it('should error if the path is not valid', function()
-			expect(function()
-				baseReplion:Insert(1, 'foo')
-			end).to.be.throw('bad type for union')
+	describe('ServerReplion:SetReplicateTo', function()
+		local newReplion = ReplionServer.new({
+			Data = { Coins = 20, Other = { Value = {} } },
+			Channel = 'SetReplicateTo',
+			ReplicateTo = 'All',
+		})
+
+		it('should change the ReplicateTo', function()
+			local newReplicateTo = {}
+
+			newReplion:SetReplicateTo(newReplicateTo)
+
+			expect(newReplion._replicateTo).to.be.equal(newReplicateTo)
 		end)
 
-		it('should insert the value', function()
-			local newReplion = ReplionService.new({
-				Player = basePlayer,
-				Name = 'Insert',
-				Data = {
-					Array = {},
-				},
-			})
-
-			newReplion:Insert('Array', 'foo')
-
-			local array = newReplion:Get('Array')
-
-			expect(array[1]).to.be.equal('foo')
+		it('should error if the ReplicateTo is not valid', function()
+			expect(function()
+				newReplion:SetReplicateTo('Invalid')
+			end).to.throw()
 		end)
 	end)
 
-	describe('Replion:Remove', function()
-		it('should error if the path is not valid', function()
-			expect(function()
-				baseReplion:Remove(1, 'foo')
-			end).to.be.throw('bad type for union')
+	describe('ServerReplion:Clear', function()
+		local newReplion = ReplionServer.new({
+			Data = { Values = { 1, 2, 3 } },
+			Channel = 'Clear',
+			ReplicateTo = 'All',
+		})
+
+		it('should clear the array', function()
+			newReplion:Clear('Values')
+
+			local newValues = newReplion:Get('Values')
+			expect(#newValues).to.equal(0)
 		end)
 
-		it('should remove the value', function()
-			local newReplion = ReplionService.new({
-				Player = basePlayer,
-				Name = 'Remove',
-				Data = {
-					Array = { 'foo', 'bar' },
-				},
-			})
+		it('should call the OnChange signal', function()
+			local called = false
 
-			local v = newReplion:Remove('Array', 1)
+			newReplion:Set('Values', { 1, 2, 3 })
 
-			expect(v).to.be.equal('foo')
-		end)
-	end)
+			newReplion:OnChange('Values', function()
+				called = true
+			end)
 
-	describe('Replion:Clear', function()
-		it('should error if the path is not valid', function()
-			expect(function()
-				baseReplion:Clear(1)
-			end).to.be.throw('bad type for union')
-		end)
+			newReplion:Clear('Values')
 
-		it('should clear the value', function()
-			local newReplion = ReplionService.new({
-				Player = basePlayer,
-				Name = 'Clear',
-				Data = {
-					Array = { 'foo', 'bar' },
-				},
-			})
-
-			newReplion:Clear('Array')
-
-			local array = newReplion:Get('Array')
-
-			expect(#array).to.be.equal(0)
+			expect(called).to.equal(true)
 		end)
 	end)
 
-	describe('Replion:Destroy', function()
-		it('should destroy the replion', function()
-			local newReplion = ReplionService.new({
-				Player = basePlayer,
-				Name = 'Destroy',
-				Data = {},
-			})
+	describe('ServerReplion:Increase', function()
+		local newReplion = ReplionServer.new({
+			Data = { Coins = 20 },
+			Channel = 'Increase',
+			ReplicateTo = 'All',
+		})
 
-			newReplion:Destroy()
+		it('should increase the value of the given key', function()
+			newReplion:Increase('Coins', 10)
 
-			expect(newReplion.Destroyed).to.be.ok()
+			expect(newReplion:Get('Coins')).to.equal(30)
 		end)
 
-		it('should be garbage collected', function()
-			local ref = setmetatable({}, { __mode = 'v' })
+		it('should error if the value is not a number', function()
+			expect(function()
+				newReplion:Increase('Coins', 'Invalid')
+			end).to.throw()
+		end)
+	end)
 
-			do
-				ref[1] = ReplionService.new({
-					Player = basePlayer,
-					Name = 'Destroy',
-					Data = {},
-				})
+	describe('ServerReplion:Insert', function()
+		local newReplion = ReplionServer.new({
+			Data = { Values = {} },
+			Channel = 'Insert',
+			ReplicateTo = 'All',
+		})
 
-				ref[1]:Destroy()
-			end
+		it('should insert the value in the given array', function()
+			local fooIndex, fooValue = newReplion:Insert('Values', 'Foo')
+			local barIndex, barValue = newReplion:Insert('Values', 'Bar', 1)
 
-			local start: number = os.clock()
+			local newValues = newReplion:Get('Values')
 
-			repeat
-				task.wait()
-			until ref[1] == nil or os.clock() > start + 5
+			expect(fooIndex).to.be.equal(1)
+			expect(fooValue).to.be.equal('Foo')
 
-			expect(ref[1]).to.equal(nil)
+			expect(barIndex).to.be.equal(1)
+			expect(barValue).to.be.equal('Bar')
+
+			expect(newValues[1]).to.be.equal('Bar')
+			expect(newValues[2]).to.be.equal('Foo')
+		end)
+	end)
+
+	describe('ServerReplion:OnArrayInsert', function()
+		local newReplion = ReplionServer.new({
+			Data = { Values = { 1 } },
+			Channel = 'OnArrayInsert',
+			ReplicateTo = 'All',
+		})
+
+		it('should call the callback when a value is added', function()
+			local changes = {}
+			newReplion:OnArrayInsert('Values', function(index: number, value: any)
+				table.insert(changes, { index = index, value = value })
+			end)
+
+			newReplion:Insert('Values', 4)
+
+			expect(changes[1].index).to.be.equal(2)
+			expect(changes[1].value).to.be.equal(4)
+
+			newReplion:Insert('Values', 6, 1)
+
+			expect(changes[2].index).to.be.equal(1)
+			expect(changes[2].value).to.be.equal(6)
+
+			expect(newReplion.Data.Values[1]).to.be.equal(6)
+			expect(newReplion.Data.Values[2]).to.be.equal(1)
+			expect(newReplion.Data.Values[3]).to.be.equal(4)
+		end)
+	end)
+
+	describe('ServerReplion:Remove', function()
+		local newReplion = ReplionServer.new({
+			Data = { Values = { 1, 2, 3 } },
+			Channel = 'Remove',
+			ReplicateTo = 'All',
+		})
+
+		it('should remove the value in the given array', function()
+			local oneValue = newReplion:Remove('Values', 1)
+			local threeValue = newReplion:Remove('Values')
+
+			local newValues = newReplion:Get('Values')
+
+			expect(oneValue).to.be.equal(1)
+			expect(threeValue).to.be.equal(3)
+
+			expect(#newValues).to.be.equal(1)
+			expect(newValues[1]).to.be.equal(2)
+		end)
+	end)
+
+	describe('ServerReplion:OnArrayRemove', function()
+		local newReplion = ReplionServer.new({
+			Data = { Values = { 1, 2, 3, 4 } },
+			Channel = 'OnArrayRemove',
+			ReplicateTo = 'All',
+		})
+
+		it('should call the callback when a value is removed', function()
+			local changes = {}
+			newReplion:OnArrayRemove('Values', function(index: number, value: any)
+				table.insert(changes, { index = index, value = value })
+			end)
+
+			local fourIndex = newReplion:Remove('Values', 4)
+
+			expect(changes[1].index).to.be.equal(4)
+			expect(changes[1].value).to.be.equal(fourIndex)
+
+			local firstIndex = newReplion:Remove('Values', 1)
+
+			expect(changes[2].index).to.be.equal(1)
+			expect(changes[2].value).to.be.equal(firstIndex)
+
+			expect(newReplion.Data.Values[1]).to.be.equal(2)
+			expect(newReplion.Data.Values[2]).to.be.equal(3)
+		end)
+	end)
+
+	describe('ServerReplion:OnChange', function()
+		it('should call the callback when the value changes', function()
+			local newReplion = ReplionServer.new({
+				Data = { Value = 0 },
+				Channel = 'OnChange',
+				ReplicateTo = 'All',
+			})
+
+			local new, old
+
+			newReplion:OnChange('Value', function(newValue, oldValue)
+				new, old = newValue, oldValue
+			end)
+
+			newReplion:Set('Value', 10)
+
+			expect(new).to.be.equal(10)
+			expect(old).to.be.equal(0)
+		end)
+
+		it('should call the callback if an value inside is changed', function()
+			local newReplion = ReplionServer.new({
+				Data = { Value = { Test = true } },
+				Channel = 'OnChangeTable',
+				ReplicateTo = 'All',
+			})
+
+			local called: number = 0
+
+			newReplion:OnChange('Value', function()
+				called += 1
+			end)
+
+			newReplion:Set('Value.Test', false)
+
+			expect(called).to.be.equal(1)
+
+			newReplion:Set('Value.Test', { Foo = false })
+
+			expect(called).to.be.equal(2)
+
+			newReplion:Set('Value.Test.Foo', true)
+
+			expect(called).to.be.equal(2)
+		end)
+	end)
+
+	describe('ServerReplion:OnDescendantChange', function()
+		local newReplion = ReplionServer.new({
+			Data = { Values = { A = true, B = false, C = { D = true } } },
+			Channel = 'OnDescendantChanged',
+			ReplicateTo = 'All',
+		})
+
+		it('should call the callback when the value changes', function()
+			local changes = {}
+
+			newReplion:OnDescendantChange('Values', function(path, newValue, oldValue)
+				table.insert(changes, { path = path, newValue = newValue, oldValue = oldValue })
+			end)
+
+			newReplion:Set('Values.A', false)
+			newReplion:Set('Values.B', true)
+			newReplion:Set('Values.C.D', false)
+
+			expect(changes[1].newValue).to.be.equal(false)
+			expect(changes[1].oldValue).to.be.equal(true)
+			expect(table.concat(changes[1].path, '.')).to.be.equal('Values.A')
+
+			expect(changes[2].newValue).to.be.equal(true)
+			expect(changes[2].oldValue).to.be.equal(false)
+			expect(table.concat(changes[2].path, '.')).to.be.equal('Values.B')
+
+			expect(changes[3].newValue).to.be.equal(false)
+			expect(changes[3].oldValue).to.be.equal(true)
+			expect(table.concat(changes[3].path, '.')).to.be.equal('Values.C.D')
+		end)
+	end)
+
+	describe('ServerReplion:Update', function()
+		local newReplion = ReplionServer.new({
+			Data = { Values = {}, ToBeRemoved = true, Other = {} },
+			Channel = 'Update',
+			ReplicateTo = 'All',
+		})
+
+		it('should call the OnChange event', function()
+			local newValues, oldValues
+			newReplion:OnChange('Values', function(newValue, oldValue)
+				newValues = newValue
+				oldValues = oldValue
+			end)
+
+			local barNew, barOld
+			newReplion:OnChange('Other.Bar', function(newValue, oldValue)
+				barNew = newValue
+				barOld = oldValue
+			end)
+
+			local returnedValue = newReplion:Update({ Values = { 1, 2, 3 } })
+			local otherValue = newReplion:Update('Other', { Bar = false })
+
+			expect(newValues[1]).to.be.equal(returnedValue.Values[1])
+			expect(newValues[2]).to.be.equal(returnedValue.Values[2])
+			expect(newValues[3]).to.be.equal(returnedValue.Values[3])
+
+			expect(barNew).to.be.equal(otherValue.Bar)
+			expect(barOld).never.to.be.ok()
+
+			expect(oldValues[1]).to.be.equal(nil)
+			expect(oldValues[2]).to.be.equal(nil)
+			expect(oldValues[3]).to.be.equal(nil)
+		end)
+
+		it('should set new values', function()
+			local returnedValue = newReplion:Update({ Coins = 20, Gems = 100, IsVip = true })
+
+			expect(returnedValue.Coins).to.be.equal(20)
+			expect(returnedValue.Gems).to.be.equal(100)
+			expect(returnedValue.IsVip).to.be.equal(true)
+
+			expect(newReplion.Data.Coins).to.be.equal(returnedValue.Coins)
+			expect(newReplion.Data.Gems).to.be.equal(returnedValue.Gems)
+			expect(newReplion.Data.IsVip).to.be.equal(returnedValue.IsVip)
+		end)
+
+		it('should remove values with the None symbol', function()
+			local updatedValue
+
+			newReplion:OnChange('ToBeRemoved', function(newValue)
+				updatedValue = newValue
+			end)
+
+			local returnedValue = newReplion:Update({ ToBeRemoved = Replion.None })
+
+			expect(returnedValue.ToBeRemoved).to.be.never.ok()
+			expect(updatedValue).to.be.never.ok()
+		end)
+	end)
+
+	describe('ServerReplion:Execute', function()
+		local newReplion = ReplionServer.new({
+			Data = { Items = {} },
+			Channel = 'Execute',
+			ReplicateTo = 'All',
+			Extensions = script.Parent.Extensions,
+		})
+
+		it('should call the events', function()
+			local wasCalled = false
+
+			newReplion:OnDescendantChange('Items', function()
+				wasCalled = true
+			end)
+
+			newReplion:Execute('AddItem', 'Sword')
+
+			expect(wasCalled).to.be.equal(true)
+		end)
+
+		it('should return the extensions values', function()
+			local wasAdded = newReplion:Execute('AddItem', 'Bow')
+
+			expect(wasAdded).to.be.equal(true)
 		end)
 	end)
 end

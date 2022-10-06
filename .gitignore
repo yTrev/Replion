@@ -1,5 +1,8 @@
-/build
-/DevPackages
-/Packages
-/roblox.toml
-/globalTypes.d.lua
+build
+DevPackages
+Packages
+roblox.yml
+sourcemap.json
+old_*
+.luaurc
+.vscode
