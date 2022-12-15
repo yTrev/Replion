@@ -5,6 +5,9 @@ local _T = require(script.Parent.Parent.Internal.Types)
 
 local Signals = require(script.Parent.Parent.Internal.Signals)
 
+-- Unsigned short
+local ID_PACK: string = 'H'
+
 type ChangeCallback = (newValue: any, oldValue: any) -> ()
 type ArrayCallback = (index: number, value: any) -> ()
 type BeforeDestroyCallback = _T.BeforeDestroy<ClientReplion>
@@ -16,10 +19,9 @@ type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescend
 type ClientReplionProps = {
 	Data: Dictionary,
 	Tags: _T.Tags,
-	Extensions: { [string]: ExtensionCallback }?,
-
 	Destroyed: boolean?,
 
+	_extensions: { { any } },
 	_channel: string,
 	_signals: Signals.Signals,
 	_beforeDestroy: _T.Signal,
@@ -39,12 +41,6 @@ local merge = Utils.merge
 
 --[=[
 	@type ExtensionCallback (replion: ClientReplion, ...any) -> ()
-	@within ClientReplion
-]=]
-
---[=[
-	@prop Extensions { [string]: (...any) -> (...any) }?
-	@readonly
 	@within ClientReplion
 ]=]
 
@@ -75,23 +71,36 @@ local ClientReplion = {}
 ClientReplion.__index = ClientReplion
 
 function ClientReplion.new(serializedReplion: _T.SerializedReplion): ClientReplion
-	local extensions
-	if serializedReplion.Extensions then
-		extensions = require(serializedReplion.Extensions) :: any
+	local extensions = {}
+
+	if serializedReplion[5] then
+		local loadedExtensions = require(serializedReplion[5]) :: any
+
+		local orderedExtensions = {}
+		for name, extension in loadedExtensions :: any do
+			table.insert(orderedExtensions, { name, extension })
+		end
+
+		-- Sort extensions by name, so that they are always initialized in the same order
+		table.sort(orderedExtensions, function(a, b)
+			return a[1] < b[1]
+		end)
+
+		for id, extension in orderedExtensions do
+			extensions[id] = extension
+		end
 	end
 
-	local self: ClientReplion = setmetatable({
-		Data = serializedReplion.Data,
-		Tags = serializedReplion.Tags,
-		Extensions = extensions,
+	return setmetatable({
+		Data = serializedReplion[3],
+		Tags = serializedReplion[4],
 
-		_channel = serializedReplion.Channel,
+		_extensions = extensions,
+		_channel = serializedReplion[2],
 
 		_beforeDestroy = Signal.new(),
 		_signals = Signals.new(),
 	}, ClientReplion)
-
-	return self
 end
 
 function ClientReplion.__tostring(self: ClientReplion)
@@ -113,8 +122,6 @@ end
 	This event is fired when a Extension is executed. The callback will be called with the return values of the Extension.
 ]=]
 function ClientReplion.OnExecute(self: ClientReplion, name: string, callback: (...any) -> (...any)): _T.Connection?
-	assert(self.Extensions, '[Replion] - No Extensions found!')
-
 	local onExecute = self._signals:Get('onExecute', name)
 	if onExecute then
 		return onExecute:Connect(callback)
@@ -216,7 +223,7 @@ end
 ]=]
 function ClientReplion.Get(self: ClientReplion, path: Path?): any
 	if path then
-		local data: any, last = Utils.getFromPath(path :: Path, self.Data)
+		local data: any, last = Utils.getFromPath(path, self.Data)
 
 		return data[last]
 	else
@@ -229,7 +236,7 @@ end
 ]=]
 function ClientReplion.Set<T>(self: ClientReplion, path: Path, newValue: T): T
 	local pathTable = Utils.getPathTable(path)
-	local currentValue, key = Utils.getFromPath(pathTable, self.Data)
+	local currentValue, key = Utils.getFromPath(path, self.Data)
 
 	local oldParentValue = if #pathTable > 1 then table.clone(currentValue) else nil
 
@@ -259,12 +266,12 @@ function ClientReplion.Update(self: ClientReplion, path: Path | Dictionary, toUp
 
 		newValue = newData
 
-		for index, value in path :: Dictionary do
-			self._signals:Fire('onChange', index, value, oldValue[index])
+		for index in path :: Dictionary do
+			self._signals:Fire('onChange', index, newData[index], oldValue[index])
 		end
 	else
+		local currentValue, key = Utils.getFromPath(path, self.Data)
 		local pathTable = Utils.getPathTable(path)
-		local currentValue, key = Utils.getFromPath(pathTable, self.Data)
 
 		local oldParentValue = if #pathTable > 1 then table.clone(currentValue) else nil
 		oldValue = currentValue[key]
@@ -385,15 +392,20 @@ end
 --[=[
 	@private
 ]=]
-function ClientReplion.Execute(self: ClientReplion, name: string, ...: any)
-	local extensions = assert(self.Extensions, '[Replion] - Is your Extension module in a shared instance?')
-	local extension = extensions[name]
+function ClientReplion.Execute(self: ClientReplion, packedId: string, ...: any)
+	local id = string.unpack(ID_PACK, packedId)
 
-	local values = table.pack(extension(self, ...))
+	local extensions = self._extensions
+	local extension = assert(extensions[id], '[Replion] - Extension with id ' .. id .. ' does not exist!')
+
+	local extensionName: string = extension[1]
+	local extensionFunction: ExtensionCallback = extension[2]
+
+	local values = table.pack(extensionFunction(self, ...))
 
 	local onExecuteSignals = self._signals:GetSignals('onExecute')
 	if onExecuteSignals then
-		local signal = onExecuteSignals[name]
+		local signal = onExecuteSignals[extensionName]
 
 		if signal then
 			signal:Fire(table.unpack(values))

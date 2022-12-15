@@ -125,16 +125,21 @@ function Server.new(config: ReplionConfig): ServerReplion
 			end
 		end
 
-		assert(
-			not isEqual,
-			string.format(
-				'[Replion] - Channel %q already exists! for %q',
-				channel,
-				if type(config.ReplicateTo) == 'table'
-					then table.concat(config.ReplicateTo, ', ')
-					else tostring(config.ReplicateTo)
-			)
-		)
+		if isEqual then
+			local replicatingTo: string
+
+			if typeof(replicateTo) == 'Instance' then
+				replicatingTo = tostring(replicateTo)
+			elseif type(replicateTo) == 'string' then
+				replicatingTo = replicateTo
+			elseif type(replicateTo) == 'table' then
+				for _, player in replicateTo do
+					replicatingTo = (if replicatingTo then replicatingTo .. ', ' else '') .. tostring(player)
+				end
+			end
+
+			error(string.format('[Replion] - Channel %q already exists! for %q', channel, replicatingTo))
+		end
 	end
 
 	local newReplion: ServerReplion = ServerReplion.new(config)

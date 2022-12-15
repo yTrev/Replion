@@ -27,11 +27,11 @@ export type ReplionConfig = {
 type ServerReplionProps = {
 	Data: { [any]: any },
 	Channel: string,
-	Tags: { string }?,
-	Extensions: { [string]: ExtensionCallback }?,
+	Tags: { string },
 
 	Destroyed: boolean?,
 
+	_extensions: { [string]: any },
 	_replicateTo: ReplicateTo,
 	_extensionModule: ModuleScript?,
 	_beforeDestroy: _T.Signal,
@@ -60,7 +60,7 @@ local availableIds: { number } = {}
 ]=]
 
 --[=[
-	@type SerializedReplion { Data: Dictionary, Channel: string, Tags: {string}?, Extensions: ModuleScript? }
+	@type SerializedReplion { any }
 
 	@within ServerReplion
 ]=]
@@ -91,7 +91,7 @@ local availableIds: { number } = {}
 ]=]
 
 --[=[
-	@prop Tags { string }?
+	@prop Tags { string }
 	@readonly
 
 	@within ServerReplion
@@ -122,13 +122,32 @@ function ServerReplion.new(config: ReplionConfig): ServerReplion
 
 	assert(selectedId <= ID_LIMIT, '[Replion] - ID limit reached! You already have ' .. ID_LIMIT .. ' ServerReplions!')
 
+	local extensions = {}
+
+	if config.Extensions then
+		local loadedExtensions = require(config.Extensions) :: any
+
+		local orderedExtensions = {}
+		for name, extension in loadedExtensions :: any do
+			table.insert(orderedExtensions, { name, extension })
+		end
+
+		table.sort(orderedExtensions, function(a, b)
+			return a[1] < b[1]
+		end)
+
+		for extensionId, extension in orderedExtensions do
+			extensions[extension[1]] = { string.pack(ID_PACK, extensionId), extension[2] }
+		end
+	end
+
 	local self: ServerReplion = setmetatable({
 		Channel = config.Channel,
 
 		Data = config.Data,
-		Tags = config.Tags,
+		Tags = if config.Tags then config.Tags else {},
 
-		Extensions = if config.Extensions then require(config.Extensions) :: any else nil,
+		_extensions = extensions,
 
 		_id = selectedId,
 		_packedId = string.pack(ID_PACK, selectedId),
@@ -175,15 +194,8 @@ end
 function ServerReplion._serialize(self: ServerReplion): _T.SerializedReplion
 	-- The initial data that is sent to the client, probably will be the most expensive part of the replication.
 	-- But it's only done once, so it's not that bad. We can optimize this later if needed, but for now it's fine.
-	return {
-		Channel = self.Channel,
 
-		Data = self.Data,
-		Tags = self.Tags,
-		Extensions = self._extensionModule,
-
-		Id = self._packedId,
-	}
+	return { self._packedId, self.Channel, self.Data, self.Tags, self._extensionModule }
 end
 
 --[=[
@@ -298,17 +310,20 @@ end
 	Executes an extension function, if it doesn't exist, it will throw an error.
 ]=]
 function ServerReplion.Execute(self: ServerReplion, name: string, ...: any): ...any
-	local extensions = assert(self.Extensions, tostring(self) .. ' has not extensions.')
+	local extensions = self._extensions
 	local extension = assert(extensions[name], tostring(self) .. ' has no extension named ' .. name)
+
+	local extensionId: string = extension[1]
+	local extensionFunction: ExtensionCallback = extension[2]
 
 	self._runningExtension = true
 
-	local result = table.pack(extension(self, ...))
+	local result = table.pack(extensionFunction(self, ...))
 
 	self._runningExtension = false
 
 	-- We could optimize this by creating and ID for each function, but I don't think it's worth it.
-	Network.sendTo(self._replicateTo, 'RunExtension', self._packedId, name, ...)
+	Network.sendTo(self._replicateTo, 'RunExtension', self._packedId, extensionId, ...)
 
 	return table.unpack(result)
 end
@@ -323,7 +338,7 @@ end
 ]=]
 function ServerReplion.Set<T>(self: ServerReplion, path: Path, newValue: T): T
 	local pathTable = Utils.getPathTable(path)
-	local currentValue, key = Utils.getFromPath(pathTable, self.Data)
+	local currentValue, key = Utils.getFromPath(path, self.Data)
 	local oldValue = currentValue[key]
 
 	if equals(oldValue, newValue :: any) then
@@ -340,7 +355,7 @@ function ServerReplion.Set<T>(self: ServerReplion, path: Path, newValue: T): T
 	self._signals:Fire('onChange', path, newValue, oldValue)
 
 	if not self._runningExtension then
-		Network.sendTo(self._replicateTo, 'Set', self._packedId, Utils.getStringPath(path), newValue)
+		Network.sendTo(self._replicateTo, 'Set', self._packedId, Utils.serializePath(path), newValue)
 	end
 
 	return newValue
@@ -452,7 +467,7 @@ function ServerReplion.Update(self: ServerReplion, path: Path | Dictionary, toUp
 			end
 		end
 
-		Network.sendTo(self._replicateTo, 'Update', self._packedId, path, toUpdate)
+		Network.sendTo(self._replicateTo, 'Update', self._packedId, Utils.serializePath(path), toUpdate)
 	end
 
 	return newValue
@@ -529,7 +544,7 @@ function ServerReplion.Insert<T>(self: ServerReplion, path: Path, value: T, inde
 				'ArrayUpdate',
 				self._packedId,
 				'i',
-				Utils.getStringPath(path),
+				Utils.serializePath(path),
 				value,
 				index
 			)
@@ -579,7 +594,7 @@ function ServerReplion.Remove(self: ServerReplion, path: Path, index: number?): 
 		self._signals:Fire('onChange', path, newArray, array)
 
 		if not self._runningExtension then
-			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'r', Utils.getStringPath(path), index)
+			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'r', Utils.serializePath(path), index)
 		end
 
 		return value
@@ -656,7 +671,7 @@ function ServerReplion.Clear(self: ServerReplion, path: Path)
 		self._signals:Fire('onChange', path, array, oldArray)
 
 		if not self._runningExtension then
-			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'c', Utils.getStringPath(path))
+			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'c', Utils.serializePath(path))
 		end
 	else
 		error('[Replion] - Cannot clear from a non-array.')
