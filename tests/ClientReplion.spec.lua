@@ -6,11 +6,7 @@ local ClientReplion = require(ReplicatedStorage.Packages.Replion.Client.ClientRe
 
 return function()
 	describe('ClientReplion.new', function()
-		local newReplion = ClientReplion.new({
-			Data = { Coins = 20 },
-			Channel = 'new',
-			Id = '',
-		})
+		local newReplion = ClientReplion.new({ nil, 'new', { Coins = 20 } })
 
 		it('should return a Replion', function()
 			expect(newReplion).to.be.a('table')
@@ -38,12 +34,7 @@ return function()
 	end)
 
 	describe('ClientReplion:Get', function()
-		local newReplion = ClientReplion.new({
-			Channel = 'Get',
-			Id = '',
-
-			Data = { Coins = 20, Other = { Value = {} } },
-		})
+		local newReplion = ClientReplion.new({ nil, 'Get', { Coins = 20, Other = { Value = {} } } })
 
 		it('should return the value of the given key', function()
 			expect(newReplion:Get('Coins')).to.equal(20)
@@ -57,11 +48,7 @@ return function()
 	end)
 
 	describe('ClientReplion:Set', function()
-		local newReplion = ClientReplion.new({
-			Data = { Coins = 20, Other = { Value = {} } },
-			Channel = 'Set',
-			Id = '',
-		})
+		local newReplion = ClientReplion.new({ nil, 'Set', { Coins = 20, Other = { Value = {} } } })
 
 		it('should set the value of the given key', function()
 			newReplion:Set('Coins', 30)
@@ -95,11 +82,7 @@ return function()
 	end)
 
 	describe('ClientReplion:Increase', function()
-		local newReplion = ClientReplion.new({
-			Data = { Coins = 20 },
-			Channel = 'Increase',
-			Id = '',
-		})
+		local newReplion = ClientReplion.new({ nil, 'Increase', { Coins = 20 } })
 
 		it('should increase the value of the given key', function()
 			newReplion:Increase('Coins', 10)
@@ -109,11 +92,7 @@ return function()
 	end)
 
 	describe('ClientReplion:Clear', function()
-		local newReplion = ClientReplion.new({
-			Data = { Values = { 1, 2, 3 } },
-			Channel = 'Clear',
-			Id = '',
-		})
+		local newReplion = ClientReplion.new({ nil, 'Clear', { Values = { 1, 2, 3 } } })
 
 		it('should clear the array', function()
 			newReplion:Clear('Values')
@@ -138,11 +117,7 @@ return function()
 	end)
 
 	describe('ClientReplion:Insert', function()
-		local newReplion = ClientReplion.new({
-			Data = { Values = {} },
-			Channel = 'Insert',
-			Id = '',
-		})
+		local newReplion = ClientReplion.new({ nil, 'Insert', { Values = {} } })
 
 		it('should insert the value in the given array', function()
 			local fooIndex, fooValue = newReplion:Insert('Values', 'Foo')
@@ -162,12 +137,7 @@ return function()
 	end)
 
 	describe('ClientReplion:OnArrayInsert', function()
-		local newReplion = ClientReplion.new({
-			Channel = 'OnArrayInsert',
-			Id = '',
-
-			Data = { Values = { 1 } },
-		})
+		local newReplion = ClientReplion.new({ nil, 'OnArrayInsert', { Values = { 1 } } })
 
 		it('should call the callback when a value is added', function()
 			local changes = {}
@@ -192,11 +162,7 @@ return function()
 	end)
 
 	describe('ClientReplion:Remove', function()
-		local newReplion = ClientReplion.new({
-			Data = { Values = { 1, 2, 3 } },
-			Channel = 'Remove',
-			Id = '',
-		})
+		local newReplion = ClientReplion.new({ nil, 'Remove', { Values = { 1, 2, 3 } } })
 
 		it('should remove the value in the given array', function()
 			local oneValue = newReplion:Remove('Values', 1)
@@ -213,11 +179,7 @@ return function()
 	end)
 
 	describe('ClientReplion:OnArrayRemove', function()
-		local newReplion = ClientReplion.new({
-			Data = { Values = { 1, 2, 3, 4 } },
-			Channel = 'OnArrayRemove',
-			Id = '',
-		})
+		local newReplion = ClientReplion.new({ nil, 'OnArrayRemove', { Values = { 1, 2, 3, 4 } } })
 
 		it('should call the callback when a value is removed', function()
 			local changes = {}
@@ -242,11 +204,7 @@ return function()
 
 	describe('ClientReplion:OnChange', function()
 		it('should call the callback when the value changes', function()
-			local newReplion = ClientReplion.new({
-				Data = { Value = 0 },
-				Channel = 'OnChange',
-				Id = '',
-			})
+			local newReplion = ClientReplion.new({ nil, 'OnChange', { Value = 0 } })
 
 			local new, old
 
@@ -261,11 +219,7 @@ return function()
 		end)
 
 		it('should call the callback if an value inside is changed', function()
-			local newReplion = ClientReplion.new({
-				Data = { Value = { Test = true } },
-				Channel = 'OnChangeTable',
-				Id = '',
-			})
+			local newReplion = ClientReplion.new({ nil, 'OnChangeTable', { Value = { Test = true } } })
 
 			local called: number = 0
 
@@ -288,11 +242,8 @@ return function()
 	end)
 
 	describe('ClientReplion:OnDescendantChanged', function()
-		local newReplion = ClientReplion.new({
-			Data = { Values = { A = true, B = false, C = { D = true } } },
-			Channel = 'OnDescendantChanged',
-			Id = '',
-		})
+		local newReplion =
+			ClientReplion.new({ nil, 'OnDescendantChanged', { Values = { A = true, B = false, C = { D = true } } } })
 
 		it('should call the callback when the value changes', function()
 			local changes = {}
@@ -320,11 +271,7 @@ return function()
 	end)
 
 	describe('ClientReplion:Update', function()
-		local newReplion = ClientReplion.new({
-			Data = { Values = {}, ToBeRemoved = true },
-			Channel = 'Update',
-			Id = '',
-		})
+		local newReplion = ClientReplion.new({ nil, 'Update', { Values = {}, ToBeRemoved = true } })
 
 		it('should call the OnChange event', function()
 			local newValues, oldValues

@@ -49,7 +49,7 @@ local function getWaitList(channel: string)
 end
 
 local function createReplion(serializedReplion: SerializedReplion)
-	local channel = serializedReplion.Channel
+	local channel = serializedReplion[2]
 	if cache[channel] then
 		return
 	end
@@ -57,7 +57,7 @@ local function createReplion(serializedReplion: SerializedReplion)
 	local newReplion = ClientReplion.new(serializedReplion)
 
 	cache[channel] = newReplion
-	cache[serializedReplion.Id] = newReplion
+	cache[serializedReplion[1]] = newReplion
 
 	addedSignal:Fire(newReplion)
 
@@ -175,25 +175,25 @@ if RunService:IsClient() then
 	local runExtension = Network.get('RunExtension')
 	local arrayUpdate = Network.get('ArrayUpdate')
 
-	addedRemote.OnClientEvent:Connect(function(serializedReplions: SerializedReplion | SerializedReplions)
-		if #serializedReplions > 0 then
-			for _, serializedReplion in serializedReplions :: SerializedReplions do
+	addedRemote.OnClientEvent:Connect(function(serializedReplions: any)
+		if type(serializedReplions[1]) == 'table' then
+			for _, serializedReplion in serializedReplions do
 				createReplion(serializedReplion)
 			end
-		elseif next(serializedReplions) then
-			createReplion(serializedReplions :: SerializedReplion)
+		else
+			createReplion(serializedReplions)
 		end
 	end)
 
 	removedRemote.OnClientEvent:Connect(function(id: string)
 		local replion = cache[id]
 		if replion then
+			cache[id] = nil
+			cache[replion._channel] = nil
+
 			removedSignal:Fire(replion)
 
 			replion:Destroy()
-
-			cache[id] = nil
-			cache[replion._channel] = nil
 		end
 	end)
 

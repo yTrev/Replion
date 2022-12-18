@@ -4,7 +4,7 @@ local Signal = require(script.Parent.Parent.Parent.Signal)
 local _T = require(script.Parent.Types)
 local Utils = require(script.Parent.Utils)
 
-type Container = { [string]: _T.Signal }
+type Container = { [string]: any }
 
 type SignalProps = {
 	_containers: { [string]: Container }?,
@@ -34,16 +34,29 @@ function Signals._getContainer(self: Signals, name: string): Container?
 	end
 end
 
-function Signals.Get(self: Signals, name: string, path: _T.Path): _T.Signal?
+function Signals.Get(self: Signals, name: string, path: _T.Path, create: boolean?): _T.Signal?
 	local container = self:_getContainer(name)
 	if container then
-		local pathInString = Utils.getStringPath(path)
-		local signal = container[pathInString]
+		local signal
 
-		if not signal then
+		for _, index in Utils.getPathTable(path) do
+			local indexContainer = container[index]
+
+			if not indexContainer then
+				indexContainer = {}
+
+				container[index] = indexContainer
+			end
+
+			container = indexContainer
+
+			signal = container.__signal
+		end
+
+		if not signal and (create == nil or create) then
 			signal = Signal.new()
 
-			container[pathInString] = signal
+			container.__signal = signal
 		end
 
 		return signal
@@ -75,8 +88,7 @@ end
 function Signals.Fire(self: Signals, name: string, path: _T.Path, ...: any)
 	local signalsContainer: Container? = self:GetSignals(name)
 	if signalsContainer then
-		local pathInString: string = Utils.getStringPath(path)
-		local signal = signalsContainer[pathInString]
+		local signal = self:Get(name, path)
 
 		if signal then
 			signal:Fire(...)
@@ -88,9 +100,9 @@ function Signals.Fire(self: Signals, name: string, path: _T.Path, ...: any)
 		local pathTable = Utils.getPathTable(path)
 
 		for i = #pathTable, 1, -1 do
-			local eventPath = table.concat(pathTable, '.', 1, i)
+			local onDescendantContainer = onDescendantChange[pathTable[i]]
+			local onDescendantSignal = if onDescendantContainer then onDescendantContainer.__signal else nil
 
-			local onDescendantSignal = onDescendantChange[eventPath]
 			if onDescendantSignal then
 				onDescendantSignal:Fire(pathTable, ...)
 			end
@@ -101,11 +113,10 @@ end
 function Signals.FireParent(self: Signals, name: string, path: _T.Path, ...: any)
 	local signalsContainer: Container? = self:GetSignals(name)
 	if signalsContainer then
-		local pathTable: { string } = Utils.getPathTable(path)
-		local parentName: string = table.concat(pathTable, '.', 1, #pathTable - 1)
+		local pathTable = table.clone(Utils.getPathTable(path))
+		pathTable[#pathTable] = nil
 
-		local parentSignal = signalsContainer[parentName]
-
+		local parentSignal = self:Get(name, pathTable)
 		if parentSignal then
 			parentSignal:Fire(...)
 		end
@@ -115,12 +126,15 @@ end
 function Signals.Destroy(self: Signals)
 	local containers = self._containers
 	if containers then
-		for name, container in containers do
-			for _, signal in container do
-				signal:DisconnectAll()
-			end
+		local function destroySignals(container: Container)
+			for _, indexContainer in container do
+				local signal = indexContainer.__signal
+				if signal then
+					signal:Destroy()
+				end
 
-			containers[name] = nil
+				destroySignals(indexContainer)
+			end
 		end
 	end
 

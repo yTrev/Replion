@@ -4,24 +4,18 @@ local _T = require(script.Parent.Types)
 local None = newproxy(false)
 local SerializedNone = '\0'
 
-local function getPathTable(path: _T.Path): { string }
+local function getPathTable(path: _T.Path): { any }
 	if type(path) == 'table' then
 		return path
-	else
+	elseif type(path) == 'string' then
 		return string.split(path, '.')
-	end
-end
-
-local function getStringPath(path: _T.Path): string
-	if type(path) == 'table' then
-		return table.concat(path, '.')
 	else
-		return path
+		return { path }
 	end
 end
 
 local function getFromPath(path: _T.Path, data: any): (any, string?)
-	local pathInTable: { string } = getPathTable(path)
+	local pathInTable: { any } = getPathTable(path)
 
 	local pathLength: number = #pathInTable
 	local value: any = data
@@ -83,7 +77,27 @@ local function equals(t: _T.Dictionary, t2: _T.Dictionary): boolean
 	return true
 end
 
-local Utils = {
+local function serializePath(path: _T.Path): _T.Path
+	if type(path) == 'string' then
+		return path
+	elseif type(path) == 'table' then
+		local newPath: { string } = {}
+
+		for i, value in path do
+			if type(value) ~= 'string' and type(value) ~= 'number' then
+				return path
+			end
+
+			newPath[i] = value
+		end
+
+		return newPath
+	end
+
+	return path
+end
+
+return table.freeze({
 	None = None,
 	SerializedNone = SerializedNone,
 
@@ -91,15 +105,12 @@ local Utils = {
 
 	getPathTable = getPathTable,
 	getFromPath = getFromPath,
-	getStringPath = getStringPath,
 
 	removeDuplicated = removeDuplicated,
 
 	merge = merge,
 	isEmpty = isEmpty,
 	equals = equals,
-}
 
-table.freeze(Utils)
-
-return Utils
+	serializePath = serializePath,
+})
