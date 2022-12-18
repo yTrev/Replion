@@ -125,9 +125,9 @@ function ClientReplion.OnExecute(self: ClientReplion, name: string, callback: (.
 	local onExecute = self._signals:Get('onExecute', name)
 	if onExecute then
 		return onExecute:Connect(callback)
-	else
-		return nil
 	end
+
+	return
 end
 
 --[=[
@@ -148,9 +148,9 @@ function ClientReplion.OnChange(self: ClientReplion, path: Path, callback: Chang
 	local onChange = self._signals:Get('onChange', path)
 	if onChange then
 		return onChange:Connect(callback)
-	else
-		return nil
 	end
+
+	return
 end
 
 --[=[
@@ -176,9 +176,9 @@ function ClientReplion.OnDescendantChange(self: ClientReplion, path: Path, callb
 	local onDescendantChange = self._signals:Get('onDescendantChange', path)
 	if onDescendantChange then
 		return onDescendantChange:Connect(callback)
-	else
-		return nil
 	end
+
+	return
 end
 
 --[=[
@@ -192,9 +192,9 @@ function ClientReplion.OnArrayInsert(self: ClientReplion, path: Path, callback: 
 	local onArrayInsert = self._signals:Get('onArrayInsert', path)
 	if onArrayInsert then
 		return onArrayInsert:Connect(callback)
-	else
-		return nil
 	end
+
+	return
 end
 
 --[=[
@@ -208,9 +208,9 @@ function ClientReplion.OnArrayRemove(self: ClientReplion, path: Path, callback: 
 	local onArrayRemove = self._signals:Get('onArrayRemove', path)
 	if onArrayRemove then
 		return onArrayRemove:Connect(callback)
-	else
-		return nil
 	end
+
+	return
 end
 
 --[=[

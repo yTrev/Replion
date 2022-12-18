@@ -217,9 +217,9 @@ function ServerReplion.OnChange(self: ServerReplion, path: Path, callback: _T.Ch
 	local onChange = self._signals:Get('onChange', path)
 	if onChange then
 		return onChange:Connect(callback)
-	else
-		return nil
 	end
+
+	return
 end
 
 --[=[
@@ -233,9 +233,9 @@ function ServerReplion.OnArrayInsert(self: ServerReplion, path: Path, callback: 
 	local onArrayInsert = self._signals:Get('onArrayInsert', path)
 	if onArrayInsert then
 		return onArrayInsert:Connect(callback)
-	else
-		return nil
 	end
+
+	return
 end
 
 --[=[
@@ -249,9 +249,9 @@ function ServerReplion.OnArrayRemove(self: ServerReplion, path: Path, callback: 
 	local onArrayRemove = self._signals:Get('onArrayRemove', path)
 	if onArrayRemove then
 		return onArrayRemove:Connect(callback)
-	else
-		return nil
 	end
+
+	return
 end
 
 type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
@@ -267,9 +267,9 @@ function ServerReplion.OnDescendantChange(self: ServerReplion, path: Path, callb
 	local onDescendantChange = self._signals:Get('onDescendantChange', path)
 	if onDescendantChange then
 		return onDescendantChange:Connect(callback)
-	else
-		return nil
 	end
+
+	return
 end
 
 --[=[
@@ -407,7 +407,7 @@ function ServerReplion.Update(self: ServerReplion, path: Path | Dictionary, toUp
 
 		-- We can't use merge because we need to change the original data instead of a copy.
 		for key, value in path :: Dictionary do
-			self.Data[key] = if value == Utils.None then nil else value
+			self.Data[key] = Utils.getValue(value)
 		end
 
 		newValue = self.Data
@@ -481,12 +481,9 @@ end
 	Increases the value at the given path by the given amount.
 ]=]
 function ServerReplion.Increase(self: ServerReplion, path: Path, amount: number): number
-	if type(amount) ~= 'number' then
-		error('[Replion] - Amount must be a number.')
-	end
+	assert(type(amount) == 'number', '[Replion] - Amount must be a number.')
 
 	local currentValue: number = self:Get(path)
-
 	return self:Set(path, currentValue + amount)
 end
 
@@ -526,34 +523,22 @@ end
 function ServerReplion.Insert<T>(self: ServerReplion, path: Path, value: T, index: number?): (number, T)
 	local data, last = Utils.getFromPath(path, self.Data)
 
-	local array = data[last]
-	if type(array) == 'table' then
-		local newArray = table.clone(array)
-		local targetIndex: number = if index then index else #newArray + 1
+	local array = assert(data[last], '[Replion] - Cannot insert into a non-array.')
+	local newArray = table.clone(array)
+	local targetIndex: number = if index then index else #newArray + 1
 
-		table.insert(newArray, targetIndex, value)
+	table.insert(newArray, targetIndex, value)
 
-		data[last] = newArray
+	data[last] = newArray
 
-		self._signals:Fire('onArrayInsert', path, targetIndex, value)
-		self._signals:Fire('onChange', path, newArray, array)
+	self._signals:Fire('onArrayInsert', path, targetIndex, value)
+	self._signals:Fire('onChange', path, newArray, array)
 
-		if not self._runningExtension then
-			Network.sendTo(
-				self._replicateTo,
-				'ArrayUpdate',
-				self._packedId,
-				'i',
-				Utils.serializePath(path),
-				value,
-				index
-			)
-		end
-
-		return targetIndex, value
-	else
-		error('[Replion] - Cannot insert into a non-array.')
+	if not self._runningExtension then
+		Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'i', Utils.serializePath(path), value, index)
 	end
+
+	return targetIndex, value
 end
 
 --[=[
@@ -581,26 +566,22 @@ end
 function ServerReplion.Remove(self: ServerReplion, path: Path, index: number?): any
 	local data, last = Utils.getFromPath(path, self.Data)
 
-	local array = data[last]
-	if type(array) == 'table' then
-		local newArray = table.clone(array)
+	local array = assert(data[last], '[Replion] - Cannot remove from a non-array.')
+	local newArray = table.clone(array)
 
-		local targetIndex: number = if index then index else #newArray
-		local value = table.remove(newArray, targetIndex)
+	local targetIndex: number = if index then index else #newArray
+	local value = table.remove(newArray, targetIndex)
 
-		data[last] = newArray
+	data[last] = newArray
 
-		self._signals:Fire('onArrayRemove', path, targetIndex, value)
-		self._signals:Fire('onChange', path, newArray, array)
+	self._signals:Fire('onArrayRemove', path, targetIndex, value)
+	self._signals:Fire('onChange', path, newArray, array)
 
-		if not self._runningExtension then
-			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'r', Utils.serializePath(path), index)
-		end
-
-		return value
-	else
-		error('[Replion] - Cannot remove from a non-array.')
+	if not self._runningExtension then
+		Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'r', Utils.serializePath(path), index)
 	end
+
+	return value
 end
 
 --[=[
@@ -662,19 +643,21 @@ end
 function ServerReplion.Clear(self: ServerReplion, path: Path)
 	local data, last = Utils.getFromPath(path, self.Data)
 
-	local array = data[last]
-	if array then
-		local oldArray = table.clone(array)
+	local array = assert(data[last], '[Replion] - Cannot clear from a non-array.')
 
-		table.clear(array)
+	-- If the array is already empty, don't do anything.
+	if Utils.isEmpty(array) then
+		return
+	end
 
-		self._signals:Fire('onChange', path, array, oldArray)
+	local oldArray = table.clone(array)
 
-		if not self._runningExtension then
-			Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'c', Utils.serializePath(path))
-		end
-	else
-		error('[Replion] - Cannot clear from a non-array.')
+	table.clear(array)
+
+	self._signals:Fire('onChange', path, array, oldArray)
+
+	if not self._runningExtension then
+		Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'c', Utils.serializePath(path))
 	end
 end
 

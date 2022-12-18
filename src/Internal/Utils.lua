@@ -97,7 +97,7 @@ local function serializePath(path: _T.Path): _T.Path
 	return path
 end
 
-local Utils = {
+return table.freeze({
 	None = None,
 	SerializedNone = SerializedNone,
 
@@ -113,8 +113,4 @@ local Utils = {
 	equals = equals,
 
 	serializePath = serializePath,
-}
-
-table.freeze(Utils)
-
-return Utils
+})
