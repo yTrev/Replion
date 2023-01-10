@@ -9,5 +9,5 @@ dependencies = []
 
 [[package]]
 name = "ytrev/replion"
-version = "1.0.0-rc.2"
+version = "1.0.0-rc.3"
 dependencies = [["Signal", "sleitnick/signal@1.2.1"]]
