@@ -90,6 +90,20 @@ return function()
 
 			expect(newReplion.Destroyed).to.equal(true)
 		end)
+
+		it('should disconnect signals', function()
+			local newReplion = ReplionServer.new({
+				Data = {},
+				Channel = 'SignalDisconnect',
+				ReplicateTo = 'All',
+			})
+
+			local conn = newReplion:OnChange('Foo', print)
+
+			newReplion:Destroy()
+
+			expect(conn.Connected).to.be.equal(false)
+		end)
 	end)
 
 	describe('ServerReplion:Get', function()

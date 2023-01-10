@@ -127,15 +127,16 @@ function Signals.Destroy(self: Signals)
 	local containers = self._containers
 	if containers then
 		local function destroySignals(container: Container)
-			for _, indexContainer in container do
-				local signal = indexContainer.__signal
-				if signal then
-					signal:Destroy()
+			for name, indexContainer in container do
+				if name == '__signal' then
+					indexContainer:Destroy()
+				else
+					destroySignals(indexContainer)
 				end
-
-				destroySignals(indexContainer)
 			end
 		end
+
+		destroySignals(containers)
 	end
 
 	self._containers = nil :: any
