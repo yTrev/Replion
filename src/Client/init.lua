@@ -11,22 +11,22 @@ type SerializedReplion = _T.SerializedReplion
 type SerializedReplions = { SerializedReplion }
 
 export type ReplionClient = {
-	OnReplionAdded: (self: ReplionClient, callback: (addedReplion: ClientReplion) -> ()) -> (_T.Connection),
+	OnReplionAdded: (self: ReplionClient, callback: (addedReplion: ClientReplion) -> ()) -> _T.Connection,
 	OnReplionAddedWithTag: (
 		self: ReplionClient,
 		tag: string,
 		callback: (addedReplion: ClientReplion) -> ()
-	) -> (_T.Connection),
+	) -> _T.Connection,
 
-	OnReplionRemoved: (self: ReplionClient, callback: (removedReplion: ClientReplion) -> ()) -> (_T.Connection),
+	OnReplionRemoved: (self: ReplionClient, callback: (removedReplion: ClientReplion) -> ()) -> _T.Connection,
 	OnReplionRemovedWithTag: (
 		self: ReplionClient,
 		tag: string,
 		callback: (addedReplion: ClientReplion) -> ()
-	) -> (_T.Connection),
+	) -> _T.Connection,
 
-	GetReplion: (self: ReplionClient, channel: string) -> (ClientReplion?),
-	WaitReplion: (self: ReplionClient, channel: string) -> (ClientReplion),
+	GetReplion: (self: ReplionClient, channel: string) -> ClientReplion?,
+	WaitReplion: (self: ReplionClient, channel: string) -> ClientReplion,
 	AwaitReplion: (self: ReplionClient, channel: string, callback: (newReplion: ClientReplion) -> ()) -> (),
 
 	Start: () -> (),

@@ -11,7 +11,7 @@
 Add Replion as a dependency to your `wally.toml` file:
 
 ```
-Replion = "ytrev/replion@1.0.0-rc.3"
+Replion = "ytrev/replion@1.0.0-rc.4"
 ```
 
 # Usage

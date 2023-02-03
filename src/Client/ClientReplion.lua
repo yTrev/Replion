@@ -86,9 +86,7 @@ function ClientReplion.new(serializedReplion: _T.SerializedReplion): ClientRepli
 			return a[1] < b[1]
 		end)
 
-		for id, extension in orderedExtensions do
-			extensions[id] = extension
-		end
+		extensions = orderedExtensions
 	end
 
 	return setmetatable({
@@ -121,7 +119,7 @@ end
 
 	This event is fired when a Extension is executed. The callback will be called with the return values of the Extension.
 ]=]
-function ClientReplion.OnExecute(self: ClientReplion, name: string, callback: (...any) -> (...any)): _T.Connection?
+function ClientReplion.OnExecute(self: ClientReplion, name: string, callback: (...any) -> ...any): _T.Connection?
 	local onExecute = self._signals:Get('onExecute', name)
 	if onExecute then
 		return onExecute:Connect(callback)
@@ -343,7 +341,7 @@ end
 --[=[
 	@private
 ]=]
-function ClientReplion.Remove(self: ClientReplion, path: Path, index: number?): (any)
+function ClientReplion.Remove(self: ClientReplion, path: Path, index: number?): any
 	local data, last = Utils.getFromPath(path, self.Data)
 
 	local oldArray = data[last]

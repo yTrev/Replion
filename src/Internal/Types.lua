@@ -4,7 +4,7 @@ local Signal = require(script.Parent.Parent.Parent.Signal)
 export type Signal = typeof(Signal.new())
 export type Signals = { [string]: Signal }
 export type Connection = typeof(Signal.new():Connect(warn))
-export type ExtensionCallback<T> = (replion: T, ...any) -> (...any)
+export type ExtensionCallback<T> = (replion: T, ...any) -> ...any
 
 export type Path = any
 export type Tags = { string }?

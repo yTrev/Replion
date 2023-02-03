@@ -16,26 +16,26 @@ type WaitList = { { thread: thread, player: Player?, async: boolean? } }
 type Cache<T> = { [string]: T }
 
 export type ReplionServer = {
-	new: (config: ReplionConfig) -> (ServerReplion),
+	new: (config: ReplionConfig) -> ServerReplion,
 
-	GetReplion: (self: ReplionServer, channel: string) -> (ServerReplion?),
+	GetReplion: (self: ReplionServer, channel: string) -> ServerReplion?,
 
 	OnReplionAdded: (
 		self: ReplionServer,
 		callback: (channel: string, newReplion: ServerReplion) -> ()
-	) -> (Connection),
+	) -> Connection,
 
 	OnReplionRemoved: (
 		self: ReplionServer,
 		callback: (channel: string, newReplion: ServerReplion) -> ()
-	) -> (Connection),
+	) -> Connection,
 
-	WaitReplion: (self: ReplionServer, channel: string, timeout: number?) -> (ServerReplion?),
+	WaitReplion: (self: ReplionServer, channel: string, timeout: number?) -> ServerReplion?,
 	AwaitReplion: (self: ReplionServer, channel: string, callback: (ServerReplion) -> (), timeout: number?) -> (),
 
-	GetReplionsFor: (self: ReplionServer, player: Player) -> ({ ServerReplion }),
-	GetReplionFor: (self: ReplionServer, player: Player, channel: string) -> (ServerReplion?),
-	WaitReplionFor: (self: ReplionServer, player: Player, channel: string, timeout: number?) -> (ServerReplion?),
+	GetReplionsFor: (self: ReplionServer, player: Player) -> { ServerReplion },
+	GetReplionFor: (self: ReplionServer, player: Player, channel: string) -> ServerReplion?,
+	WaitReplionFor: (self: ReplionServer, player: Player, channel: string, timeout: number?) -> ServerReplion?,
 	AwaitReplionFor: (
 		self: ReplionServer,
 		player: Player,

@@ -100,8 +100,7 @@ function Signals.Fire(self: Signals, name: string, path: _T.Path, ...: any)
 		local pathTable = Utils.getPathTable(path)
 
 		for i = #pathTable, 1, -1 do
-			local onDescendantContainer = onDescendantChange[pathTable[i]]
-			local onDescendantSignal = if onDescendantContainer then onDescendantContainer.__signal else nil
+			local onDescendantSignal = self:Get('onDescendantChange', table.concat(pathTable, '.', 1, i), false)
 
 			if onDescendantSignal then
 				onDescendantSignal:Fire(pathTable, ...)

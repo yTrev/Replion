@@ -6,7 +6,7 @@ export type Remotes = {
 }
 
 type Network = {
-	get: (id: string) -> (RemoteEvent),
+	get: (id: string) -> RemoteEvent,
 	create: (events: { string }) -> (),
 
 	sendTo: (replicateTo: any, id: string, ...any) -> (),
