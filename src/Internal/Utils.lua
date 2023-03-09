@@ -97,6 +97,20 @@ local function serializePath(path: _T.Path): _T.Path
 	return path
 end
 
+local function isInEnv(compareWith: (...any) -> ...any, startLevel: number?, t: thread?)
+	local level: number = (startLevel or 1) + 1
+	local thread: thread = t or coroutine.running()
+
+	local env = debug.info(thread, level, 'f')
+	if env ~= nil and env ~= compareWith then
+		return isInEnv(compareWith, level + 1)
+	elseif env == compareWith then
+		return true
+	end
+
+	return false
+end
+
 return table.freeze({
 	None = None,
 	SerializedNone = SerializedNone,
@@ -113,4 +127,6 @@ return table.freeze({
 	equals = equals,
 
 	serializePath = serializePath,
+
+	isInEnv = isInEnv,
 })

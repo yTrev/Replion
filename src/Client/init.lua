@@ -28,8 +28,6 @@ export type ReplionClient = {
 	GetReplion: (self: ReplionClient, channel: string) -> ClientReplion?,
 	WaitReplion: (self: ReplionClient, channel: string) -> ClientReplion,
 	AwaitReplion: (self: ReplionClient, channel: string, callback: (newReplion: ClientReplion) -> ()) -> (),
-
-	Start: () -> (),
 }
 
 local cache: { [string]: ClientReplion? } = {}
@@ -172,6 +170,7 @@ if RunService:IsClient() then
 	local removedRemote = Network.get('Removed')
 	local updateRemote = Network.get('Update')
 	local setRemote = Network.get('Set')
+	local updateReplicateTo = Network.get('UpdateReplicateTo')
 	local runExtension = Network.get('RunExtension')
 	local arrayUpdate = Network.get('ArrayUpdate')
 
@@ -205,6 +204,14 @@ if RunService:IsClient() then
 		end
 	end)
 
+	updateReplicateTo.OnClientEvent:Connect(function(id: string, replicateTo: _T.ReplicateTo)
+		local replion = cache[id]
+
+		if replion then
+			replion._replicateTo = replicateTo
+		end
+	end)
+
 	setRemote.OnClientEvent:Connect(function(id: string, path: _T.Path, newValue: any)
 		local replion = cache[id]
 
@@ -234,6 +241,4 @@ if RunService:IsClient() then
 	end)
 end
 
-table.freeze(Client)
-
-return Client
+return table.freeze(Client)

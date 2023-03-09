@@ -17,4 +17,6 @@ export type ChangeCallback = (newValue: any, oldValue: any) -> ()
 export type ArrayCallback = (index: number, value: any) -> ()
 export type BeforeDestroy<T> = (replion: T, ...any) -> ()
 
+export type ReplicateTo = Player | { Player } | 'All'
+
 return nil

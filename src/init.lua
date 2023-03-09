@@ -11,13 +11,9 @@ export type ClientReplion = Client.ClientReplion
 export type ExtensionCallback = Types.ExtensionCallback<ServerReplion>
 export type Extensions = { [string]: ExtensionCallback }
 
-local Replion = {
+return table.freeze({
 	Server = Server,
 	Client = Client,
 
 	None = Utils.None,
-}
-
-table.freeze(Replion)
-
-return Replion
+})

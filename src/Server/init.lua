@@ -138,7 +138,7 @@ function Server.new(config: ReplionConfig): ServerReplion
 				end
 			end
 
-			error(string.format('[Replion] - Channel %q already exists! for %q', channel, replicatingTo))
+			error(`[Replion] - Channel {channel} already exists! for {replicatingTo}`)
 		end
 	end
 
@@ -211,9 +211,7 @@ function Server:GetReplion(channel: string): ServerReplion?
 
 	assert(
 		#channelCache == 1,
-		'[Replion] - There are multiple replions with the channel "'
-			.. tostring(channel)
-			.. '". Did you mean to use GetReplionFor?'
+		`[Replion] - There are multiple replions with the channel "{tostring(channel)}". Did you mean to use GetReplionFor?`
 	)
 
 	return channelCache[1]
@@ -371,6 +369,7 @@ if RunService:IsServer() then
 		'Added',
 		'Removed',
 		'Update',
+		'UpdateReplicateTo',
 
 		'Set',
 		'RunExtension',

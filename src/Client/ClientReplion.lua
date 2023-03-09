@@ -5,15 +5,13 @@ local _T = require(script.Parent.Parent.Internal.Types)
 
 local Signals = require(script.Parent.Parent.Internal.Signals)
 
--- Unsigned short
-local ID_PACK: string = 'H'
-
 type ChangeCallback = (newValue: any, oldValue: any) -> ()
 type ArrayCallback = (index: number, value: any) -> ()
 type BeforeDestroyCallback = _T.BeforeDestroy<ClientReplion>
 type ExtensionCallback = _T.ExtensionCallback<ClientReplion>
 type Dictionary = _T.Dictionary
 type Path = _T.Path
+type ReplicateTo = _T.ReplicateTo
 type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
 
 type ClientReplionProps = {
@@ -25,6 +23,7 @@ type ClientReplionProps = {
 	_channel: string,
 	_signals: Signals.Signals,
 	_beforeDestroy: _T.Signal,
+	_replicateTo: ReplicateTo,
 }
 
 local merge = Utils.merge
@@ -73,8 +72,8 @@ ClientReplion.__index = ClientReplion
 function ClientReplion.new(serializedReplion: _T.SerializedReplion): ClientReplion
 	local extensions = {}
 
-	if serializedReplion[5] then
-		local loadedExtensions = require(serializedReplion[5]) :: any
+	if serializedReplion[6] then
+		local loadedExtensions = require(serializedReplion[6]) :: any
 
 		local orderedExtensions = {}
 		for name, extension in loadedExtensions :: any do
@@ -95,6 +94,7 @@ function ClientReplion.new(serializedReplion: _T.SerializedReplion): ClientRepli
 
 		_extensions = extensions,
 		_channel = serializedReplion[2],
+		_replicateTo = serializedReplion[5],
 
 		_beforeDestroy = Signal.new(),
 		_signals = Signals.new(),
@@ -102,7 +102,7 @@ function ClientReplion.new(serializedReplion: _T.SerializedReplion): ClientRepli
 end
 
 function ClientReplion.__tostring(self: ClientReplion)
-	return 'Replion<' .. self._channel .. '>'
+	return `Replion<{self._channel}>`
 end
 
 --[=[
@@ -388,13 +388,20 @@ function ClientReplion.Clear(self: ClientReplion, path: Path)
 end
 
 --[=[
+	@return ReplicateTo
+]=]
+function ClientReplion.GetReplicateTo(self: ClientReplion): ReplicateTo
+	return self._replicateTo
+end
+
+--[=[
 	@private
 ]=]
 function ClientReplion.Execute(self: ClientReplion, packedId: string, ...: any)
-	local id = string.unpack(ID_PACK, packedId)
+	local id = utf8.codepoint(packedId)
 
 	local extensions = self._extensions
-	local extension = assert(extensions[id], '[Replion] - Extension with id ' .. id .. ' does not exist!')
+	local extension = assert(extensions[id], `[Replion] - Extension with id {id} does not exist!`)
 
 	local extensionName: string = extension[1]
 	local extensionFunction: ExtensionCallback = extension[2]

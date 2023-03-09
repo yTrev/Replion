@@ -72,13 +72,7 @@ function Signals.GetSignals(self: Signals, name: string): Container?
 	else
 		local source, line = debug.info(4, 'sl')
 		if source then
-			error(
-				string.format(
-					"[Replion] You're trying to use a Replion that has been destroyed, at %s:%d",
-					source,
-					line
-				)
-			)
+			error(`[Replion] You're trying to use a Replion that has been destroyed, at {source}:{line}`)
 		end
 
 		return nil

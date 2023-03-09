@@ -36,15 +36,13 @@ type ServerReplionProps = {
 	_extensionModule: ModuleScript?,
 	_beforeDestroy: _T.Signal,
 	_signals: Signals.Signals,
-	_runningExtension: boolean?,
 
 	_id: number,
 	_packedId: string,
 }
 
 -- Unsigned short
-local ID_PACK: string = 'H'
-local ID_LIMIT: number = 65535
+local ID_LIMIT: number = 1114111
 
 local merge = Utils.merge
 local isEmpty = Utils.isEmpty
@@ -110,17 +108,17 @@ function ServerReplion.new(config: ReplionConfig): ServerReplion
 	assert(config.ReplicateTo, '[Replion] - ReplicateTo is required!')
 
 	local replicateTo: ReplicateTo = config.ReplicateTo
-
 	local selectedId: number
-	if availableIds[1] ~= nil then
-		selectedId = table.remove(availableIds, 1) :: number
+
+	local availableId = table.remove(availableIds)
+	if availableId then
+		selectedId = availableId
 	else
 		id += 1
-
 		selectedId = id
 	end
 
-	assert(selectedId <= ID_LIMIT, '[Replion] - ID limit reached! You already have ' .. ID_LIMIT .. ' ServerReplions!')
+	assert(selectedId <= ID_LIMIT, `[Replion] - ID limit reached! You already have {ID_LIMIT} ServerReplions!`)
 
 	local extensions = {}
 
@@ -137,7 +135,7 @@ function ServerReplion.new(config: ReplionConfig): ServerReplion
 		end)
 
 		for extensionId, extension in orderedExtensions do
-			extensions[extension[1]] = { string.pack(ID_PACK, extensionId), extension[2] }
+			extensions[extension[1]] = { utf8.char(extensionId), extension[2] }
 		end
 	end
 
@@ -150,7 +148,7 @@ function ServerReplion.new(config: ReplionConfig): ServerReplion
 		_extensions = extensions,
 
 		_id = selectedId,
-		_packedId = string.pack(ID_PACK, selectedId),
+		_packedId = utf8.char(selectedId),
 
 		_extensionModule = config.Extensions,
 		_replicateTo = replicateTo,
@@ -182,7 +180,7 @@ function ServerReplion.__tostring(self: ServerReplion)
 		replicatingTo = replicateTo
 	end
 
-	return 'Replion<' .. channel .. ':' .. replicatingTo .. '>'
+	return `Replion<{channel}:{replicatingTo}>`
 end
 
 --[=[
@@ -195,7 +193,7 @@ function ServerReplion._serialize(self: ServerReplion): _T.SerializedReplion
 	-- The initial data that is sent to the client, probably will be the most expensive part of the replication.
 	-- But it's only done once, so it's not that bad. We can optimize this later if needed, but for now it's fine.
 
-	return { self._packedId, self.Channel, self.Data, self.Tags, self._extensionModule }
+	return { self._packedId, self.Channel, self.Data, self.Tags, self._replicateTo, self._extensionModule }
 end
 
 --[=[
@@ -297,6 +295,8 @@ function ServerReplion.SetReplicateTo(self: ServerReplion, replicateTo: Replicat
 	end
 
 	self._replicateTo = replicateTo
+
+	Network.sendTo(replicateTo, 'UpdateReplicateTo', self._packedId, replicateTo)
 end
 
 --[=[
@@ -311,16 +311,12 @@ end
 ]=]
 function ServerReplion.Execute(self: ServerReplion, name: string, ...: any): ...any
 	local extensions = self._extensions
-	local extension = assert(extensions[name], tostring(self) .. ' has no extension named ' .. name)
+	local extension = assert(extensions[name], `{tostring(self)} has no extension named {name}`)
 
 	local extensionId: string = extension[1]
 	local extensionFunction: ExtensionCallback = extension[2]
 
-	self._runningExtension = true
-
 	local result = table.pack(extensionFunction(self, ...))
-
-	self._runningExtension = false
 
 	-- We could optimize this by creating and ID for each function, but I don't think it's worth it.
 	Network.sendTo(self._replicateTo, 'RunExtension', self._packedId, extensionId, ...)
@@ -354,7 +350,7 @@ function ServerReplion.Set<T>(self: ServerReplion, path: Path, newValue: T): T
 
 	self._signals:Fire('onChange', path, newValue, oldValue)
 
-	if not self._runningExtension then
+	if not Utils.isInEnv(self.Execute, 3) then
 		Network.sendTo(self._replicateTo, 'Set', self._packedId, Utils.serializePath(path), newValue)
 	end
 
@@ -451,7 +447,7 @@ function ServerReplion.Update(self: ServerReplion, path: Path | Dictionary, toUp
 
 	self._signals:Fire('onChange', path, newValue, oldValue)
 
-	if not self._runningExtension then
+	if not Utils.isInEnv(self.Execute, 3) then
 		-- Serialize the None symbol.
 		if toUpdate then
 			for index, value in toUpdate do
@@ -534,7 +530,7 @@ function ServerReplion.Insert<T>(self: ServerReplion, path: Path, value: T, inde
 	self._signals:Fire('onArrayInsert', path, targetIndex, value)
 	self._signals:Fire('onChange', path, newArray, array)
 
-	if not self._runningExtension then
+	if not Utils.isInEnv(self.Execute, 3) then
 		Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'i', Utils.serializePath(path), value, index)
 	end
 
@@ -577,7 +573,7 @@ function ServerReplion.Remove(self: ServerReplion, path: Path, index: number?): 
 	self._signals:Fire('onArrayRemove', path, targetIndex, value)
 	self._signals:Fire('onChange', path, newArray, array)
 
-	if not self._runningExtension then
+	if not Utils.isInEnv(self.Execute, 3) then
 		Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'r', Utils.serializePath(path), index)
 	end
 
@@ -656,7 +652,7 @@ function ServerReplion.Clear(self: ServerReplion, path: Path)
 
 	self._signals:Fire('onChange', path, array, oldArray)
 
-	if not self._runningExtension then
+	if not Utils.isInEnv(self.Execute, 3) then
 		Network.sendTo(self._replicateTo, 'ArrayUpdate', self._packedId, 'c', Utils.serializePath(path))
 	end
 end
@@ -708,9 +704,9 @@ function ServerReplion.Destroy(self: ServerReplion)
 
 	self._signals:Destroy()
 
-	table.insert(availableIds, self._id)
-
 	Network.sendTo(self._replicateTo, 'Removed', self._packedId)
+
+	table.insert(availableIds, self._id)
 end
 
 export type ServerReplion = typeof(setmetatable({} :: ServerReplionProps, ServerReplion))
