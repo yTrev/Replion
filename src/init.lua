@@ -1,19 +1,15 @@
 --!strict
-local Server = require(script.Server)
 local Client = require(script.Client)
+local Server = require(script.Server)
 
-local Utils = require(script.Internal.Utils)
-local Types = require(script.Internal.Types)
+local Freeze = require(script.Parent.Freeze)
 
-export type ServerReplion = Server.ServerReplion
-export type ClientReplion = Client.ClientReplion
-
-export type ExtensionCallback = Types.ExtensionCallback<ServerReplion>
-export type Extensions = { [string]: ExtensionCallback }
+export type ServerReplion<T = any> = Server.ServerReplion<T>
+export type ClientReplion<T = any> = Client.ClientReplion<T>
 
 return table.freeze({
 	Server = Server,
 	Client = Client,
 
-	None = Utils.None,
+	None = Freeze.None,
 })

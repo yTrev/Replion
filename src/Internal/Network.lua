@@ -1,5 +1,6 @@
 --!strict
 local RunService = game:GetService('RunService')
+local Utils = require(script.Parent.Utils)
 
 export type Remotes = {
 	[string]: RemoteEvent,
@@ -14,17 +15,18 @@ type Network = {
 
 local IS_SERVER: boolean = RunService:IsServer()
 local IS_CLIENT: boolean = RunService:IsClient()
-local NOT_INITIALIZED: string = '[Replion] - Did you forget to require the Replion module on the server?'
-local RUNNING_TESTS: boolean = workspace:GetAttribute('RUNNING_TESTS')
+local NOT_INITIALIZED: string = 'Did you forget to require the Replion module on the server?'
 
 local RemotesFolder: Folder
 
-if IS_SERVER then
-	RemotesFolder = Instance.new('Folder')
-	RemotesFolder.Name = 'Remotes'
-	RemotesFolder.Parent = script.Parent.Parent
-else
-	RemotesFolder = assert(script.Parent.Parent:WaitForChild('Remotes', 5), NOT_INITIALIZED) :: Folder
+if not Utils.ShouldMock then
+	if IS_SERVER then
+		RemotesFolder = Instance.new('Folder')
+		RemotesFolder.Name = 'Remotes'
+		RemotesFolder.Parent = script.Parent.Parent
+	else
+		RemotesFolder = assert(script.Parent.Parent:WaitForChild('Remotes', 5), NOT_INITIALIZED) :: Folder
+	end
 end
 
 local function get(id: string): RemoteEvent
@@ -49,7 +51,7 @@ local function create(events: { string })
 end
 
 local function sendTo(replicateTo: any, id: string, ...: any)
-	if RUNNING_TESTS then
+	if Utils.ShouldMock then
 		return
 	end
 
@@ -64,7 +66,7 @@ local function sendTo(replicateTo: any, id: string, ...: any)
 	elseif typeof(replicateTo) == 'Instance' and replicateTo:IsA('Player') then
 		remote:FireClient(replicateTo, ...)
 	else
-		error('[Replion] - Invalid replicateTo!')
+		error('Invalid replicateTo!')
 	end
 end
 

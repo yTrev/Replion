@@ -3,11 +3,21 @@
 registry = "test"
 
 [[package]]
+name = "duckarmor/freeze"
+version = "0.1.4"
+dependencies = [["TestEZ", "roblox/testez@0.4.1"]]
+
+[[package]]
+name = "roblox/testez"
+version = "0.4.1"
+dependencies = []
+
+[[package]]
 name = "sleitnick/signal"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = []
 
 [[package]]
 name = "ytrev/replion"
-version = "1.0.0-rc.5"
-dependencies = [["Signal", "sleitnick/signal@1.4.1"]]
+version = "2.0.0-rc.1"
+dependencies = [["Freeze", "duckarmor/freeze@0.1.4"], ["Signal", "sleitnick/signal@1.5.0"]]

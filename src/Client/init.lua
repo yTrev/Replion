@@ -1,29 +1,30 @@
 --!strict
 local RunService = game:GetService('RunService')
 
+local Utils = require(script.Parent.Internal.Utils)
 local Signal = require(script.Parent.Parent.Signal)
 local Network = require(script.Parent.Internal.Network)
 local ClientReplion = require(script.ClientReplion)
 local _T = require(script.Parent.Internal.Types)
 
-export type ClientReplion = ClientReplion.ClientReplion
+export type ClientReplion<D = any> = ClientReplion.ClientReplion<D>
 type SerializedReplion = _T.SerializedReplion
 type SerializedReplions = { SerializedReplion }
 
 export type ReplionClient = {
-	OnReplionAdded: (self: ReplionClient, callback: (addedReplion: ClientReplion) -> ()) -> _T.Connection,
+	OnReplionAdded: (self: ReplionClient, callback: (addedReplion: ClientReplion) -> ()) -> Signal.Connection,
 	OnReplionAddedWithTag: (
 		self: ReplionClient,
 		tag: string,
 		callback: (addedReplion: ClientReplion) -> ()
-	) -> _T.Connection,
+	) -> Signal.Connection,
 
-	OnReplionRemoved: (self: ReplionClient, callback: (removedReplion: ClientReplion) -> ()) -> _T.Connection,
+	OnReplionRemoved: (self: ReplionClient, callback: (removedReplion: ClientReplion) -> ()) -> Signal.Connection,
 	OnReplionRemovedWithTag: (
 		self: ReplionClient,
 		tag: string,
 		callback: (addedReplion: ClientReplion) -> ()
-	) -> _T.Connection,
+	) -> Signal.Connection,
 
 	GetReplion: (self: ReplionClient, channel: string) -> ClientReplion?,
 	WaitReplion: (self: ReplionClient, channel: string) -> ClientReplion,
@@ -81,8 +82,8 @@ local Client: ReplionClient = {} :: any
 
 	Calls the callback when a replion is added.
 ]=]
-function Client:OnReplionAdded(callback: (addedReplion: ClientReplion) -> ()): _T.Connection
-	return addedSignal:Connect(callback :: any)
+function Client:OnReplionAdded(callback): Signal.Connection
+	return addedSignal:Connect(callback)
 end
 
 --[=[
@@ -90,8 +91,8 @@ end
 
 	Calls the callback when a replion is removed.
 ]=]
-function Client:OnReplionRemoved(callback: (removedReplion: ClientReplion) -> ()): _T.Connection
-	return removedSignal:Connect(callback :: any)
+function Client:OnReplionRemoved(callback): Signal.Connection
+	return removedSignal:Connect(callback)
 end
 
 --[=[
@@ -99,7 +100,7 @@ end
 
 	Calls the callback when a replion with the given tag is added.
 ]=]
-function Client:OnReplionAddedWithTag(tag: string, callback: (ClientReplion) -> ()): _T.Connection
+function Client:OnReplionAddedWithTag(tag, callback): Signal.Connection
 	return self:OnReplionAdded(function(replion: ClientReplion)
 		local tags: { string }? = replion.Tags
 
@@ -114,7 +115,7 @@ end
 
 	Calls the callback when a replion with the given tag is removed.
 ]=]
-function Client:OnReplionRemovedWithTag(tag: string, callback: (ClientReplion) -> ()): _T.Connection
+function Client:OnReplionRemovedWithTag(tag, callback): Signal.Connection
 	return self:OnReplionRemoved(function(replion: ClientReplion)
 		local tags: { string }? = replion.Tags
 
@@ -127,7 +128,7 @@ end
 --[=[
 	Returns the replion with the given channel.
 ]=]
-function Client:GetReplion(channel: string): ClientReplion?
+function Client:GetReplion(channel): ClientReplion?
 	return cache[channel]
 end
 
@@ -136,7 +137,7 @@ end
 
 	Yields until the replion with the given channel is added.
 ]=]
-function Client:WaitReplion(channel: string): ClientReplion
+function Client:WaitReplion(channel): ClientReplion
 	local replion = cache[channel]
 	if replion then
 		return replion
@@ -153,7 +154,7 @@ end
 --[=[
 	This function will call the callback when a replion with the channel is created.
 ]=]
-function Client:AwaitReplion(channel: string, callback: (newReplion: ClientReplion) -> ())
+function Client:AwaitReplion(channel, callback)
 	local replion = cache[channel]
 	if replion then
 		return callback(replion)
@@ -165,13 +166,12 @@ function Client:AwaitReplion(channel: string, callback: (newReplion: ClientRepli
 	table.insert(waitList, newThread)
 end
 
-if RunService:IsClient() then
+if not Utils.ShouldMock and RunService:IsClient() then
 	local addedRemote = Network.get('Added')
 	local removedRemote = Network.get('Removed')
 	local updateRemote = Network.get('Update')
 	local setRemote = Network.get('Set')
 	local updateReplicateTo = Network.get('UpdateReplicateTo')
-	local runExtension = Network.get('RunExtension')
 	local arrayUpdate = Network.get('ArrayUpdate')
 
 	addedRemote.OnClientEvent:Connect(function(serializedReplions: any)
@@ -200,7 +200,7 @@ if RunService:IsClient() then
 		local replion = cache[id]
 
 		if replion then
-			replion:Update(path, toUpdate)
+			replion:_update(path, toUpdate)
 		end
 	end)
 
@@ -208,7 +208,7 @@ if RunService:IsClient() then
 		local replion = cache[id]
 
 		if replion then
-			replion._replicateTo = replicateTo
+			replion.ReplicateTo = replicateTo
 		end
 	end)
 
@@ -216,14 +216,7 @@ if RunService:IsClient() then
 		local replion = cache[id]
 
 		if replion then
-			replion:Set(path, newValue)
-		end
-	end)
-
-	runExtension.OnClientEvent:Connect(function(id: string, extensionName: string, ...: any)
-		local replion = cache[id]
-		if replion then
-			replion:Execute(extensionName, ...)
+			replion:_set(path, newValue)
 		end
 	end)
 
@@ -231,11 +224,11 @@ if RunService:IsClient() then
 		local replion = cache[id]
 		if replion then
 			if action == 'i' then
-				replion:Insert(...)
+				replion:_insert(...)
 			elseif action == 'r' then
-				replion:Remove(...)
+				replion:_remove(...)
 			elseif action == 'c' then
-				replion:Clear(...)
+				replion:_clear(...)
 			end
 		end
 	end)

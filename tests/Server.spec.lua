@@ -27,7 +27,7 @@ return function()
 					Data = { Coins = 20 },
 					ReplicateTo = 'All',
 				})
-			end).to.throw('[Replion] - Channel is required!')
+			end).to.throw('Channel is required!')
 		end)
 
 		it('should error if a ReplicateTo is not provided', function()
@@ -36,7 +36,7 @@ return function()
 					Channel = 'replicateToRequired',
 					Data = { Coins = 20 },
 				})
-			end).to.throw('[Replion] - ReplicateTo is required!')
+			end).to.throw('ReplicateTo is required!')
 		end)
 
 		it('should error if trying to create a Replion with the same channel and ReplicateTo', function()
@@ -46,7 +46,7 @@ return function()
 					Data = { Coins = 20 },
 					ReplicateTo = 'All',
 				})
-			end).to.throw('[Replion] - Channel "new" already exists! for "All"')
+			end).to.throw('Channel "new" already exists! for "All"')
 		end)
 
 		it('should not error if trying to create a Replion with the same channel', function()
