@@ -12,23 +12,23 @@ type SerializedReplion = _T.SerializedReplion
 type SerializedReplions = { SerializedReplion }
 
 export type ReplionClient = {
-	OnReplionAdded: (self: ReplionClient, callback: (addedReplion: ClientReplion) -> ()) -> Signal.Connection,
+	OnReplionAdded: (self: ReplionClient, callback: (ClientReplion) -> ()) -> Signal.Connection,
 	OnReplionAddedWithTag: (
 		self: ReplionClient,
 		tag: string,
-		callback: (addedReplion: ClientReplion) -> ()
+		callback: (replion: ClientReplion) -> ()
 	) -> Signal.Connection,
 
-	OnReplionRemoved: (self: ReplionClient, callback: (removedReplion: ClientReplion) -> ()) -> Signal.Connection,
+	OnReplionRemoved: (self: ReplionClient, callback: (replion: ClientReplion) -> ()) -> Signal.Connection,
 	OnReplionRemovedWithTag: (
 		self: ReplionClient,
 		tag: string,
-		callback: (addedReplion: ClientReplion) -> ()
+		callback: (replion: ClientReplion) -> ()
 	) -> Signal.Connection,
 
 	GetReplion: (self: ReplionClient, channel: string) -> ClientReplion?,
 	WaitReplion: (self: ReplionClient, channel: string) -> ClientReplion,
-	AwaitReplion: (self: ReplionClient, channel: string, callback: (newReplion: ClientReplion) -> ()) -> (),
+	AwaitReplion: (self: ReplionClient, channel: string, callback: (replion: ClientReplion) -> ()) -> (),
 }
 
 local cache: { [string]: ClientReplion? } = {}
@@ -78,6 +78,8 @@ end
 local Client: ReplionClient = {} :: any
 
 --[=[
+	@param callback (addedReplion: ClientReplion) -> ()
+
 	@return RBXScriptConnection
 
 	Calls the callback when a replion is added.
@@ -87,6 +89,8 @@ function Client:OnReplionAdded(callback): Signal.Connection
 end
 
 --[=[
+	@param callback (replion: ClientReplion) -> ()
+
 	@return RBXScriptConnection
 
 	Calls the callback when a replion is removed.
@@ -96,6 +100,9 @@ function Client:OnReplionRemoved(callback): Signal.Connection
 end
 
 --[=[
+	@param tag string
+	@param callback (replion: ClientReplion) -> ()
+
 	@return RBXScriptConnection
 
 	Calls the callback when a replion with the given tag is added.
@@ -111,6 +118,9 @@ function Client:OnReplionAddedWithTag(tag, callback): Signal.Connection
 end
 
 --[=[
+	@param tag string
+	@param callback (replion: ClientReplion) -> ()
+
 	@return RBXScriptConnection
 
 	Calls the callback when a replion with the given tag is removed.
@@ -126,6 +136,8 @@ function Client:OnReplionRemovedWithTag(tag, callback): Signal.Connection
 end
 
 --[=[
+	@param channel string
+
 	Returns the replion with the given channel.
 ]=]
 function Client:GetReplion(channel): ClientReplion?
@@ -133,6 +145,8 @@ function Client:GetReplion(channel): ClientReplion?
 end
 
 --[=[
+	@param channel string
+
 	@yields
 
 	Yields until the replion with the given channel is added.
@@ -152,6 +166,9 @@ function Client:WaitReplion(channel): ClientReplion
 end
 
 --[=[
+	@param channel string
+	@param callback (replion: ClientReplion) -> ()
+
 	This function will call the callback when a replion with the channel is created.
 ]=]
 function Client:AwaitReplion(channel, callback)

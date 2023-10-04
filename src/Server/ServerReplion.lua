@@ -84,6 +84,12 @@ local id: number = 0
 local availableIds: { number } = {}
 
 --[=[
+	@type Path string | { any }
+
+	@within ServerReplion
+]=]
+
+--[=[
 	@type ReplicateTo Player | { Player } | 'All'
 
 	@within ServerReplion
@@ -91,12 +97,6 @@ local availableIds: { number } = {}
 
 --[=[
 	@type SerializedReplion { any }
-
-	@within ServerReplion
-]=]
-
---[=[
-	@type Dictionary { [any]: any }
 
 	@within ServerReplion
 ]=]
@@ -122,6 +122,13 @@ local availableIds: { number } = {}
 
 --[=[
 	@prop Tags { string }
+	@readonly
+
+	@within ServerReplion
+]=]
+
+--[=[
+	@prop ReplicateTo ReplicateTo
 	@readonly
 
 	@within ServerReplion
@@ -207,6 +214,8 @@ function ServerReplion:_serialize(): _T.SerializedReplion
 end
 
 --[=[
+	@param callback (replion: ServerReplion) -> ()
+
 	@return RBXScriptConnection
 
 	Connects to a signal that is fired when the :Destroy() method is called.
@@ -216,6 +225,8 @@ function ServerReplion:BeforeDestroy(callback)
 end
 
 --[=[
+	@param callback (newData: any, path: Path) -> ()
+
 	@return RBXScriptConnection
 
 	Connects to a signal that is fired when a value is changed in the data. 
@@ -225,7 +236,9 @@ function ServerReplion:OnDataChange(callback)
 end
 
 --[=[
+	@param path Path
 	@param callback (newValue: any, oldValue: any) -> ()
+	
 	@return RBXScriptConnection
 
 	Connects to a signal that is fired when the value at the given path is changed.
@@ -235,6 +248,7 @@ function ServerReplion:OnChange<V>(path, callback)
 end
 
 --[=[
+	@param path Path
 	@param callback (index: number, value: any) -> ()
 
 	@return RBXScriptConnection
@@ -246,6 +260,7 @@ function ServerReplion:OnArrayInsert(path, callback)
 end
 
 --[=[
+	@param path Path
 	@param callback (index: number, value: any) -> ()
 
 	@return RBXScriptConnection
@@ -259,6 +274,7 @@ end
 type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
 
 --[=[
+	@param path Path
 	@param callback (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
 
 	@return RBXScriptConnection
@@ -302,6 +318,9 @@ end
 	local newCoins: number = Replion:Set('Coins', 79)
 	print(newCoins) --> 79
 	```
+
+	@param path Path
+	@param newValue T
 
 	Sets the value at the given path to the given value.
 ]=]
@@ -347,6 +366,9 @@ end
 		Level = 20,
 	})
 	```
+
+	@param path Path
+	@param toUpdate { [any]: any }?
 
 	Updates the data with the given table. Only the keys that are different will be sent to the client.
 
@@ -410,6 +432,9 @@ end
 	local newCoins: number = Replion:Increase('Coins', 20)
 	```
 
+	@param path Path
+	@param amount number
+
 	Increases the value at the given path by the given amount.
 ]=]
 function ServerReplion:Increase(path, amount)
@@ -424,6 +449,9 @@ end
 	```lua
 	local newCoins: number = Replion:Decrease('Coins', 20)
 	```
+
+	@param path Path
+	@param amount number
 
 	Decreases the value at the given path by the given amount.
 ]=]
@@ -446,6 +474,10 @@ end
 	newReplion:Insert('Items', 'Sword')
 	newReplion:Insert('Items', 'Diamond Sword', 1)
 	```
+
+	@param path Path
+	@param value T
+	@param index number?
 
 	:::note Arrays only
 	This only works on Arrays.
@@ -489,6 +521,9 @@ end
 	local item: string = newReplion:Remove('Items')
 	print(item) --> 'Bow'
 	```
+
+	@param path Path
+	@param index number?
 
 	:::note Arrays only
 	This only works on Arrays.
@@ -537,6 +572,8 @@ end
 	print(newReplion:Get('Items')) --> {}
 	```
 
+	@param path Path
+
 	:::note Arrays only
 	This only works on Arrays.
 
@@ -578,6 +615,9 @@ end
 	print(index, item) --> 1, 'Bow'
 	```
 
+	@param path Path
+	@param value T
+
 	:::note Arrays only
 	This only works on Arrays.
 
@@ -602,6 +642,8 @@ end
 	local coins: number = Replion:Get('Coins')
 	```
 
+	@param path Path
+
 	Returns the value at the given path.
 ]=]
 function ServerReplion:Get<T>(path): T?
@@ -615,6 +657,9 @@ end
 	local coins: number = Replion:GetExpect('Coins')
 	local gems: number = Replion:GetExpect('Gems', 'Gems does not exist!')
 	```
+
+	@param path Path
+	@param message string?
 
 	@error "Invalid path" -- This error is thrown when the path does not have a value.
 

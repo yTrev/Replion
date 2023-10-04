@@ -67,11 +67,6 @@ export type ClientReplion<D = any> = {
 ]=]
 
 --[=[
-	@type ChangeCallback (newValue: any, oldValue: any) -> ()
-	@within ClientReplion
-]=]
-
---[=[
 	@prop Destroyed boolean?
 	@readonly
 	@within ClientReplion
@@ -86,6 +81,11 @@ export type ClientReplion<D = any> = {
 --[=[
 	@prop Tags { string }?
 	@readonly
+	@within ClientReplion
+]=]
+
+--[=[
+	@prop ReplicateTo ReplicateTo
 	@within ClientReplion
 ]=]
 
@@ -119,6 +119,8 @@ function ClientReplion:__tostring()
 end
 
 --[=[
+	@param callback (replion: ClientReplion) -> ()
+
 	@return RBXScriptConnection
 
 	Connects to a signal that is fired when the :Destroy() method is called.
@@ -128,6 +130,8 @@ function ClientReplion:BeforeDestroy(callback)
 end
 
 --[=[
+	@param callback (newData: any, path: { string }) -> ()
+
 	@return RBXScriptConnection
 
 	Connects to a signal that is fired when a value is changed in the data. 
@@ -144,7 +148,7 @@ end
 	```
 
 	@param path Path
-	@param callback ChangeCallback
+	@param callback (newValue: any, oldValue: any) -> ()
 
 	@return RBXScriptConnection
 
@@ -178,6 +182,7 @@ function ClientReplion:OnDescendantChange(path, callback)
 end
 
 --[=[
+	@param path Path
 	@param callback (index: number, value: any) -> ()
 
 	@return RBXScriptConnection
@@ -189,6 +194,7 @@ function ClientReplion:OnArrayInsert(path, callback)
 end
 
 --[=[
+	@param path Path
 	@param callback (index: number, value: any) -> ()
 
 	@return RBXScriptConnection
@@ -199,9 +205,6 @@ function ClientReplion:OnArrayRemove(path, callback)
 	return self._signals:Connect('onArrayRemove', path, callback)
 end
 
---[=[
-	@private
-]=]
 function ClientReplion:_set<T>(path, newValue: T): T
 	local pathTable = Utils.getPathTable(path)
 
@@ -221,9 +224,6 @@ function ClientReplion:_set<T>(path, newValue: T): T
 	return newValue
 end
 
---[=[
-	@private
-]=]
 function ClientReplion:_update(path, toUpdate)
 	local values = Freeze.Dictionary.map(toUpdate or path :: Dictionary, function(value, key)
 		return if value == Utils.SerializedNone then Freeze.None else value, key
@@ -260,25 +260,16 @@ function ClientReplion:_update(path, toUpdate)
 	end
 end
 
---[=[
-	@private
-]=]
 function ClientReplion:_increase(path, amount)
 	local currentValue: number = self:GetExpect(path)
 
 	return self:_set(path, currentValue + amount)
 end
 
---[=[
-	@private
-]=]
 function ClientReplion:_decrease(path, amount)
 	return self:_increase(path, -amount)
 end
 
---[=[
-	@private
-]=]
 function ClientReplion:_insert<T>(path, value: T, index)
 	local pathTable = Utils.getPathTable(path)
 
@@ -298,9 +289,6 @@ function ClientReplion:_insert<T>(path, value: T, index)
 	self._signals:FireChange(pathTable, newData, oldData)
 end
 
---[=[
-	@private
-]=]
 function ClientReplion:_remove<T>(path, index)
 	local pathTable = Utils.getPathTable(path)
 
@@ -323,9 +311,6 @@ function ClientReplion:_remove<T>(path, index)
 	return value
 end
 
---[=[
-	@private
-]=]
 function ClientReplion:_clear(path)
 	local pathTable = Utils.getPathTable(path)
 
@@ -342,6 +327,9 @@ end
 	```lua
 	local index: number?, item: string? = replion:Find('Items', 'Bow')
 	```
+
+	@param path Path
+	@param value T
 
 	:::note Arrays only
 	This only works on Arrays.
@@ -367,6 +355,8 @@ end
 	local coins: number? = newReplion:Get('Coins')
 	```
 
+	@param path path
+
 	Returns the value at the given path. If no path is given, returns the entire data table.
 	If you are expecting a value to exist, use `Replion:GetExpect` instead.
 ]=]
@@ -379,6 +369,9 @@ end
 	local coins: number = Replion:GetExpect('Coins')
 	local gems: number = Replion:GetExpect('Gems', 'Gems does not exist!')
 	```
+
+	@param path Path
+	@param message string?
 
 	@error "Invalid path" -- This error is thrown when the path does not have a value.
 
