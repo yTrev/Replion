@@ -1,48 +1,48 @@
 --!strict
-local RunService = game:GetService('RunService')
 local Players = game:GetService('Players')
+local RunService = game:GetService('RunService')
 
+local Utils = require(script.Parent.Internal.Utils)
 local Network = require(script.Parent.Internal.Network)
 local ServerReplion = require(script.ServerReplion)
 
 local Signal = require(script.Parent.Parent.Signal)
 local _T = require(script.Parent.Internal.Types)
 
-export type ServerReplion = ServerReplion.ServerReplion
-type ReplionConfig = ServerReplion.ReplionConfig
-type Connection = _T.Connection
+export type ServerReplion<D = any> = ServerReplion.ServerReplion<D>
+type ReplionConfig<T> = ServerReplion.ReplionConfig<T>
 
 type WaitList = { { thread: thread, player: Player?, async: boolean? } }
 type Cache<T> = { [string]: T }
 
 export type ReplionServer = {
-	new: (config: ReplionConfig) -> ServerReplion,
+	new: <T>(config: ReplionConfig<T>) -> ServerReplion<T>,
 
-	GetReplion: (self: ReplionServer, channel: string) -> ServerReplion?,
+	GetReplion: <T>(self: ReplionServer, channel: string) -> ServerReplion<T>?,
 
-	OnReplionAdded: (
-		self: ReplionServer,
-		callback: (channel: string, newReplion: ServerReplion) -> ()
-	) -> Connection,
-
-	OnReplionRemoved: (
-		self: ReplionServer,
-		callback: (channel: string, newReplion: ServerReplion) -> ()
-	) -> Connection,
-
-	WaitReplion: (self: ReplionServer, channel: string, timeout: number?) -> ServerReplion?,
-	AwaitReplion: (self: ReplionServer, channel: string, callback: (ServerReplion) -> (), timeout: number?) -> (),
+	WaitReplion: <T>(self: ReplionServer, channel: string, timeout: number?) -> ServerReplion<T>?,
+	AwaitReplion: (self: ReplionServer, channel: string, callback: <T>(ServerReplion<T>) -> (), timeout: number?) -> (),
 
 	GetReplionsFor: (self: ReplionServer, player: Player) -> { ServerReplion },
-	GetReplionFor: (self: ReplionServer, player: Player, channel: string) -> ServerReplion?,
-	WaitReplionFor: (self: ReplionServer, player: Player, channel: string, timeout: number?) -> ServerReplion?,
+	GetReplionFor: <T>(self: ReplionServer, player: Player, channel: string) -> ServerReplion<T>?,
+	WaitReplionFor: <T>(self: ReplionServer, player: Player, channel: string, timeout: number?) -> ServerReplion<T>?,
 	AwaitReplionFor: (
 		self: ReplionServer,
 		player: Player,
 		channel: string,
-		callback: (ServerReplion) -> (),
+		callback: <T>(ServerReplion<T>) -> (),
 		timeout: number?
 	) -> (),
+
+	OnReplionAdded: (
+		self: ReplionServer,
+		callback: <T>(channel: string, replion: ServerReplion<T>) -> ()
+	) -> Signal.Connection,
+
+	OnReplionRemoved: (
+		self: ReplionServer,
+		callback: <T>(channel: string, replion: ServerReplion<T>) -> ()
+	) -> Signal.Connection,
 }
 
 local replionAdded = Signal.new()
@@ -91,7 +91,7 @@ end
 ]=]
 
 --[=[
-	@type ReplionConfig {Channel: string, Data: {[any]: any}, Tags: {string}?, Extensions: ModuleScript?}
+	@type ReplionConfig {Channel: string, Data: {[any]: any}, Tags: {string}?}
 	@within Server
 ]=]
 
@@ -104,15 +104,15 @@ local Server: ReplionServer = {} :: any
 --[=[
 	Creates a new Replion.
 ]=]
-function Server.new(config: ReplionConfig): ServerReplion
-	local channel: string = assert(config.Channel, '[Replion] - Channel is required!')
+function Server.new<T>(config: ReplionConfig<T>): ServerReplion<T>
+	local channel: string = assert(config.Channel, 'Channel is required!')
 
 	-- Check if a Replion with the same Channel and ReplicateTo is already created.
 	local channelCache = getCache(replionsCache, channel)
 	local newReplicateTo = config.ReplicateTo
 
 	for _, replion in channelCache do
-		local replicateTo = replion._replicateTo
+		local replicateTo = replion.ReplicateTo
 		local isEqual = replicateTo == newReplicateTo
 
 		if not isEqual and type(replicateTo) == 'table' and type(newReplicateTo) == 'table' then
@@ -138,13 +138,13 @@ function Server.new(config: ReplionConfig): ServerReplion
 				end
 			end
 
-			error(`[Replion] - Channel {channel} already exists! for {replicatingTo}`)
+			error(`Channel "{channel}" already exists! for "{replicatingTo}"`)
 		end
 	end
 
 	local newReplion: ServerReplion = ServerReplion.new(config)
 	newReplion:BeforeDestroy(function()
-		local index: number? = table.find(channelCache, newReplion)
+		local index = table.find(channelCache, newReplion)
 		if index then
 			table.remove(channelCache, index)
 		end
@@ -168,7 +168,7 @@ function Server.new(config: ReplionConfig): ServerReplion
 			local thread = info.thread
 			local player = info.player
 
-			local replicateTo = newReplion._replicateTo
+			local replicateTo = newReplion.ReplicateTo
 
 			-- Need to make sure that the player is in the replicateTo list
 			if player then
@@ -203,7 +203,7 @@ end
 --[=[
 	Gets a Replion with the given channel. If multiple Replions exist with the same channel, it will throw an error.
 ]=]
-function Server:GetReplion(channel: string): ServerReplion?
+function Server:GetReplion<T>(channel: string): ServerReplion<T>?
 	local channelCache = replionsCache[channel]
 	if not channelCache then
 		return nil
@@ -211,7 +211,7 @@ function Server:GetReplion(channel: string): ServerReplion?
 
 	assert(
 		#channelCache == 1,
-		`[Replion] - There are multiple replions with the channel "{tostring(channel)}". Did you mean to use GetReplionFor?`
+		`There are multiple replions with the channel "{channel}". Did you mean to use GetReplionFor?`
 	)
 
 	return channelCache[1]
@@ -220,11 +220,11 @@ end
 --[=[
 	Returns the first Replion that matches the channel.
 ]=]
-function Server:GetReplionFor(player: Player, channel: string): ServerReplion?
+function Server:GetReplionFor<T>(player: Player, channel: string): ServerReplion<T>?
 	local channelCache = replionsCache[channel]
 	if channelCache then
 		for _, replion in channelCache do
-			if replion._replicateTo == player and replion.Channel == channel then
+			if replion.ReplicateTo == player and replion.Channel == channel then
 				return replion :: any
 			end
 		end
@@ -236,12 +236,12 @@ end
 --[=[
 	Returns all replions for the given player. Includes replions that are replicated to "All".
 ]=]
-function Server:GetReplionsFor(player: Player): { ServerReplion }
-	local playerReplions: { ServerReplion } = {}
+function Server:GetReplionsFor(player)
+	local playerReplions = {}
 
 	for _, replions in replionsCache do
 		for _, replion in replions do
-			local replicateTo = replion._replicateTo
+			local replicateTo = replion.ReplicateTo
 
 			local isReplicatingToPlayer: boolean = replicateTo == 'All'
 			if not isReplicatingToPlayer then
@@ -266,7 +266,7 @@ end
 
 	Wait for a replion with the given channel to be created.
 ]=]
-function Server:WaitReplion(channel: string, timeout: number?): ServerReplion?
+function Server:WaitReplion<T>(channel, timeout): ServerReplion<T>?
 	local replion = self:GetReplion(channel)
 	if replion then
 		return replion
@@ -289,7 +289,7 @@ end
 
 	Wait for a replion to be created for the player.
 ]=]
-function Server:WaitReplionFor(player: Player, channel: string, timeout: number?): ServerReplion?
+function Server:WaitReplionFor<T>(player, channel, timeout): ServerReplion<T>?
 	local replion = self:GetReplionFor(player, channel)
 	if replion then
 		return replion
@@ -310,7 +310,7 @@ end
 --[=[
 	The callback will be called when the replion with the given id is added.
 ]=]
-function Server:AwaitReplion(channel: string, callback: (ServerReplion) -> (), timeout: number?)
+function Server:AwaitReplion(channel, callback, timeout)
 	local replion = self:GetReplion(channel)
 	if replion then
 		return callback(replion)
@@ -329,7 +329,7 @@ end
 --[=[
 	The callback will be called when the replion with the given id for the given player is added.
 ]=]
-function Server:AwaitReplionFor(player: Player, channel: string, callback: (ServerReplion) -> (), timeout: number?)
+function Server:AwaitReplionFor(player, channel, callback, timeout)
 	local replion = self:GetReplionFor(player, channel)
 	if replion then
 		return callback(replion)
@@ -350,7 +350,7 @@ end
 
 	The callback will be called when a replion is added.
 ]=]
-function Server:OnReplionAdded(callback: (channel: string, newReplion: ServerReplion) -> ()): Connection
+function Server:OnReplionAdded(callback)
 	return replionAdded:Connect(callback)
 end
 
@@ -359,21 +359,18 @@ end
 
 	The callback will be called when a replion is removed.
 ]=]
-function Server:OnReplionRemoved(callback: (channel: string, newReplion: ServerReplion) -> ()): Connection
+function Server:OnReplionRemoved(callback)
 	return replionRemoved:Connect(callback)
 end
 
--- Setup remotes, if we are the server.
-if RunService:IsServer() then
+-- Only setup the remotes if we are not mocking
+if not Utils.ShouldMock and RunService:IsServer() then
 	Network.create({
 		'Added',
 		'Removed',
 		'Update',
 		'UpdateReplicateTo',
-
 		'Set',
-		'RunExtension',
-
 		'ArrayUpdate',
 	})
 
@@ -381,8 +378,8 @@ if RunService:IsServer() then
 		local replicatedToPlayer = Server:GetReplionsFor(player)
 		local playerReplions = {}
 
-		for _, replion: any in replicatedToPlayer do
-			table.insert(playerReplions, replion:_serialize())
+		for _, replion in replicatedToPlayer do
+			table.insert(playerReplions, (replion :: any):_serialize())
 		end
 
 		if #playerReplions > 0 then
@@ -392,19 +389,19 @@ if RunService:IsServer() then
 
 	Players.PlayerRemoving:Connect(function(player: Player)
 		for _, replions in replionsCache do
-			for _, replion: any in replions do
-				local replicateTo = replion._replicateTo
+			for _, replion in replions do
+				local replicateTo = replion.ReplicateTo
 				if replicateTo == 'All' then
 					continue
 				end
 
 				if type(replicateTo) == 'table' then
-					local index: number? = table.find(replicateTo, player)
+					local index = table.find(replicateTo, player)
 					if index then
 						table.remove(replicateTo, index)
 					end
 				elseif replicateTo == player then
-					replion:Destroy()
+					(replion :: any):Destroy()
 				end
 			end
 		end

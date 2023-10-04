@@ -1,32 +1,65 @@
 --!strict
+local Freeze = require(script.Parent.Parent.Parent.Freeze)
+
 local Utils = require(script.Parent.Parent.Internal.Utils)
 local Signal = require(script.Parent.Parent.Parent.Signal)
 local _T = require(script.Parent.Parent.Internal.Types)
 
 local Signals = require(script.Parent.Parent.Internal.Signals)
 
-type ChangeCallback = (newValue: any, oldValue: any) -> ()
-type ArrayCallback = (index: number, value: any) -> ()
-type BeforeDestroyCallback = _T.BeforeDestroy<ClientReplion>
-type ExtensionCallback = _T.ExtensionCallback<ClientReplion>
 type Dictionary = _T.Dictionary
 type Path = _T.Path
 type ReplicateTo = _T.ReplicateTo
 type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
 
-type ClientReplionProps = {
-	Data: Dictionary,
+export type ClientReplion<D = any> = {
+	Data: D,
 	Tags: _T.Tags,
 	Destroyed: boolean?,
+	ReplicateTo: ReplicateTo,
 
-	_extensions: { { any } },
 	_channel: string,
 	_signals: Signals.Signals,
-	_beforeDestroy: _T.Signal,
-	_replicateTo: ReplicateTo,
-}
+	_beforeDestroy: Signal.Signal<ClientReplion<D>>,
 
-local merge = Utils.merge
+	new: (serializedReplion: _T.SerializedReplion) -> ClientReplion<D>,
+	BeforeDestroy: (self: ClientReplion<D>, callback: (replion: ClientReplion<D>) -> ()) -> Signal.Connection,
+
+	OnDataChange: (self: ClientReplion<D>, callback: (newData: D, path: _T.Path) -> ()) -> Signal.Connection,
+	OnChange: <T>(
+		self: ClientReplion<D>,
+		path: _T.Path,
+		callback: (newValue: T, oldValue: T) -> ()
+	) -> Signal.Connection,
+
+	OnDescendantChange: (
+		self: ClientReplion<D>,
+		path: _T.Path,
+		callback: (path: _T.Path, newDescendantValue: any, oldDescendantValue: any) -> ()
+	) -> Signal.Connection,
+
+	OnArrayInsert: (self: ClientReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
+	OnArrayRemove: (self: ClientReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
+
+	_set: <T>(self: ClientReplion<D>, path: _T.Path, newValue: T) -> T,
+	_update: (self: ClientReplion<D>, path: _T.Path | Dictionary, toUpdate: Dictionary?) -> (),
+
+	_increase: (self: ClientReplion<D>, path: _T.Path, amount: number) -> number,
+	_decrease: (self: ClientReplion<D>, path: _T.Path, amount: number) -> number,
+
+	_insert: <T>(self: ClientReplion<D>, path: _T.Path, value: T, index: number?) -> (),
+	_remove: <T>(self: ClientReplion<D>, path: _T.Path, index: number?) -> T,
+	_clear: (self: ClientReplion<D>, path: _T.Path) -> (),
+
+	Find: <T>(self: ClientReplion<D>, path: _T.Path, value: T) -> (number?, T?),
+
+	Get: <T>(self: ClientReplion<D>, path: _T.Path) -> T?,
+	GetExpect: <T>(self: ClientReplion<D>, path: _T.Path, message: string?) -> T,
+
+	Destroy: (self: ClientReplion<D>) -> (),
+
+	__tostring: (self: ClientReplion<D>) -> string,
+}
 
 --[=[
 	@type Path string | { string }
@@ -35,11 +68,6 @@ local merge = Utils.merge
 
 --[=[
 	@type ChangeCallback (newValue: any, oldValue: any) -> ()
-	@within ClientReplion
-]=]
-
---[=[
-	@type ExtensionCallback (replion: ClientReplion, ...any) -> ()
 	@within ClientReplion
 ]=]
 
@@ -66,42 +94,27 @@ local merge = Utils.merge
 	
 	@client
 ]=]
-local ClientReplion = {}
-ClientReplion.__index = ClientReplion
+local ClientReplionMeta = {}
+ClientReplionMeta.__index = ClientReplionMeta
 
-function ClientReplion.new(serializedReplion: _T.SerializedReplion): ClientReplion
-	local extensions = {}
+local ClientReplion: ClientReplion = ClientReplionMeta :: any
 
-	if serializedReplion[6] then
-		local loadedExtensions = require(serializedReplion[6]) :: any
-
-		local orderedExtensions = {}
-		for name, extension in loadedExtensions :: any do
-			table.insert(orderedExtensions, { name, extension })
-		end
-
-		-- Sort extensions by name, so that they are always initialized in the same order
-		table.sort(orderedExtensions, function(a, b)
-			return a[1] < b[1]
-		end)
-
-		extensions = orderedExtensions
-	end
-
-	return setmetatable({
+function ClientReplion.new(serializedReplion)
+	local self: ClientReplion = setmetatable({
 		Data = serializedReplion[3],
-		Tags = serializedReplion[4],
+		Tags = serializedReplion[5],
+		ReplicateTo = serializedReplion[3],
 
-		_extensions = extensions,
 		_channel = serializedReplion[2],
-		_replicateTo = serializedReplion[5],
 
 		_beforeDestroy = Signal.new(),
 		_signals = Signals.new(),
-	}, ClientReplion)
+	}, ClientReplion) :: any
+
+	return self
 end
 
-function ClientReplion.__tostring(self: ClientReplion)
+function ClientReplion:__tostring()
 	return `Replion<{self._channel}>`
 end
 
@@ -110,22 +123,17 @@ end
 
 	Connects to a signal that is fired when the :Destroy() method is called.
 ]=]
-function ClientReplion.BeforeDestroy(self: ClientReplion, callback: (replion: ClientReplion) -> ()): _T.Connection
+function ClientReplion:BeforeDestroy(callback)
 	return self._beforeDestroy:Connect(callback)
 end
 
 --[=[
 	@return RBXScriptConnection
 
-	This event is fired when a Extension is executed. The callback will be called with the return values of the Extension.
+	Connects to a signal that is fired when a value is changed in the data. 
 ]=]
-function ClientReplion.OnExecute(self: ClientReplion, name: string, callback: (...any) -> ...any): _T.Connection?
-	local onExecute = self._signals:Get('onExecute', name)
-	if onExecute then
-		return onExecute:Connect(callback)
-	end
-
-	return
+function ClientReplion:OnDataChange(callback)
+	return self._signals:Connect('onDataChange', '__root', callback)
 end
 
 --[=[
@@ -142,13 +150,8 @@ end
 
 	This function is called when the value of the path changes.
 ]=]
-function ClientReplion.OnChange(self: ClientReplion, path: Path, callback: ChangeCallback): _T.Connection?
-	local onChange = self._signals:Get('onChange', path)
-	if onChange then
-		return onChange:Connect(callback)
-	end
-
-	return
+function ClientReplion:OnChange<T>(path, callback)
+	return self._signals:Connect('onChange', path, callback)
 end
 
 --[=[
@@ -159,7 +162,7 @@ end
 
 	```lua
 	replion:OnDescendantChange('Areas', function(path: { string }, newValue: any, oldValue: any)
-		print(path, newValue, oldValue)
+		print(path, newValue, oldValue) --> {'Areas', 'Ice'}, true, false
 	end)
 	```
 
@@ -170,13 +173,8 @@ end
 
 	This event will be fired when any descendant of the path is changed.
 ]=]
-function ClientReplion.OnDescendantChange(self: ClientReplion, path: Path, callback: DescendantCallback): _T.Connection?
-	local onDescendantChange = self._signals:Get('onDescendantChange', path)
-	if onDescendantChange then
-		return onDescendantChange:Connect(callback)
-	end
-
-	return
+function ClientReplion:OnDescendantChange(path, callback)
+	return self._signals:Connect('onDescendantChange', path, callback)
 end
 
 --[=[
@@ -186,13 +184,8 @@ end
 
 	Connects to a signal that is fired when a value is inserted in the array at the given path.
 ]=]
-function ClientReplion.OnArrayInsert(self: ClientReplion, path: Path, callback: ArrayCallback): _T.Connection?
-	local onArrayInsert = self._signals:Get('onArrayInsert', path)
-	if onArrayInsert then
-		return onArrayInsert:Connect(callback)
-	end
-
-	return
+function ClientReplion:OnArrayInsert(path, callback)
+	return self._signals:Connect('onArrayInsert', path, callback)
 end
 
 --[=[
@@ -202,50 +195,28 @@ end
 
 	Connects to a signal that is fired when a value is removed in the array at the given path.
 ]=]
-function ClientReplion.OnArrayRemove(self: ClientReplion, path: Path, callback: ArrayCallback): _T.Connection?
-	local onArrayRemove = self._signals:Get('onArrayRemove', path)
-	if onArrayRemove then
-		return onArrayRemove:Connect(callback)
-	end
-
-	return
-end
-
---[=[
-	```lua
-	local coins: number = newReplion:Get('Coins')
-	local data = newReplion:Get() --> Returns the entire data
-	```
-
-	Returns the value at the given path. If no path is given, returns the entire data table.
-]=]
-function ClientReplion.Get(self: ClientReplion, path: Path?): any
-	if path then
-		local data: any, last = Utils.getFromPath(path, self.Data)
-
-		return data[last]
-	else
-		return self.Data
-	end
+function ClientReplion:OnArrayRemove(path, callback)
+	return self._signals:Connect('onArrayRemove', path, callback)
 end
 
 --[=[
 	@private
 ]=]
-function ClientReplion.Set<T>(self: ClientReplion, path: Path, newValue: T): T
+function ClientReplion:_set<T>(path, newValue: T): T
 	local pathTable = Utils.getPathTable(path)
-	local currentValue, key = Utils.getFromPath(path, self.Data)
 
-	local oldParentValue = if #pathTable > 1 then table.clone(currentValue) else nil
-
-	local oldValue = currentValue[key]
-	currentValue[key] = newValue
-
-	if oldParentValue then
-		self._signals:FireParent('onChange', pathTable, currentValue, oldParentValue)
+	local currentValue: T? = Freeze.Dictionary.getIn(self.Data, pathTable)
+	if currentValue == newValue then
+		return newValue
 	end
 
-	self._signals:Fire('onChange', path, newValue, oldValue)
+	local newData = Freeze.Dictionary.setIn(self.Data, pathTable, newValue)
+	local oldData = self.Data
+
+	self.Data = newData
+
+	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
+	self._signals:FireChange(path, newData, oldData)
 
 	return newValue
 end
@@ -253,180 +224,184 @@ end
 --[=[
 	@private
 ]=]
-function ClientReplion.Update(self: ClientReplion, path: Path | Dictionary, toUpdate: Dictionary?): Dictionary?
-	local newValue, oldValue
+function ClientReplion:_update(path, toUpdate)
+	local values = Freeze.Dictionary.map(toUpdate or path :: Dictionary, function(value, key)
+		return if value == Utils.SerializedNone then Freeze.None else value, key
+	end)
+
+	local oldData = self.Data
 
 	if toUpdate == nil then
-		oldValue = self.Data
+		local newData = Freeze.Dictionary.merge(self.Data, values)
 
-		local newData: Dictionary = merge(self.Data, path :: Dictionary)
 		self.Data = newData
 
-		newValue = newData
+		self._signals:FireEvent('onDataChange', '__root', newData, {})
 
-		for index in path :: Dictionary do
-			self._signals:Fire('onChange', index, newData[index], oldValue[index])
+		for index, value in values do
+			self._signals:FireEvent('onChange', index, Utils.getValue(value), oldData[index])
 		end
 	else
-		local currentValue, key = Utils.getFromPath(path, self.Data)
 		local pathTable = Utils.getPathTable(path)
+		local newData = Freeze.Dictionary.mergeIn(self.Data, pathTable, values)
 
-		local oldParentValue = if #pathTable > 1 then table.clone(currentValue) else nil
-		oldValue = currentValue[key]
+		self.Data = newData
 
-		if currentValue[key] ~= nil then
-			currentValue[key] = merge(currentValue[key], toUpdate :: Dictionary)
-		else
-			currentValue[key] = toUpdate :: Dictionary
+		self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
+
+		for index, value in values do
+			local indexPath = Freeze.List.push(pathTable, index)
+			local oldValue = Freeze.Dictionary.getIn(oldData, indexPath)
+
+			self._signals:FireEvent('onChange', indexPath, Utils.getValue(value), oldValue)
 		end
 
-		if oldParentValue then
-			self._signals:FireParent('onChange', pathTable, currentValue, oldParentValue)
-		end
-
-		local newLast = #pathTable + 1
-		for index, value in toUpdate :: Dictionary do
-			pathTable[newLast] = index
-
-			self._signals:Fire('onChange', pathTable, Utils.getValue(value), oldValue[index])
-		end
-
-		pathTable[newLast] = nil
-
-		newValue = currentValue[key]
+		self._signals:FireChange(path, newData, oldData)
 	end
-
-	self._signals:Fire('onChange', path, newValue, oldValue)
-
-	return newValue
 end
 
 --[=[
 	@private
 ]=]
-function ClientReplion.Increase(self: ClientReplion, path: Path, amount: number): number
-	local currentValue: number = self:Get(path)
+function ClientReplion:_increase(path, amount)
+	local currentValue: number = self:GetExpect(path)
 
-	return self:Set(path, currentValue + amount)
+	return self:_set(path, currentValue + amount)
 end
 
 --[=[
 	@private
 ]=]
-function ClientReplion.Decrease(self: ClientReplion, path: Path, amount: number): number
-	return self:Increase(path, -amount)
+function ClientReplion:_decrease(path, amount)
+	return self:_increase(path, -amount)
 end
 
 --[=[
 	@private
 ]=]
-function ClientReplion.Insert<T>(self: ClientReplion, path: Path, value: T, index: number?): (number, T)
-	local data, last = Utils.getFromPath(path, self.Data)
+function ClientReplion:_insert<T>(path, value: T, index)
+	local pathTable = Utils.getPathTable(path)
 
-	local oldArray = data[last]
-	local newArray = table.clone(oldArray)
+	local array =
+		assert(Freeze.Dictionary.getIn(self.Data, pathTable), `"{Utils.getPathString(path)}" is not a valid path!`)
+	local targetIndex: number = if index then index else #array + 1
 
-	local targetIndex: number = if index then index else #newArray + 1
+	local newArray = Freeze.List.insert(array, targetIndex, value)
 
-	table.insert(newArray, targetIndex, value)
+	local oldData = self.Data
+	local newData = Freeze.Dictionary.setIn(self.Data, pathTable, newArray)
 
-	data[last] = newArray
+	self.Data = newData
 
-	self._signals:Fire('onArrayInsert', path, targetIndex, value)
-	self._signals:Fire('onChange', path, newArray, oldArray)
-
-	return targetIndex, value
+	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
+	self._signals:FireEvent('onArrayInsert', pathTable, targetIndex, value)
+	self._signals:FireChange(pathTable, newData, oldData)
 end
 
 --[=[
 	@private
 ]=]
-function ClientReplion.Remove(self: ClientReplion, path: Path, index: number?): any
-	local data, last = Utils.getFromPath(path, self.Data)
+function ClientReplion:_remove<T>(path, index)
+	local pathTable = Utils.getPathTable(path)
 
-	local oldArray = data[last]
-	local newArray = table.clone(oldArray)
+	local array =
+		assert(Freeze.Dictionary.getIn(self.Data, pathTable), `"{Utils.getPathString(path)}" is not a valid path!`)
+	local targetIndex: number = if index then index else #array
+	local value = array[targetIndex]
 
-	index = if index then index else #newArray
+	local newArray = Freeze.List.remove(array, targetIndex)
 
-	local value = table.remove(newArray, index)
+	local oldData = self.Data
+	local newData = Freeze.Dictionary.setIn(self.Data, pathTable, newArray)
 
-	data[last] = newArray
+	self.Data = newData
 
-	self._signals:Fire('onArrayRemove', path, index, value)
-	self._signals:Fire('onChange', path, newArray, oldArray)
+	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
+	self._signals:FireEvent('onArrayRemove', path, targetIndex, value)
+	self._signals:FireChange(path, newData, oldData)
 
 	return value
 end
 
-function ClientReplion.Find<T>(self: ClientReplion, path: Path, value: T): (number?, T?)
-	local array: { any } = self:Get(path)
-	if array then
-		local index: number? = table.find(array, value)
-
-		if index then
-			return index, value
-		end
-	end
-
-	return
-end
-
 --[=[
 	@private
 ]=]
-function ClientReplion.Clear(self: ClientReplion, path: Path)
-	local data, last = Utils.getFromPath(path, self.Data)
+function ClientReplion:_clear(path)
+	local pathTable = Utils.getPathTable(path)
 
-	local oldArray = data[last]
+	local oldData = self.Data
+	local newData = Freeze.Dictionary.setIn(self.Data, pathTable, {})
 
-	-- We could use the `table.clear`, but I don't see any reason to do that.
-	local newArray = {}
-	data[last] = newArray
+	self.Data = newData
 
-	self._signals:Fire('onChange', path, newArray, oldArray)
+	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
+	self._signals:FireChange(path, newData, oldData)
 end
 
 --[=[
-	@return ReplicateTo
+	```lua
+	local index: number?, item: string? = replion:Find('Items', 'Bow')
+	```
+
+	:::note Arrays only
+	This only works on Arrays.
+
+	Try to find the value in the array at the given path, and returns the index and value.
 ]=]
-function ClientReplion.GetReplicateTo(self: ClientReplion): ReplicateTo
-	return self._replicateTo
-end
-
---[=[
-	@private
-]=]
-function ClientReplion.Execute(self: ClientReplion, packedId: string, ...: any)
-	local id = utf8.codepoint(packedId)
-
-	local extensions = self._extensions
-	local extension = assert(extensions[id], `[Replion] - Extension with id {id} does not exist!`)
-
-	local extensionName: string = extension[1]
-	local extensionFunction: ExtensionCallback = extension[2]
-
-	local values = table.pack(extensionFunction(self, ...))
-
-	local onExecuteSignals = self._signals:GetSignals('onExecute')
-	if onExecuteSignals then
-		local signal = onExecuteSignals[extensionName]
-
-		if signal then
-			signal:Fire(table.unpack(values))
-		end
+function ClientReplion:Find<T>(path, value: T): (number?, T?)
+	local array: { T }? = self:Get(path)
+	if not array then
+		return
 	end
+
+	local index: number? = table.find(array, value)
+	if not index then
+		return
+	end
+
+	return index, value
 end
 
-function ClientReplion.Destroy(self: ClientReplion)
+--[=[
+	```lua
+	local coins: number? = newReplion:Get('Coins')
+	```
+
+	Returns the value at the given path. If no path is given, returns the entire data table.
+	If you are expecting a value to exist, use `Replion:GetExpect` instead.
+]=]
+function ClientReplion:Get<T>(path): T?
+	return Freeze.Dictionary.getIn(self.Data, Utils.getPathTable(path))
+end
+
+--[=[
+	```lua
+	local coins: number = Replion:GetExpect('Coins')
+	local gems: number = Replion:GetExpect('Gems', 'Gems does not exist!')
+	```
+
+	@error "Invalid path" -- This error is thrown when the path does not have a value.
+
+	Same as `Replion:Get`, but throws an error if the path does not have a value.
+	You can set a custom error message by passing it as the second argument.
+]=]
+function ClientReplion:GetExpect<T>(path, message): T
+	assert(path, 'Path is required!')
+
+	return assert(self:Get(path), if message then message else 'Invalid path.') :: T
+end
+
+function ClientReplion:Destroy()
+	if self.Destroyed then
+		return
+	end
+
 	self.Destroyed = true
 
-	self._beforeDestroy:Fire()
+	self._beforeDestroy:Fire(self)
 	self._beforeDestroy:DisconnectAll()
 
 	self._signals:Destroy()
 end
-
-export type ClientReplion = typeof(setmetatable({} :: ClientReplionProps, ClientReplion))
 
 return ClientReplion

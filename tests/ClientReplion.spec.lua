@@ -6,9 +6,8 @@ local ClientReplion = require(ReplicatedStorage.Packages.Replion.Client.ClientRe
 
 return function()
 	describe('ClientReplion.new', function()
-		local newReplion = ClientReplion.new({ nil, 'new', { Coins = 20 } })
-
 		it('should return a Replion', function()
+			local newReplion = ClientReplion.new({ nil, 'new', { Coins = 20 } })
 			expect(newReplion).to.be.a('table')
 		end)
 	end)
@@ -120,16 +119,10 @@ return function()
 		local newReplion = ClientReplion.new({ nil, 'Insert', { Values = {} } })
 
 		it('should insert the value in the given array', function()
-			local fooIndex, fooValue = newReplion:Insert('Values', 'Foo')
-			local barIndex, barValue = newReplion:Insert('Values', 'Bar', 1)
+			newReplion:Insert('Values', 'Foo')
+			newReplion:Insert('Values', 'Bar', 1)
 
 			local newValues = newReplion:Get('Values')
-
-			expect(fooIndex).to.be.equal(1)
-			expect(fooValue).to.be.equal('Foo')
-
-			expect(barIndex).to.be.equal(1)
-			expect(barValue).to.be.equal('Bar')
 
 			expect(newValues[1]).to.be.equal('Bar')
 			expect(newValues[2]).to.be.equal('Foo')
@@ -222,22 +215,15 @@ return function()
 			local newReplion = ClientReplion.new({ nil, 'OnChangeTable', { Value = { Test = true } } })
 
 			local called: number = 0
-
 			newReplion:OnChange('Value', function()
 				called += 1
 			end)
 
 			newReplion:Set('Value.Test', false)
-
-			expect(called).to.be.equal(1)
-
 			newReplion:Set('Value.Test', { Foo = false })
-
-			expect(called).to.be.equal(2)
-
 			newReplion:Set('Value.Test.Foo', true)
 
-			expect(called).to.be.equal(2)
+			expect(called).to.be.equal(3)
 		end)
 	end)
 
@@ -264,9 +250,11 @@ return function()
 			expect(changes[2].oldValue).to.be.equal(false)
 			expect(table.concat(changes[2].path, '.')).to.be.equal('Values.B')
 
-			expect(changes[3].newValue).to.be.equal(false)
-			expect(changes[3].oldValue).to.be.equal(true)
-			expect(table.concat(changes[3].path, '.')).to.be.equal('Values.C.D')
+			expect(changes[3].newValue).to.be.a('table')
+			expect(changes[3].oldValue).to.be.a('table')
+
+			expect(changes[3].newValue.D).to.be.equal(false)
+			expect(changes[3].oldValue.D).to.be.equal(true)
 		end)
 	end)
 
@@ -280,33 +268,35 @@ return function()
 				oldValues = oldValue
 			end)
 
-			local returnedValue = newReplion:Update({ Values = { 1, 2, 3 } })
+			local barNew, barOld
+			newReplion:OnChange('Other.Bar', function(newValue, oldValue)
+				barNew = newValue
+				barOld = oldValue
+			end)
 
-			expect(newValues[1]).to.be.equal(returnedValue.Values[1])
-			expect(newValues[2]).to.be.equal(returnedValue.Values[2])
-			expect(newValues[3]).to.be.equal(returnedValue.Values[3])
+			newReplion:Update({ Values = { 1, 2, 3 } })
+			newReplion:Update('Other', { Bar = false })
 
-			expect(oldValues[1]).to.be.equal(nil)
-			expect(oldValues[2]).to.be.equal(nil)
-			expect(oldValues[3]).to.be.equal(nil)
+			expect(barNew).to.be.equal(false)
+			expect(barOld).never.to.be.ok()
+
+			expect(newValues).to.be.a('table')
+			expect(#newValues).to.be.equal(3)
+			expect(#oldValues).to.be.equal(0)
 		end)
 
 		it('should set new values', function()
-			local returnedValue = newReplion:Update({ Coins = 20, Gems = 100, IsVip = true })
+			newReplion:Update({ Coins = 20, Gems = 100, IsVip = true })
 
-			expect(returnedValue.Coins).to.be.equal(20)
-			expect(returnedValue.Gems).to.be.equal(100)
-			expect(returnedValue.IsVip).to.be.equal(true)
-
-			expect(newReplion.Data.Coins).to.be.equal(returnedValue.Coins)
-			expect(newReplion.Data.Gems).to.be.equal(returnedValue.Gems)
-			expect(newReplion.Data.IsVip).to.be.equal(returnedValue.IsVip)
+			expect(newReplion:Get('Coins')).to.be.equal(20)
+			expect(newReplion:Get('Gems')).to.be.equal(100)
+			expect(newReplion:Get('IsVip')).to.be.equal(true)
 		end)
 
 		it('should remove values with the None symbol', function()
-			local returnedValue = newReplion:Update({ ToBeRemoved = Utils.SerializedNone })
+			newReplion:Update({ ToBeRemoved = Utils.SerializedNone })
 
-			expect(returnedValue.ToBeRemoved).to.be.never.ok()
+			expect(newReplion:Get('ToBeRemoved')).to.be.never.ok()
 		end)
 	end)
 end

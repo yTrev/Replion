@@ -3,7 +3,8 @@
 
 # To add a new tool, add an entry to this table.
 [tools]
-selene = "Kampfkarren/selene@0.24.0"
-rojo = "rojo-rbx/rojo@7.2.1"
+selene = "Kampfkarren/selene@0.25.0"
+rojo = "rojo-rbx/rojo@7.3.0"
 wally = "UpliftGames/wally@0.3.1"
-stylua = "JohnnyMorganz/StyLua@0.16.0"
+stylua = "JohnnyMorganz/StyLua@0.18.2"
+wally-package-types = "JohnnyMorganz/wally-package-types@1.2.1"

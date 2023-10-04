@@ -6,13 +6,13 @@ local ReplionServer = Replion.Server
 
 return function()
 	describe('ServerReplion.new', function()
-		local newReplion = ReplionServer.new({
-			Data = {},
-			Channel = 'serverNew',
-			ReplicateTo = 'All',
-		})
-
 		it('should create a new ReplionServer', function()
+			local newReplion = ReplionServer.new({
+				Data = {},
+				Channel = 'serverNew',
+				ReplicateTo = 'All',
+			})
+
 			expect(newReplion).to.be.ok()
 		end)
 
@@ -76,7 +76,7 @@ return function()
 				newReplion:Destroy()
 
 				newReplion:Set('Foo', true)
-			end).to.throw("[Replion] You're trying to use a Replion that has been destroyed")
+			end).to.throw("You're trying to use a Replion that has been destroyed")
 		end)
 
 		it('should mark the Replion as destroyed', function()
@@ -197,7 +197,7 @@ return function()
 
 			newReplion:SetReplicateTo(newReplicateTo)
 
-			expect(newReplion._replicateTo).to.be.equal(newReplicateTo)
+			expect(newReplion.ReplicateTo).to.be.equal(newReplicateTo)
 		end)
 
 		it('should error if the ReplicateTo is not valid', function()
@@ -218,6 +218,7 @@ return function()
 			newReplion:Clear('Values')
 
 			local newValues = newReplion:Get('Values')
+			print(newValues)
 			expect(#newValues).to.equal(0)
 		end)
 
@@ -264,16 +265,10 @@ return function()
 		})
 
 		it('should insert the value in the given array', function()
-			local fooIndex, fooValue = newReplion:Insert('Values', 'Foo')
-			local barIndex, barValue = newReplion:Insert('Values', 'Bar', 1)
+			newReplion:Insert('Values', 'Foo')
+			newReplion:Insert('Values', 'Bar', 1)
 
 			local newValues = newReplion:Get('Values')
-
-			expect(fooIndex).to.be.equal(1)
-			expect(fooValue).to.be.equal('Foo')
-
-			expect(barIndex).to.be.equal(1)
-			expect(barValue).to.be.equal('Bar')
 
 			expect(newValues[1]).to.be.equal('Bar')
 			expect(newValues[2]).to.be.equal('Foo')
@@ -386,22 +381,15 @@ return function()
 			})
 
 			local called: number = 0
-
 			newReplion:OnChange('Value', function()
 				called += 1
 			end)
 
 			newReplion:Set('Value.Test', false)
-
-			expect(called).to.be.equal(1)
-
 			newReplion:Set('Value.Test', { Foo = false })
-
-			expect(called).to.be.equal(2)
-
 			newReplion:Set('Value.Test.Foo', true)
 
-			expect(called).to.be.equal(2)
+			expect(called).to.be.equal(3)
 		end)
 	end)
 
@@ -431,9 +419,11 @@ return function()
 			expect(changes[2].oldValue).to.be.equal(false)
 			expect(table.concat(changes[2].path, '.')).to.be.equal('Values.B')
 
-			expect(changes[3].newValue).to.be.equal(false)
-			expect(changes[3].oldValue).to.be.equal(true)
-			expect(table.concat(changes[3].path, '.')).to.be.equal('Values.C.D')
+			expect(changes[3].newValue).to.be.a('table')
+			expect(changes[3].oldValue).to.be.a('table')
+
+			expect(changes[3].newValue.D).to.be.equal(false)
+			expect(changes[3].oldValue.D).to.be.equal(true)
 		end)
 	end)
 
@@ -457,71 +447,29 @@ return function()
 				barOld = oldValue
 			end)
 
-			local returnedValue = newReplion:Update({ Values = { 1, 2, 3 } })
-			local otherValue = newReplion:Update('Other', { Bar = false })
+			newReplion:Update({ Values = { 1, 2, 3 } })
+			newReplion:Update('Other', { Bar = false })
 
-			expect(newValues[1]).to.be.equal(returnedValue.Values[1])
-			expect(newValues[2]).to.be.equal(returnedValue.Values[2])
-			expect(newValues[3]).to.be.equal(returnedValue.Values[3])
-
-			expect(barNew).to.be.equal(otherValue.Bar)
+			expect(barNew).to.be.equal(false)
 			expect(barOld).never.to.be.ok()
 
-			expect(oldValues[1]).to.be.equal(nil)
-			expect(oldValues[2]).to.be.equal(nil)
-			expect(oldValues[3]).to.be.equal(nil)
+			expect(newValues).to.be.a('table')
+			expect(#newValues).to.be.equal(3)
+			expect(#oldValues).to.be.equal(0)
 		end)
 
 		it('should set new values', function()
-			local returnedValue = newReplion:Update({ Coins = 20, Gems = 100, IsVip = true })
+			newReplion:Update({ Coins = 20, Gems = 100, IsVip = true })
 
-			expect(returnedValue.Coins).to.be.equal(20)
-			expect(returnedValue.Gems).to.be.equal(100)
-			expect(returnedValue.IsVip).to.be.equal(true)
-
-			expect(newReplion.Data.Coins).to.be.equal(returnedValue.Coins)
-			expect(newReplion.Data.Gems).to.be.equal(returnedValue.Gems)
-			expect(newReplion.Data.IsVip).to.be.equal(returnedValue.IsVip)
+			expect(newReplion:Get('Coins')).to.be.equal(20)
+			expect(newReplion:Get('Gems')).to.be.equal(100)
+			expect(newReplion:Get('IsVip')).to.be.equal(true)
 		end)
 
 		it('should remove values with the None symbol', function()
-			local updatedValue
+			newReplion:Update({ ToBeRemoved = Replion.None })
 
-			newReplion:OnChange('ToBeRemoved', function(newValue)
-				updatedValue = newValue
-			end)
-
-			local returnedValue = newReplion:Update({ ToBeRemoved = Replion.None })
-
-			expect(returnedValue.ToBeRemoved).to.be.never.ok()
-			expect(updatedValue).to.be.never.ok()
-		end)
-	end)
-
-	describe('ServerReplion:Execute', function()
-		local newReplion = ReplionServer.new({
-			Data = { Items = {} },
-			Channel = 'Execute',
-			ReplicateTo = 'All',
-			Extensions = script.Parent.Extensions,
-		})
-
-		it('should call the events', function()
-			local wasCalled = false
-
-			newReplion:OnDescendantChange('Items', function()
-				wasCalled = true
-			end)
-
-			newReplion:Execute('AddItem', 'Sword')
-
-			expect(wasCalled).to.be.equal(true)
-		end)
-
-		it('should return the extensions values', function()
-			local wasAdded = newReplion:Execute('AddItem', 'Bow')
-
-			expect(wasAdded).to.be.equal(true)
+			expect(newReplion:Get('ToBeRemoved')).to.be.never.ok()
 		end)
 	end)
 end
