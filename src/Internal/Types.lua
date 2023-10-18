@@ -11,5 +11,6 @@ export type ArrayCallback = (index: number, value: any) -> ()
 export type BeforeDestroy<T> = (replion: T, ...any) -> ()
 
 export type ReplicateTo = Player | { Player } | 'All'
+export type Cache<T> = { [string]: T }
 
 return nil

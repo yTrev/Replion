@@ -667,7 +667,16 @@ end
 	You can set a custom error message by passing it as the second argument.
 ]=]
 function ServerReplion:GetExpect<T>(path, message): T
-	return assert(self:Get(path), message or 'Invalid path.') :: T
+	assert(path, 'Path is required!')
+
+	message = if message then message else `"{Utils.getPathString(path)}" is not a valid path!`
+
+	local value: T? = self:Get(path)
+	if value == nil then
+		error(message)
+	end
+
+	return value
 end
 
 --[=[

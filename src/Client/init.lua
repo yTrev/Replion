@@ -10,6 +10,7 @@ local _T = require(script.Parent.Internal.Types)
 export type ClientReplion<D = any> = ClientReplion.ClientReplion<D>
 type SerializedReplion = _T.SerializedReplion
 type SerializedReplions = { SerializedReplion }
+type WaitList = { { thread: thread, async: boolean? } }
 
 export type ReplionClient = {
 	OnReplionAdded: (self: ReplionClient, callback: (ClientReplion) -> ()) -> Signal.Connection,
@@ -27,12 +28,19 @@ export type ReplionClient = {
 	) -> Signal.Connection,
 
 	GetReplion: (self: ReplionClient, channel: string) -> ClientReplion?,
-	WaitReplion: (self: ReplionClient, channel: string) -> ClientReplion,
-	AwaitReplion: (self: ReplionClient, channel: string, callback: (replion: ClientReplion) -> ()) -> (),
+	WaitReplion: (self: ReplionClient, channel: string, timeout: number?) -> ClientReplion,
+	AwaitReplion: (
+		self: ReplionClient,
+		channel: string,
+		callback: (replion: ClientReplion) -> (),
+		timeout: number?
+	) -> (() -> ())?,
 }
 
 local cache: { [string]: ClientReplion? } = {}
-local waitingList: { [string]: { thread } } = {}
+local waitingList: _T.Cache<WaitList> = {}
+
+local timeouts: { [thread]: thread } = {}
 
 local addedSignal = Signal.new()
 local removedSignal = Signal.new()
@@ -45,6 +53,31 @@ local function getWaitList(channel: string)
 	end
 
 	return list
+end
+
+local function cancelWait(waitList: WaitList, thread: thread)
+	for index, info in waitList do
+		if info.thread ~= thread then
+			continue
+		end
+
+		table.remove(waitList, index)
+
+		-- if is an await function, just cancel it
+		if info.async then
+			task.cancel(thread)
+		else
+			task.spawn(thread)
+		end
+
+		timeouts[thread] = nil
+
+		break
+	end
+end
+
+local function createTimeout(waitList: WaitList, timeout: number, thread: thread)
+	return task.delay(timeout, cancelWait, waitList, thread)
 end
 
 local function createReplion(serializedReplion: SerializedReplion)
@@ -62,8 +95,8 @@ local function createReplion(serializedReplion: SerializedReplion)
 
 	local waitList = waitingList[channel]
 	if waitList then
-		for _, thread in waitList do
-			task.spawn(thread, newReplion)
+		for _, info in waitList do
+			task.spawn(info.thread, newReplion)
 		end
 
 		waitingList[channel] = nil
@@ -146,21 +179,26 @@ end
 
 --[=[
 	@param channel string
+	@param timeout number?
 
 	@yields
 
 	Yields until the replion with the given channel is added.
 ]=]
-function Client:WaitReplion(channel): ClientReplion
+function Client:WaitReplion(channel, timeout): ClientReplion
 	local replion = cache[channel]
 	if replion then
 		return replion
 	end
 
+	local thread: thread = coroutine.running()
 	local waitList = getWaitList(channel)
-	local thread = coroutine.running()
 
-	table.insert(waitList, thread)
+	if timeout then
+		timeouts[thread] = createTimeout(waitList, timeout, thread)
+	end
+
+	table.insert(waitList, { thread = thread })
 
 	return coroutine.yield()
 end
@@ -168,10 +206,14 @@ end
 --[=[
 	@param channel string
 	@param callback (replion: ClientReplion) -> ()
+	@param timeout number?
+
+	@return (() -> ())?
 
 	This function will call the callback when a replion with the channel is created.
+	Returns a function that can be called to cancel the wait.
 ]=]
-function Client:AwaitReplion(channel, callback)
+function Client:AwaitReplion(channel, callback, timeout)
 	local replion = cache[channel]
 	if replion then
 		return callback(replion)
@@ -180,7 +222,15 @@ function Client:AwaitReplion(channel, callback)
 	local waitList = getWaitList(channel)
 	local newThread = coroutine.create(callback)
 
-	table.insert(waitList, newThread)
+	if timeout then
+		timeouts[newThread] = createTimeout(waitList, timeout, newThread)
+	end
+
+	table.insert(waitList, { thread = newThread, async = true })
+
+	return function()
+		cancelWait(waitList, newThread)
+	end
 end
 
 if not Utils.ShouldMock and RunService:IsClient() then

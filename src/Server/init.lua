@@ -13,7 +13,6 @@ export type ServerReplion<D = any> = ServerReplion.ServerReplion<D>
 type ReplionConfig<T> = ServerReplion.ReplionConfig<T>
 
 type WaitList = { { thread: thread, player: Player?, async: boolean? } }
-type Cache<T> = { [string]: T }
 
 export type ReplionServer = {
 	new: <T>(config: ReplionConfig<T>) -> ServerReplion<T>,
@@ -21,7 +20,12 @@ export type ReplionServer = {
 	GetReplion: <T>(self: ReplionServer, channel: string) -> ServerReplion<T>?,
 
 	WaitReplion: <T>(self: ReplionServer, channel: string, timeout: number?) -> ServerReplion<T>?,
-	AwaitReplion: (self: ReplionServer, channel: string, callback: <T>(ServerReplion<T>) -> (), timeout: number?) -> (),
+	AwaitReplion: (
+		self: ReplionServer,
+		channel: string,
+		callback: <T>(ServerReplion<T>) -> (),
+		timeout: number?
+	) -> (() -> ())?,
 
 	GetReplionsFor: (self: ReplionServer, player: Player) -> { ServerReplion },
 	GetReplionFor: <T>(self: ReplionServer, player: Player, channel: string) -> ServerReplion<T>?,
@@ -32,7 +36,7 @@ export type ReplionServer = {
 		channel: string,
 		callback: <T>(ServerReplion<T>) -> (),
 		timeout: number?
-	) -> (),
+	) -> (() -> ())?,
 
 	OnReplionAdded: (
 		self: ReplionServer,
@@ -48,12 +52,12 @@ export type ReplionServer = {
 local replionAdded = Signal.new()
 local replionRemoved = Signal.new()
 
-local replionsCache: Cache<{ ServerReplion }> = {}
-local waitingList: Cache<WaitList> = {}
+local replionsCache: _T.Cache<{ ServerReplion }> = {}
+local waitingList: _T.Cache<WaitList> = {}
 
 local timeouts: { [thread]: thread } = {}
 
-local function getCache<T>(cache: Cache<T>, channel: string): T
+local function getCache<T>(cache: _T.Cache<T>, channel: string): T
 	local channelCache = cache[channel]
 
 	if not channelCache then
@@ -64,25 +68,29 @@ local function getCache<T>(cache: Cache<T>, channel: string): T
 	return channelCache
 end
 
-local function createTimeout(waitList: WaitList, timeout: number, thread: thread)
-	return task.delay(timeout, function()
-		for index, info in waitList do
-			if info.thread == thread then
-				table.remove(waitList, index)
-
-				-- if is an await function, just cancel it
-				if info.async then
-					task.cancel(thread)
-				else
-					task.spawn(thread)
-				end
-
-				timeouts[thread] = nil
-
-				break
-			end
+local function cancelWait(waitList: WaitList, thread: thread)
+	for index, info in waitList do
+		if info.thread ~= thread then
+			continue
 		end
-	end)
+
+		table.remove(waitList, index)
+
+		-- if is an await function, just cancel it
+		if info.async then
+			task.cancel(thread)
+		else
+			task.spawn(thread)
+		end
+
+		timeouts[thread] = nil
+
+		break
+	end
+end
+
+local function createTimeout(waitList: WaitList, timeout: number, thread: thread)
+	return task.delay(timeout, cancelWait, waitList, thread)
 end
 
 --[=[
@@ -321,7 +329,10 @@ end
 	@param callback (replion: ServerReplion) -> ()
 	@param timeout number?
 
+	@return (() -> ())?
+
 	The callback will be called when the replion with the given id is added.
+	Returns a function that can be called to cancel the wait.
 ]=]
 function Server:AwaitReplion(channel, callback, timeout)
 	local replion = self:GetReplion(channel)
@@ -337,6 +348,10 @@ function Server:AwaitReplion(channel, callback, timeout)
 	end
 
 	table.insert(waitList, { thread = newThread, async = true })
+
+	return function()
+		cancelWait(waitList, newThread)
+	end
 end
 
 --[=[
@@ -345,7 +360,10 @@ end
 	@param callback (replion: ServerReplion) -> ()
 	@param timeout number?
 
+	@return (() -> ())?
+
 	The callback will be called when the replion with the given id for the given player is added.
+	Returns a function that can be called to cancel the wait.
 ]=]
 function Server:AwaitReplionFor(player, channel, callback, timeout)
 	local replion = self:GetReplionFor(player, channel)
@@ -361,6 +379,10 @@ function Server:AwaitReplionFor(player, channel, callback, timeout)
 	end
 
 	table.insert(waitList, { thread = newThread, player = player, async = true })
+
+	return function()
+		cancelWait(waitList, newThread)
+	end
 end
 
 --[=[

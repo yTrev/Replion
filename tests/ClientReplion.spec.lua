@@ -50,7 +50,7 @@ return function()
 		local newReplion = ClientReplion.new({ nil, 'Set', { Coins = 20, Other = { Value = {} } } })
 
 		it('should set the value of the given key', function()
-			newReplion:Set('Coins', 30)
+			newReplion:_set('Coins', 30)
 
 			expect(newReplion:Get('Coins')).to.equal(30)
 		end)
@@ -62,7 +62,7 @@ return function()
 				called = true
 			end)
 
-			newReplion:Set('Coins', 50)
+			newReplion:_set('Coins', 50)
 
 			expect(called).to.equal(true)
 		end)
@@ -74,7 +74,7 @@ return function()
 				called = true
 			end)
 
-			newReplion:Set('Other.Value', { Foo = true })
+			newReplion:_set('Other.Value', { Foo = true })
 
 			expect(called).to.equal(true)
 		end)
@@ -84,7 +84,7 @@ return function()
 		local newReplion = ClientReplion.new({ nil, 'Increase', { Coins = 20 } })
 
 		it('should increase the value of the given key', function()
-			newReplion:Increase('Coins', 10)
+			newReplion:_increase('Coins', 10)
 
 			expect(newReplion:Get('Coins')).to.equal(30)
 		end)
@@ -94,7 +94,7 @@ return function()
 		local newReplion = ClientReplion.new({ nil, 'Clear', { Values = { 1, 2, 3 } } })
 
 		it('should clear the array', function()
-			newReplion:Clear('Values')
+			newReplion:_clear('Values')
 
 			local newValues = newReplion:Get('Values')
 			expect(#newValues).to.equal(0)
@@ -103,13 +103,13 @@ return function()
 		it('should call the OnChange signal', function()
 			local called = false
 
-			newReplion:Set('Values', { 1, 2, 3 })
+			newReplion:_set('Values', { 1, 2, 3 })
 
 			newReplion:OnChange('Values', function()
 				called = true
 			end)
 
-			newReplion:Clear('Values')
+			newReplion:_clear('Values')
 
 			expect(called).to.equal(true)
 		end)
@@ -119,8 +119,8 @@ return function()
 		local newReplion = ClientReplion.new({ nil, 'Insert', { Values = {} } })
 
 		it('should insert the value in the given array', function()
-			newReplion:Insert('Values', 'Foo')
-			newReplion:Insert('Values', 'Bar', 1)
+			newReplion:_insert('Values', 'Foo')
+			newReplion:_insert('Values', 'Bar', 1)
 
 			local newValues = newReplion:Get('Values')
 
@@ -138,12 +138,12 @@ return function()
 				table.insert(changes, { index = index, value = value })
 			end)
 
-			newReplion:Insert('Values', 4, 2)
+			newReplion:_insert('Values', 4, 2)
 
 			expect(changes[1].index).to.be.equal(2)
 			expect(changes[1].value).to.be.equal(4)
 
-			newReplion:Insert('Values', 6, 1)
+			newReplion:_insert('Values', 6, 1)
 
 			expect(changes[2].index).to.be.equal(1)
 			expect(changes[2].value).to.be.equal(6)
@@ -158,8 +158,8 @@ return function()
 		local newReplion = ClientReplion.new({ nil, 'Remove', { Values = { 1, 2, 3 } } })
 
 		it('should remove the value in the given array', function()
-			local oneValue = newReplion:Remove('Values', 1)
-			local threeValue = newReplion:Remove('Values')
+			local oneValue = newReplion:_remove('Values', 1)
+			local threeValue = newReplion:_remove('Values')
 
 			local newValues = newReplion:Get('Values')
 
@@ -180,12 +180,12 @@ return function()
 				table.insert(changes, { index = index, value = value })
 			end)
 
-			local fourIndex = newReplion:Remove('Values', 4)
+			local fourIndex = newReplion:_remove('Values', 4)
 
 			expect(changes[1].index).to.be.equal(4)
 			expect(changes[1].value).to.be.equal(fourIndex)
 
-			local firstIndex = newReplion:Remove('Values', 1)
+			local firstIndex = newReplion:_remove('Values', 1)
 
 			expect(changes[2].index).to.be.equal(1)
 			expect(changes[2].value).to.be.equal(firstIndex)
@@ -205,7 +205,7 @@ return function()
 				new, old = newValue, oldValue
 			end)
 
-			newReplion:Set('Value', 10)
+			newReplion:_set('Value', 10)
 
 			expect(new).to.be.equal(10)
 			expect(old).to.be.equal(0)
@@ -219,9 +219,9 @@ return function()
 				called += 1
 			end)
 
-			newReplion:Set('Value.Test', false)
-			newReplion:Set('Value.Test', { Foo = false })
-			newReplion:Set('Value.Test.Foo', true)
+			newReplion:_set('Value.Test', false)
+			newReplion:_set('Value.Test', { Foo = false })
+			newReplion:_set('Value.Test.Foo', true)
 
 			expect(called).to.be.equal(3)
 		end)
@@ -238,9 +238,9 @@ return function()
 				table.insert(changes, { path = path, newValue = newValue, oldValue = oldValue })
 			end)
 
-			newReplion:Set('Values.A', false)
-			newReplion:Set('Values.B', true)
-			newReplion:Set('Values.C.D', false)
+			newReplion:_set('Values.A', false)
+			newReplion:_set('Values.B', true)
+			newReplion:_set('Values.C.D', false)
 
 			expect(changes[1].newValue).to.be.equal(false)
 			expect(changes[1].oldValue).to.be.equal(true)
@@ -274,8 +274,8 @@ return function()
 				barOld = oldValue
 			end)
 
-			newReplion:Update({ Values = { 1, 2, 3 } })
-			newReplion:Update('Other', { Bar = false })
+			newReplion:_update({ Values = { 1, 2, 3 } })
+			newReplion:_update('Other', { Bar = false })
 
 			expect(barNew).to.be.equal(false)
 			expect(barOld).never.to.be.ok()
@@ -286,7 +286,7 @@ return function()
 		end)
 
 		it('should set new values', function()
-			newReplion:Update({ Coins = 20, Gems = 100, IsVip = true })
+			newReplion:_update({ Coins = 20, Gems = 100, IsVip = true })
 
 			expect(newReplion:Get('Coins')).to.be.equal(20)
 			expect(newReplion:Get('Gems')).to.be.equal(100)
@@ -294,7 +294,7 @@ return function()
 		end)
 
 		it('should remove values with the None symbol', function()
-			newReplion:Update({ ToBeRemoved = Utils.SerializedNone })
+			newReplion:_update({ ToBeRemoved = Utils.SerializedNone })
 
 			expect(newReplion:Get('ToBeRemoved')).to.be.never.ok()
 		end)

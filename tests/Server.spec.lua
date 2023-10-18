@@ -283,5 +283,26 @@ return function()
 
 			expect(fooReplion).to.never.be.ok()
 		end)
+
+		it('should cancel if the callback is called', function()
+			local fooReplion
+			local cancel = ReplionServer:AwaitReplion('CancelFor', function(newReplion)
+				fooReplion = newReplion
+			end)
+
+			cancel()
+
+			task.wait()
+
+			ReplionServer.new({
+				Channel = 'CancelFor',
+				Data = {},
+				ReplicateTo = fakePlayer,
+			})
+
+			task.wait()
+
+			expect(fooReplion).to.never.be.ok()
+		end)
 	end)
 end

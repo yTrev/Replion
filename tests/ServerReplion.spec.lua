@@ -41,7 +41,7 @@ return function()
 			expect(serialized[1]).to.be.a('string')
 			expect(serialized[2]).to.be.equal('_serialize')
 			expect(serialized[3]).to.be.a('table')
-			expect(serialized[4]).to.be.a('table')
+			expect(serialized[4]).to.be.a('string')
 		end)
 	end)
 

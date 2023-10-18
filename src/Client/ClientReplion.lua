@@ -381,7 +381,14 @@ end
 function ClientReplion:GetExpect<T>(path, message): T
 	assert(path, 'Path is required!')
 
-	return assert(self:Get(path), if message then message else 'Invalid path.') :: T
+	message = if message then message else `"{Utils.getPathString(path)}" is not a valid path!`
+
+	local value: T? = self:Get(path)
+	if value == nil then
+		error(message)
+	end
+
+	return value
 end
 
 function ClientReplion:Destroy()
