@@ -2,6 +2,7 @@
 local Players = game:GetService('Players')
 local RunService = game:GetService('RunService')
 
+local Freeze = require(script.Parent.Parent.Freeze)
 local Utils = require(script.Parent.Internal.Utils)
 local Network = require(script.Parent.Internal.Network)
 local ServerReplion = require(script.ServerReplion)
@@ -20,39 +21,39 @@ export type ReplionServer = {
 	GetReplion: <T>(self: ReplionServer, channel: string) -> ServerReplion<T>?,
 
 	WaitReplion: <T>(self: ReplionServer, channel: string, timeout: number?) -> ServerReplion<T>?,
-	AwaitReplion: (
+	AwaitReplion: <T>(
 		self: ReplionServer,
 		channel: string,
-		callback: <T>(ServerReplion<T>) -> (),
+		callback: (ServerReplion<T>) -> (),
 		timeout: number?
 	) -> (() -> ())?,
 
 	GetReplionsFor: (self: ReplionServer, player: Player) -> { ServerReplion },
 	GetReplionFor: <T>(self: ReplionServer, player: Player, channel: string) -> ServerReplion<T>?,
 	WaitReplionFor: <T>(self: ReplionServer, player: Player, channel: string, timeout: number?) -> ServerReplion<T>?,
-	AwaitReplionFor: (
+	AwaitReplionFor: <T>(
 		self: ReplionServer,
 		player: Player,
 		channel: string,
-		callback: <T>(ServerReplion<T>) -> (),
+		callback: (ServerReplion<T>) -> (),
 		timeout: number?
 	) -> (() -> ())?,
 
-	OnReplionAdded: (
+	OnReplionAdded: <T>(
 		self: ReplionServer,
-		callback: <T>(channel: string, replion: ServerReplion<T>) -> ()
+		callback: (channel: string, replion: ServerReplion<T>) -> ()
 	) -> Signal.Connection,
 
-	OnReplionRemoved: (
+	OnReplionRemoved: <T>(
 		self: ReplionServer,
-		callback: <T>(channel: string, replion: ServerReplion<T>) -> ()
+		callback: (channel: string, replion: ServerReplion<T>) -> ()
 	) -> Signal.Connection,
 }
 
 local replionAdded = Signal.new()
 local replionRemoved = Signal.new()
 
-local replionsCache: _T.Cache<{ ServerReplion }> = {}
+local replionsCache: _T.Cache<{ ServerReplion<any> }> = {}
 local waitingList: _T.Cache<WaitList> = {}
 
 local timeouts: { [thread]: thread } = {}
@@ -78,7 +79,7 @@ local function cancelWait(waitList: WaitList, thread: thread)
 
 		-- if is an await function, just cancel it
 		if info.async then
-			task.cancel(thread)
+			Utils.safeCancelThread(thread)
 		else
 			task.spawn(thread)
 		end
@@ -189,7 +190,7 @@ function Server.new<T>(config: ReplionConfig<T>): ServerReplion<T>
 
 			local timeoutThread: thread? = timeouts[thread]
 			if timeoutThread then
-				task.cancel(timeoutThread)
+				Utils.safeCancelThread(timeoutThread)
 
 				timeouts[thread] = nil
 			end
@@ -334,10 +335,10 @@ end
 	The callback will be called when the replion with the given id is added.
 	Returns a function that can be called to cancel the wait.
 ]=]
-function Server:AwaitReplion(channel, callback, timeout)
-	local replion = self:GetReplion(channel)
+function Server:AwaitReplion<T>(channel, callback, timeout)
+	local replion: ServerReplion<T>? = self:GetReplion(channel)
 	if replion then
-		return callback(replion)
+		return callback(replion :: any)
 	end
 
 	local waitList = getCache(waitingList, channel)
@@ -365,10 +366,10 @@ end
 	The callback will be called when the replion with the given id for the given player is added.
 	Returns a function that can be called to cancel the wait.
 ]=]
-function Server:AwaitReplionFor(player, channel, callback, timeout)
-	local replion = self:GetReplionFor(player, channel)
+function Server:AwaitReplionFor<T>(player, channel, callback, timeout)
+	local replion: ServerReplion<T>? = self:GetReplionFor(player, channel)
 	if replion then
-		return callback(replion)
+		return callback(replion :: any)
 	end
 
 	local waitList = getCache(waitingList, channel)
@@ -392,7 +393,7 @@ end
 
 	The callback will be called when a replion is added.
 ]=]
-function Server:OnReplionAdded(callback)
+function Server:OnReplionAdded<T>(callback)
 	return replionAdded:Connect(callback)
 end
 
@@ -403,7 +404,7 @@ end
 
 	The callback will be called when a replion is removed.
 ]=]
-function Server:OnReplionRemoved(callback)
+function Server:OnReplionRemoved<T>(callback)
 	return replionRemoved:Connect(callback)
 end
 
@@ -418,7 +419,7 @@ if not Utils.ShouldMock and RunService:IsServer() then
 		'ArrayUpdate',
 	})
 
-	Players.PlayerAdded:Connect(function(player: Player)
+	local function onPlayerAdded(player: Player)
 		local replicatedToPlayer = Server:GetReplionsFor(player)
 		local playerReplions = {}
 
@@ -429,23 +430,27 @@ if not Utils.ShouldMock and RunService:IsServer() then
 		if #playerReplions > 0 then
 			Network.sendTo(player, 'Added', playerReplions)
 		end
-	end)
+	end
+
+	for _, player in Players:GetPlayers() do
+		task.spawn(onPlayerAdded, player)
+	end
+
+	Players.PlayerAdded:Connect(onPlayerAdded)
 
 	Players.PlayerRemoving:Connect(function(player: Player)
 		for _, replions in replionsCache do
-			for _, replion in replions do
+			for _, replion: any in replions do
 				local replicateTo = replion.ReplicateTo
 				if replicateTo == 'All' then
 					continue
 				end
 
 				if type(replicateTo) == 'table' then
-					local index = table.find(replicateTo, player)
-					if index then
-						table.remove(replicateTo, index)
-					end
+					local newReplicate = Freeze.List.removeValue(replicateTo, player)
+					replion:SetReplicateTo(newReplicate)
 				elseif replicateTo == player then
-					(replion :: any):Destroy()
+					replion:Destroy()
 				end
 			end
 		end
@@ -460,7 +465,7 @@ if not Utils.ShouldMock and RunService:IsServer() then
 
 				if waitingPlayer == player then
 					if info.async then
-						task.cancel(thread)
+						Utils.safeCancelThread(thread)
 					else
 						task.spawn(thread)
 					end

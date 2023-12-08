@@ -30,6 +30,12 @@ local function getValue<T>(value: T): T?
 	return if value == Freeze.None or value == SERIALIZED_NONE then nil else value
 end
 
+local function safeCancelThread(thread: thread)
+	if coroutine.status(thread) ~= 'dead' then
+		task.cancel(thread)
+	end
+end
+
 return table.freeze({
 	SerializedNone = SERIALIZED_NONE,
 
@@ -38,4 +44,6 @@ return table.freeze({
 	getValue = getValue,
 	getPathTable = getPathTable,
 	getPathString = getPathString,
+
+	safeCancelThread = safeCancelThread,
 })

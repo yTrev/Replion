@@ -65,7 +65,7 @@ local function cancelWait(waitList: WaitList, thread: thread)
 
 		-- if is an await function, just cancel it
 		if info.async then
-			task.cancel(thread)
+			Utils.safeCancelThread(thread)
 		else
 			task.spawn(thread)
 		end

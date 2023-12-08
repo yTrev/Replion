@@ -1,4 +1,6 @@
 --!strict
+local Players = game:GetService('Players')
+
 local Network = require(script.Parent.Parent.Internal.Network)
 local Signal = require(script.Parent.Parent.Parent.Signal)
 
@@ -9,18 +11,12 @@ local _T = require(script.Parent.Parent.Internal.Types)
 
 local Freeze = require(script.Parent.Parent.Parent.Freeze)
 
-type Path = _T.Path
-type BeforeDestroyCallback = _T.BeforeDestroy<ServerReplion>
-type ArrayCallback = _T.ArrayCallback
-type Dictionary = _T.Dictionary
-type ReplicateTo = Player | { Player } | 'All'
-
 export type ServerReplion<D = any> = {
 	Channel: string,
 	Data: D,
 	Destroyed: boolean?,
 	Tags: { string },
-	ReplicateTo: ReplicateTo,
+	ReplicateTo: _T.ReplicateTo,
 
 	_beforeDestroy: Signal.Signal<ServerReplion<D>>,
 	_signals: Signals.Signals,
@@ -38,18 +34,18 @@ export type ServerReplion<D = any> = {
 		callback: (newValue: V, oldValue: V) -> ()
 	) -> Signal.Connection,
 
-	OnArrayInsert: (self: ServerReplion<D>, path: _T.Path, callback: ArrayCallback) -> Signal.Connection,
-	OnArrayRemove: (self: ServerReplion<D>, path: _T.Path, callback: ArrayCallback) -> Signal.Connection,
+	OnArrayInsert: (self: ServerReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
+	OnArrayRemove: (self: ServerReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
 	OnDescendantChange: (
 		self: ServerReplion<D>,
 		path: _T.Path,
 		callback: (path: _T.Path, newDescendantValue: any, oldDescendantValue: any) -> ()
 	) -> Signal.Connection,
 
-	SetReplicateTo: (self: ServerReplion<D>, replicateTo: ReplicateTo) -> (),
+	SetReplicateTo: (self: ServerReplion<D>, replicateTo: _T.ReplicateTo) -> (),
 
 	Set: <T>(self: ServerReplion<D>, path: _T.Path, newValue: T) -> T,
-	Update: (self: ServerReplion<D>, path: _T.Path, toUpdate: Dictionary?) -> (),
+	Update: (self: ServerReplion<D>, path: _T.Path, toUpdate: _T.Dictionary?) -> (),
 
 	Increase: (self: ServerReplion<D>, path: _T.Path, amount: number) -> number,
 	Decrease: (self: ServerReplion<D>, path: _T.Path, amount: number) -> number,
@@ -72,7 +68,7 @@ export type ReplionConfig<D = any> = {
 	Channel: string,
 
 	Data: D,
-	ReplicateTo: ReplicateTo,
+	ReplicateTo: _T.ReplicateTo,
 
 	Tags: { string }?,
 }
@@ -271,8 +267,6 @@ function ServerReplion:OnArrayRemove(path, callback)
 	return self._signals:Connect('onArrayRemove', path, callback)
 end
 
-type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
-
 --[=[
 	@param path Path
 	@param callback (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
@@ -288,24 +282,45 @@ end
 --[=[
 	Sets the players to which the data should be replicated.
 ]=]
-function ServerReplion:SetReplicateTo(replicateTo: ReplicateTo)
-	local isAll: boolean = replicateTo == 'All'
-	local isATable: boolean = type(replicateTo) == 'table'
-	local isAPlayer: boolean = typeof(replicateTo) == 'Instance' and replicateTo:IsA('Player')
-
-	assert(isAll or isATable or isAPlayer, 'ReplicateTo must be a Player, a table of Players, or "All"')
+function ServerReplion:SetReplicateTo(replicateTo)
+	assert(
+		replicateTo == 'All'
+			or type(replicateTo) == 'table'
+			or typeof(replicateTo) == 'Instance' and replicateTo:IsA('Player'),
+		'ReplicateTo must be a Player, a table of Players or "All"'
+	)
 
 	local oldReplicateTo = self.ReplicateTo
+	if oldReplicateTo == replicateTo then
+		return
+	end
 
-	-- We need to send to the Removed event to the old players.
-	if typeof(oldReplicateTo) == 'Instance' then
-		Network.sendTo(oldReplicateTo, 'Removed', self._packedId)
-	elseif type(oldReplicateTo) == 'table' then
-		for _, player in oldReplicateTo do
-			Network.sendTo(player, 'Removed', self._packedId)
+	local oldReplicateToPlayers = if oldReplicateTo == 'All'
+		then Players:GetPlayers()
+		elseif type(oldReplicateTo) == 'table' then oldReplicateTo
+		else { replicateTo }
+
+	local newReplicateToPlayers = if replicateTo == 'All'
+		then Players:GetPlayers()
+		elseif type(replicateTo) == 'table' then replicateTo
+		else { replicateTo }
+
+	-- Send Removed event for old players that are not in the new list
+	for _, player in oldReplicateToPlayers do
+		if table.find(newReplicateToPlayers, player) then
+			continue
 		end
-	elseif type(oldReplicateTo) == 'string' then
-		Network.sendTo('All', 'Removed', self._packedId)
+
+		Network.sendTo(player, 'Removed', self._packedId)
+	end
+
+	-- Send Added event for new players that are not in the old list
+	for _, player in newReplicateToPlayers do
+		if table.find(oldReplicateToPlayers, player) then
+			continue
+		end
+
+		Network.sendTo(replicateTo, 'Added', self:_serialize())
 	end
 
 	self.ReplicateTo = replicateTo
@@ -377,36 +392,36 @@ end
 	If you want to remove a key, set it to `Replion.None`.
 ]=]
 function ServerReplion:Update(path, toUpdate)
-	local values = Freeze.Dictionary.filter(toUpdate or path :: Dictionary, function(value, key)
-		return self.Data[key] ~= value
+	local pathTable = if toUpdate then Utils.getPathTable(path) else nil
+	local changedValues = Freeze.Dictionary.filter(toUpdate or path :: _T.Dictionary, function(value, key)
+		local currentValue = if pathTable then Freeze.Dictionary.getIn(self.Data, pathTable) else self.Data[key]
+
+		return not Freeze.Dictionary.equals(currentValue, value)
 	end)
 
-	if Freeze.isEmpty(values) then
+	if Freeze.isEmpty(changedValues) then
 		return
 	end
 
 	local oldData = self.Data
-	local isRootUpdate = toUpdate == nil
-
-	if isRootUpdate then
-		local newData = Freeze.Dictionary.merge(self.Data, values)
+	if not pathTable then
+		local newData = Freeze.Dictionary.merge(self.Data, changedValues)
 
 		self.Data = newData
 
 		self._signals:FireEvent('onDataChange', '__root', newData, {})
 
-		for index, value in values do
+		for index, value in changedValues do
 			self._signals:FireEvent('onChange', index, Utils.getValue(value), oldData[index])
 		end
 	else
-		local pathTable = Utils.getPathTable(path)
-		local newData = Freeze.Dictionary.mergeIn(self.Data, pathTable, values)
+		local newData = Freeze.Dictionary.mergeIn(self.Data, pathTable, changedValues)
 
 		self.Data = newData
 
 		self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
 
-		for index, value in values do
+		for index, value in changedValues do
 			local indexPath = Freeze.List.push(pathTable, index)
 			local oldValue = Freeze.Dictionary.getIn(oldData, indexPath)
 
@@ -416,11 +431,11 @@ function ServerReplion:Update(path, toUpdate)
 		self._signals:FireChange(path, newData, oldData)
 	end
 
-	local serializedUpdate = Freeze.Dictionary.map(values, function(value, key)
+	local serializedUpdate = Freeze.Dictionary.map(changedValues, function(value, key)
 		return if value == Freeze.None then Utils.SerializedNone else value, key
 	end)
 
-	if isRootUpdate then
+	if not pathTable then
 		Network.sendTo(self.ReplicateTo, 'Update', self._packedId, serializedUpdate)
 	else
 		Network.sendTo(self.ReplicateTo, 'Update', self._packedId, path, serializedUpdate)
@@ -490,6 +505,7 @@ function ServerReplion:Insert<T>(path, value: T, index)
 
 	local array =
 		assert(Freeze.Dictionary.getIn(self.Data, pathTable), `"{Utils.getPathString(path)}" is not a valid path!`)
+
 	local targetIndex: number = if index then index else #array + 1
 
 	local newArray = Freeze.List.insert(array, targetIndex, value)
@@ -536,6 +552,7 @@ function ServerReplion:Remove<T>(path, index): T
 
 	local array =
 		assert(Freeze.Dictionary.getIn(self.Data, pathTable), `"{Utils.getPathString(path)}" is not a valid path!`)
+
 	local targetIndex: number = if index then index else #array
 	local value = array[targetIndex]
 
@@ -639,7 +656,7 @@ end
 
 --[=[
 	```lua
-	local coins: number = Replion:Get('Coins')
+	local coins: number? = Replion:Get('Coins')
 	```
 
 	@param path Path

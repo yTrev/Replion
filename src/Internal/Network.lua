@@ -1,4 +1,5 @@
 --!strict
+local Players = game:GetService('Players')
 local RunService = game:GetService('RunService')
 local Utils = require(script.Parent.Utils)
 
@@ -61,6 +62,10 @@ local function sendTo(replicateTo: any, id: string, ...: any)
 		remote:FireAllClients(...)
 	elseif type(replicateTo) == 'table' then
 		for _, player in replicateTo :: { Player } do
+			if not player:IsDescendantOf(Players) then
+				continue
+			end
+
 			remote:FireClient(player, ...)
 		end
 	elseif typeof(replicateTo) == 'Instance' and replicateTo:IsA('Player') then

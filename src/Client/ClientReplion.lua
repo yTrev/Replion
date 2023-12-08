@@ -8,15 +8,12 @@ local _T = require(script.Parent.Parent.Internal.Types)
 local Signals = require(script.Parent.Parent.Internal.Signals)
 
 type Dictionary = _T.Dictionary
-type Path = _T.Path
-type ReplicateTo = _T.ReplicateTo
-type DescendantCallback = (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
 
 export type ClientReplion<D = any> = {
 	Data: D,
 	Tags: _T.Tags,
 	Destroyed: boolean?,
-	ReplicateTo: ReplicateTo,
+	ReplicateTo: _T.ReplicateTo,
 
 	_channel: string,
 	_signals: Signals.Signals,

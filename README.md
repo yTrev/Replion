@@ -11,7 +11,7 @@
 Add Replion as a dependency to your `wally.toml` file:
 
 ```
-Replion = "ytrev/replion@2.0.0-rc.2"
+Replion = "ytrev/replion@2.0.0-rc.3"
 ```
 
 # Usage
@@ -26,6 +26,10 @@ local Players = game:GetService('Players')
 
 local Replion = require(ReplicatedStorage.Packages.Replion)
 local ReplionServer = Replion.Server
+
+type DataReplion = Replion.ServerReplion<{
+	Coins: number,
+}>
 
 local function createReplion(player: Player)
 	ReplionServer.new({
@@ -46,7 +50,7 @@ end
 
 while true do
 	for _, player: Player in Players:GetPlayers() do
-		local playerReplion = ReplionService:GetReplionFor(player, 'Data')
+		local playerReplion: DataReplion? = ReplionService:GetReplionFor(player, 'Data')
 		if playerReplion then
 			playerReplion:Increase('Coins', 10)
 		end
