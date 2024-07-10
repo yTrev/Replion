@@ -50,7 +50,7 @@ end
 
 while true do
 	for _, player: Player in Players:GetPlayers() do
-		local playerReplion: DataReplion? = ReplionService:GetReplionFor(player, 'Data')
+		local playerReplion: DataReplion? = ReplionServer:GetReplionFor(player, 'Data')
 		if playerReplion then
 			playerReplion:Increase('Coins', 10)
 		end
