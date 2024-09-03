@@ -13,8 +13,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Aftman
-        uses: ok-nick/setup-aftman@v0.3.0
+      - name: Setup rokit
+      - uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Code quality
         run: |
