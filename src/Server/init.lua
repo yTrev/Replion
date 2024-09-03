@@ -53,16 +53,17 @@ export type ReplionServer = {
 local replionAdded = Signal.new()
 local replionRemoved = Signal.new()
 
-local replionsCache: _T.Cache<{ ServerReplion<any> }> = {}
-local waitingList: _T.Cache<WaitList> = {}
+local replionsCache: { [string]: { [number]: ServerReplion } } = {}
+local waitingList: { [string]: WaitList } = {}
+local playersReplionsIndex: { [Player]: { [string]: number } } = {}
 
 local timeouts: { [thread]: thread } = {}
 
-local function getCache<T>(cache: _T.Cache<T>, channel: string): T
+local function getCache<T>(cache: any, channel: any): T
 	local channelCache = cache[channel]
 
 	if not channelCache then
-		channelCache = {} :: any
+		channelCache = {}
 		cache[channel] = channelCache
 	end
 
@@ -81,7 +82,7 @@ local function cancelWait(waitList: WaitList, thread: thread)
 		if info.async then
 			Utils.safeCancelThread(thread)
 		else
-			task.spawn(thread)
+			pcall(task.spawn, thread)
 		end
 
 		timeouts[thread] = nil
@@ -95,7 +96,7 @@ local function createTimeout(waitList: WaitList, timeout: number, thread: thread
 end
 
 --[=[
-	@type ReplionConfig { Channel: string, Data: { [any]: any }, Tags: { string }?, ReplicateTo: ReplicateTo }
+	@type ReplionConfig { Channel: string, Data: { [any]: any }, Tags: { string }?, ReplicateTo: ReplicateTo, DisableAutoDestroy: boolean? }
 	@within Server
 ]=]
 
@@ -132,7 +133,7 @@ function Server.new<T>(config: ReplionConfig<T>): ServerReplion<T>
 		if isEqual then
 			local replicatingTo: string
 
-			if typeof(replicateTo) == 'Instance' then
+			if typeof(replicateTo) == 'Instance' or typeof(replicatingTo) == 'userdata' then
 				replicatingTo = tostring(replicateTo)
 			elseif type(replicateTo) == 'string' then
 				replicatingTo = replicateTo
@@ -148,21 +149,61 @@ function Server.new<T>(config: ReplionConfig<T>): ServerReplion<T>
 
 	local newReplion: ServerReplion = ServerReplion.new(config)
 	newReplion:BeforeDestroy(function()
-		local index = table.find(channelCache, newReplion)
-		if index then
-			table.remove(channelCache, index)
-		end
+		channelCache[newReplion._id] = nil
 
-		if #channelCache == 0 then
+		if not next(channelCache) then
 			replionsCache[channel] = nil
 		end
 
 		replionRemoved:Fire(channel, newReplion)
+		newReplion = nil :: any
 	end)
 
-	table.insert(channelCache, newReplion)
+	-- Because of the new optimizations we need to update the playersReplionsIndex
+	-- when the replicateTo changes
+	newReplion._replicateToChanged:Connect(function(replicateTo, oldReplicateTo)
+		if typeof(oldReplicateTo) == 'Player' then
+			local playerCache = playersReplionsIndex[oldReplicateTo]
+			if not playerCache then
+				return
+			end
 
+			playerCache[channel] = nil
+		elseif typeof(oldReplicateTo) == 'table' then
+			for _, player in oldReplicateTo do
+				local playerCache = playersReplionsIndex[player]
+				if not playerCache then
+					continue
+				end
+
+				playerCache[channel] = nil
+			end
+		end
+
+		if typeof(replicateTo) == 'Player' then
+			local playerCache = getCache(playersReplionsIndex, replicateTo)
+			playerCache[channel] = newReplion._id
+		elseif typeof(replicateTo) == 'table' then
+			for _, player in replicateTo do
+				local playerCache = getCache(playersReplionsIndex, player)
+				playerCache[channel] = newReplion._id
+			end
+		end
+	end)
+
+	channelCache[newReplion._id] = newReplion
 	replionAdded:Fire(channel, newReplion)
+
+	-- In the future we can extend this to support other types of replication
+	if typeof(newReplicateTo) == 'Instance' or (Utils.ShouldMock and typeof(newReplicateTo) == 'userdata') then
+		local playerIndexes = getCache(playersReplionsIndex, newReplicateTo)
+		playerIndexes[channel] = newReplion._id
+	elseif type(newReplicateTo) == 'table' then
+		for _, player in newReplicateTo do
+			local playerIndexes = getCache(playersReplionsIndex, player)
+			playerIndexes[channel] = newReplion._id
+		end
+	end
 
 	local waitList = waitingList[channel]
 	if waitList then
@@ -172,15 +213,13 @@ function Server.new<T>(config: ReplionConfig<T>): ServerReplion<T>
 			local thread = info.thread
 			local player = info.player
 
-			local replicateTo = newReplion.ReplicateTo
-
 			-- Need to make sure that the player is in the replicateTo list
 			if player then
 				local isReplicating = false
-				if typeof(replicateTo) == 'Instance' then
-					isReplicating = replicateTo == player
-				elseif type(replicateTo) == 'table' then
-					isReplicating = table.find(replicateTo, player) ~= nil
+				if typeof(newReplicateTo) == 'Instance' or typeof(newReplicateTo) == 'userdata' then
+					isReplicating = newReplicateTo == player
+				elseif type(newReplicateTo) == 'table' then
+					isReplicating = table.find(newReplicateTo, player) ~= nil
 				end
 
 				if not isReplicating then
@@ -188,14 +227,16 @@ function Server.new<T>(config: ReplionConfig<T>): ServerReplion<T>
 				end
 			end
 
-			local timeoutThread: thread? = timeouts[thread]
+			local timeoutThread = timeouts[thread]
 			if timeoutThread then
 				Utils.safeCancelThread(timeoutThread)
 
 				timeouts[thread] = nil
 			end
 
-			task.spawn(thread, newReplion)
+			if coroutine.status(thread) == 'suspended' then
+				task.spawn(thread, newReplion)
+			end
 
 			table.remove(waitList, i)
 		end
@@ -216,11 +257,12 @@ function Server:GetReplion<T>(channel: string): ServerReplion<T>?
 	end
 
 	assert(
-		#channelCache == 1,
+		Freeze.Dictionary.count(channelCache) == 1,
 		`There are multiple replions with the channel "{channel}". Did you mean to use GetReplionFor?`
 	)
 
-	return channelCache[1]
+	local _, replion = next(channelCache)
+	return replion
 end
 
 --[=[
@@ -231,15 +273,16 @@ end
 ]=]
 function Server:GetReplionFor<T>(player, channel): ServerReplion<T>?
 	local channelCache = replionsCache[channel]
-	if channelCache then
-		for _, replion in channelCache do
-			if replion.ReplicateTo == player and replion.Channel == channel then
-				return replion :: any
-			end
-		end
+	if not channelCache then
+		return
 	end
 
-	return nil
+	local playerIndexes = playersReplionsIndex[player]
+	if not playerIndexes then
+		return
+	end
+
+	return channelCache[playerIndexes[channel]]
 end
 
 --[=[
@@ -313,6 +356,16 @@ function Server:WaitReplionFor<T>(player, channel, timeout): ServerReplion<T>?
 		return replion
 	end
 
+	if typeof(player) == 'Instance' and not player:IsDescendantOf(Players) then
+		if _G.__DEV__ then
+			local scriptName, line = debug.info(2, 'sl')
+
+			warn(`Warning: Trying to wait for a player that is not in the game at {scriptName}:{line}`)
+		end
+
+		return nil
+	end
+
 	local thread: thread = coroutine.running()
 	local waitList = getCache(waitingList, channel)
 
@@ -372,6 +425,16 @@ function Server:AwaitReplionFor<T>(player, channel, callback, timeout)
 		return callback(replion :: any)
 	end
 
+	if typeof(player) == 'Instance' and player.Parent == nil then
+		if _G.__DEV__ then
+			local scriptName, line = debug.info(2, 'sl')
+
+			warn(`Warning: Trying to await for a player that is not in the game at {scriptName}:{line}`)
+		end
+
+		return nil
+	end
+
 	local waitList = getCache(waitingList, channel)
 	local newThread = coroutine.create(callback)
 
@@ -419,7 +482,7 @@ if not Utils.ShouldMock and RunService:IsServer() then
 		'ArrayUpdate',
 	})
 
-	local function onPlayerAdded(player: Player)
+	local function onPlayerAdded(player)
 		local replicatedToPlayer = Server:GetReplionsFor(player)
 		local playerReplions = {}
 
@@ -438,7 +501,9 @@ if not Utils.ShouldMock and RunService:IsServer() then
 
 	Players.PlayerAdded:Connect(onPlayerAdded)
 
-	Players.PlayerRemoving:Connect(function(player: Player)
+	Players.PlayerRemoving:Connect(function(player)
+		local aliveReplions = {}
+
 		for _, replions in replionsCache do
 			for _, replion: any in replions do
 				local replicateTo = replion.ReplicateTo
@@ -447,16 +512,39 @@ if not Utils.ShouldMock and RunService:IsServer() then
 				end
 
 				if type(replicateTo) == 'table' then
-					local newReplicate = Freeze.List.removeValue(replicateTo, player)
-					replion:SetReplicateTo(newReplicate)
+					replion:SetReplicateTo(Freeze.List.removeValue(replicateTo, player))
 				elseif replicateTo == player then
-					replion:Destroy()
+					if not replion.DisableAutoDestroy then
+						replion:Destroy()
+
+						continue
+					end
+
+					replion:BeforeDestroy(function()
+						local index = table.find(aliveReplions, replion)
+						if not index then
+							return
+						end
+
+						table.remove(aliveReplions, index)
+
+						if #aliveReplions == 0 then
+							playersReplionsIndex[player] = nil
+						end
+					end)
+
+					table.insert(aliveReplions, replion)
 				end
 			end
 		end
 
+		-- Clean up players replions index
+		if #aliveReplions == 0 then
+			playersReplionsIndex[player] = nil
+		end
+
 		-- Clean up the waiting list for this player.
-		for _, waitList in waitingList do
+		for index, waitList in waitingList do
 			for i = #waitList, 1, -1 do
 				local info = waitList[i]
 
@@ -467,13 +555,17 @@ if not Utils.ShouldMock and RunService:IsServer() then
 					if info.async then
 						Utils.safeCancelThread(thread)
 					else
-						task.spawn(thread)
+						pcall(task.spawn, thread)
 					end
 
 					timeouts[thread] = nil
 
 					table.remove(waitList, i)
 				end
+			end
+
+			if #waitList == 0 then
+				waitingList[index] = nil
 			end
 		end
 	end)

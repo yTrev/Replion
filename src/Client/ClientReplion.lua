@@ -17,10 +17,10 @@ export type ClientReplion<D = any> = {
 
 	_channel: string,
 	_signals: Signals.Signals,
-	_beforeDestroy: Signal.Signal<ClientReplion<D>>,
+	_beforeDestroy: Signal.Signal<nil>,
 
 	new: (serializedReplion: _T.SerializedReplion) -> ClientReplion<D>,
-	BeforeDestroy: (self: ClientReplion<D>, callback: (replion: ClientReplion<D>) -> ()) -> Signal.Connection,
+	BeforeDestroy: (self: ClientReplion<D>, callback: () -> ()) -> Signal.Connection,
 
 	OnDataChange: (self: ClientReplion<D>, callback: (newData: D, path: _T.Path) -> ()) -> Signal.Connection,
 	OnChange: <T>(
@@ -39,7 +39,7 @@ export type ClientReplion<D = any> = {
 	OnArrayRemove: (self: ClientReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
 
 	_set: <T>(self: ClientReplion<D>, path: _T.Path, newValue: T) -> T,
-	_update: (self: ClientReplion<D>, path: _T.Path | Dictionary, toUpdate: Dictionary?) -> (),
+	_update: (self: ClientReplion<D>, path: _T.Path | Dictionary, toUpdate: Dictionary?, isUnordered: boolean?) -> (),
 
 	_increase: (self: ClientReplion<D>, path: _T.Path, amount: number) -> number,
 	_decrease: (self: ClientReplion<D>, path: _T.Path, amount: number) -> number,
@@ -100,7 +100,7 @@ function ClientReplion.new(serializedReplion)
 	local self: ClientReplion = setmetatable({
 		Data = serializedReplion[3],
 		Tags = serializedReplion[5],
-		ReplicateTo = serializedReplion[3],
+		ReplicateTo = serializedReplion[4],
 
 		_channel = serializedReplion[2],
 
@@ -221,9 +221,9 @@ function ClientReplion:_set<T>(path, newValue: T): T
 	return newValue
 end
 
-function ClientReplion:_update(path, toUpdate)
+function ClientReplion:_update(path, toUpdate, isUnordered)
 	local values = Freeze.Dictionary.map(toUpdate or path :: Dictionary, function(value, key)
-		return if value == Utils.SerializedNone then Freeze.None else value, key
+		return if value == Utils.SerializedNone then Freeze.None else value, if isUnordered then tonumber(key) else key
 	end)
 
 	local oldData = self.Data
@@ -393,12 +393,12 @@ function ClientReplion:Destroy()
 		return
 	end
 
-	self.Destroyed = true
-
-	self._beforeDestroy:Fire(self)
+	self._beforeDestroy:Fire()
 	self._beforeDestroy:DisconnectAll()
 
 	self._signals:Destroy()
+
+	self.Destroyed = true
 end
 
 return ClientReplion

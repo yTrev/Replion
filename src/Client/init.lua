@@ -38,7 +38,7 @@ export type ReplionClient = {
 }
 
 local cache: { [string]: ClientReplion? } = {}
-local waitingList: _T.Cache<WaitList> = {}
+local waitingList: { [string]: WaitList? } = {}
 
 local timeouts: { [thread]: thread } = {}
 
@@ -52,7 +52,7 @@ local function getWaitList(channel: string)
 		waitingList[channel] = list
 	end
 
-	return list
+	return assert(list, 'Invalid wait list')
 end
 
 local function cancelWait(waitList: WaitList, thread: thread)
@@ -67,7 +67,7 @@ local function cancelWait(waitList: WaitList, thread: thread)
 		if info.async then
 			Utils.safeCancelThread(thread)
 		else
-			task.spawn(thread)
+			pcall(task.spawn, thread)
 		end
 
 		timeouts[thread] = nil
@@ -96,7 +96,7 @@ local function createReplion(serializedReplion: SerializedReplion)
 	local waitList = waitingList[channel]
 	if waitList then
 		for _, info in waitList do
-			task.spawn(info.thread, newReplion)
+			pcall(task.spawn, info.thread, newReplion)
 		end
 
 		waitingList[channel] = nil
@@ -117,7 +117,7 @@ local Client: ReplionClient = {} :: any
 
 	Calls the callback when a replion is added.
 ]=]
-function Client:OnReplionAdded(callback): Signal.Connection
+function Client:OnReplionAdded(callback)
 	return addedSignal:Connect(callback)
 end
 
@@ -128,7 +128,7 @@ end
 
 	Calls the callback when a replion is removed.
 ]=]
-function Client:OnReplionRemoved(callback): Signal.Connection
+function Client:OnReplionRemoved(callback)
 	return removedSignal:Connect(callback)
 end
 
@@ -140,7 +140,7 @@ end
 
 	Calls the callback when a replion with the given tag is added.
 ]=]
-function Client:OnReplionAddedWithTag(tag, callback): Signal.Connection
+function Client:OnReplionAddedWithTag(tag, callback)
 	return self:OnReplionAdded(function(replion: ClientReplion)
 		local tags: { string }? = replion.Tags
 
@@ -158,7 +158,7 @@ end
 
 	Calls the callback when a replion with the given tag is removed.
 ]=]
-function Client:OnReplionRemovedWithTag(tag, callback): Signal.Connection
+function Client:OnReplionRemovedWithTag(tag, callback)
 	return self:OnReplionRemoved(function(replion: ClientReplion)
 		local tags: { string }? = replion.Tags
 
@@ -173,7 +173,7 @@ end
 
 	Returns the replion with the given channel.
 ]=]
-function Client:GetReplion(channel): ClientReplion?
+function Client:GetReplion(channel)
 	return cache[channel]
 end
 
@@ -185,7 +185,7 @@ end
 
 	Yields until the replion with the given channel is added.
 ]=]
-function Client:WaitReplion(channel, timeout): ClientReplion
+function Client:WaitReplion(channel, timeout)
 	local replion = cache[channel]
 	if replion then
 		return replion
@@ -263,13 +263,15 @@ if not Utils.ShouldMock and RunService:IsClient() then
 		end
 	end)
 
-	updateRemote.OnClientEvent:Connect(function(id: string, path: _T.Path | _T.Dictionary, toUpdate: _T.Dictionary?)
-		local replion = cache[id]
+	updateRemote.OnClientEvent:Connect(
+		function(id: string, path: _T.Path | _T.Dictionary, toUpdate: _T.Dictionary?, isUnoredered: boolean?)
+			local replion = cache[id]
 
-		if replion then
-			replion:_update(path, toUpdate)
+			if replion then
+				replion:_update(path, toUpdate, isUnoredered)
+			end
 		end
-	end)
+	)
 
 	updateReplicateTo.OnClientEvent:Connect(function(id: string, replicateTo: _T.ReplicateTo)
 		local replion = cache[id]

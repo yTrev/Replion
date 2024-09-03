@@ -8,7 +8,7 @@ local SERIALIZED_NONE = '\0'
 
 local function getPathTable(path: _T.Path): { any }
 	if type(path) == 'table' then
-		return path
+		return table.clone(path)
 	elseif type(path) == 'string' then
 		return string.split(path, '.')
 	else
@@ -36,14 +36,25 @@ local function safeCancelThread(thread: thread)
 	end
 end
 
+local function trimString(str: string): string
+	return string.gsub(str, '^%s*(.-)%s*$', '%1')
+end
+
+local function checkForTrimmedString(str: string): boolean
+	return str ~= trimString(str)
+end
+
 return table.freeze({
 	SerializedNone = SERIALIZED_NONE,
 
-	ShouldMock = RunService:IsStudio() and not RunService:IsRunning(),
+	ShouldMock = RunService:IsStudio() and not RunService:IsRunning() or _G.NOCOLOR,
 
 	getValue = getValue,
 	getPathTable = getPathTable,
 	getPathString = getPathString,
 
 	safeCancelThread = safeCancelThread,
+
+	trimString = trimString,
+	checkForTrimmedString = checkForTrimmedString,
 })

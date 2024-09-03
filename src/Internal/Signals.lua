@@ -1,6 +1,6 @@
 --!strict
-
-local Freeze = require(script.Parent.Parent.Parent.Freeze)
+--!optimize 2
+--!native
 local Signal = require(script.Parent.Parent.Parent.Signal)
 
 local _T = require(script.Parent.Types)
@@ -9,97 +9,183 @@ local Utils = require(script.Parent.Utils)
 type Container = { [string]: Container, __signal: Signal.Signal<...any>? }
 type Containers = { [string]: Container }
 
-type SignalProps = {
-	_containers: Containers?,
-}
+-- Use this function instead of Freeze.Dictionary.getIn to be able to inline it
+local function getIn(value: any, path: { any }): any
+	for _, index in path do
+		if not value then
+			return nil
+		end
 
-local Signals = {}
-Signals.__index = Signals
-
-function Signals.new()
-	return setmetatable({
-		_containers = {},
-	}, Signals)
-end
-
-function Signals._getContainer(self: Signals, eventName: string): Container
-	assert(self._containers, "You're trying to use a Replion that has been destroyed!")
-
-	local container = self._containers[eventName]
-	if not container then
-		container = {}
-
-		self._containers[eventName] = container
+		value = value[index]
 	end
 
-	return container
+	return value
 end
 
-function Signals.Connect(self: Signals, eventName: string, path: _T.Path, callback: (...any) -> nil): Signal.Connection
+export type Signals = {
+	new: () -> Signals,
+	_containers: { [any]: Container }?,
+
+	_getContainer: (self: Signals, eventName: string, create: boolean?) -> Container,
+
+	Connect: (self: Signals, eventName: string, path: _T.Path, callback: (...any) -> ()) -> Signal.Connection,
+	Get: (self: Signals, eventName: string, path: _T.Path, create: boolean?) -> Signal.Signal<...any>?,
+
+	FireEvent: (self: Signals, eventName: string, path: _T.Path, ...any) -> (),
+	FireChange: (self: Signals, path: _T.Path, newValue: any, oldValue: any) -> (),
+
+	Destroy: (self: Signals) -> (),
+}
+
+local SignalsMeta = {}
+SignalsMeta.__index = SignalsMeta
+
+local Signals: Signals = SignalsMeta :: any
+
+function Signals.new()
+	return (setmetatable({
+		_containers = {},
+	}, Signals) :: any) :: Signals
+end
+
+function Signals:_getContainer(eventName, create)
+	assert(self._containers, "You're trying to use a Replion that has been destroyed!")
+
+	if create and not self._containers[eventName] then
+		self._containers[eventName] = {}
+	end
+
+	return self._containers[eventName]
+end
+
+function Signals:Connect(eventName, path, callback)
+	if _G.__DEV__ and not _G.__IGNORE_INSTANCES_WARNING__ then
+		-- Warn about the possible memory leak when using Instances as indexes
+		local hasInstances = false
+		for _, value in Utils.getPathTable(path) do
+			if typeof(value) ~= 'Instance' then
+				continue
+			end
+
+			hasInstances = true
+
+			break
+		end
+
+		if hasInstances then
+			local scriptName, line = debug.info(3, 'sl')
+
+			task.spawn(
+				error,
+				`[Memory Leak Warning] Instance used as a Connection index at {scriptName}:{line}. `
+					.. 'Using Instances will cause memory leaks as Replion cannot automatically '
+					.. 'dispose of such connections. Consider using a string or number as your index to prevent this issue.'
+			)
+		end
+	end
+
 	local signal = assert(self:Get(eventName, path), 'Signal does not exist!')
 
 	return signal:Connect(callback)
 end
 
-function Signals.Get(self: Signals, eventName: string, path: _T.Path, create: boolean?): Signal.Signal<...any>?
-	local container = self:_getContainer(eventName)
-	local signal
+function Signals:Get(eventName, path, create)
+	-- Only create the container/signal if it's really needed
+	-- This is to prevent creating a lot of empty tables and unused signals
+	local shouldCreate = create == nil or create
+	local container = self:_getContainer(eventName, shouldCreate)
+	if not container then
+		return
+	end
 
 	for _, index in Utils.getPathTable(path) do
-		local indexContainer = container[index]
-
-		if not indexContainer then
-			indexContainer = {}
-
-			container[index] = indexContainer
+		if not container[index] then
+			if shouldCreate then
+				container[index] = {}
+			else
+				return nil
+			end
 		end
 
-		container = indexContainer
+		container = container[index]
 
-		signal = container.__signal
+		if not container then
+			return nil
+		end
 	end
 
-	if not signal and (create == nil or create) then
-		signal = Signal.new()
-
-		container.__signal = signal
+	if shouldCreate and not container.__signal then
+		container.__signal = Signal.new()
 	end
 
-	return signal
+	return container.__signal
 end
 
-function Signals.FireEvent(self: Signals, eventName: string, path: _T.Path, ...: any)
-	local signal = self:Get(eventName, path)
+function Signals:FireEvent(eventName, path, ...)
+	local signal = self:Get(eventName, path, false)
 	if signal then
 		signal:Fire(...)
 	end
 end
 
-function Signals.FireChange(self: Signals, path: _T.Path, newValue: any, oldValue: any)
+function Signals:FireChange(path, newValue, oldValue)
+	-- If it is destroyed or there are no containers, there's no need to continue
+	if not self._containers or not next(self._containers) then
+		return
+	end
+
 	local pathTable = Utils.getPathTable(path)
+	local pathLength = #pathTable
 
-	for i = #pathTable, 1, -1 do
-		local eventPath = Freeze.List.slice(pathTable, 1, i)
-		local signal = self:Get('onChange', eventPath, false)
+	local onDescendantChange = self._containers.onDescendantChange ~= nil
 
-		local newPathValue = Freeze.Dictionary.getIn(newValue, eventPath)
-		local oldPathValue = Freeze.Dictionary.getIn(oldValue, eventPath)
+	-- TODO: I still think that we can improve this function even more
+	-- it is up to 7x faster than the previous version, but I think we can do better
+	for i = pathLength, 1, -1 do
+		-- Mutate the path table to prevent creating a new table for each iteration
+		-- we need this function to be as fast as possible, because in bigger games
+		-- we end up calling this function a lot of times
+		if i < pathLength then
+			pathTable[i + 1] = nil
+		end
+
+		local signalContainer = getIn(self._containers.onChange, pathTable)
+		local signal = if signalContainer then signalContainer.__signal else nil
+		local parentSignal
+
+		if onDescendantChange and i > 1 then
+			-- Temporary remove the index from the path table to get the parent signal
+			local pathIndex = pathTable[i]
+			pathTable[i] = nil
+
+			local parentContainer = getIn(self._containers.onDescendantChange, pathTable)
+			parentSignal = if parentContainer then parentContainer.__signal else nil
+
+			pathTable[i] = pathIndex
+		end
+
+		-- If there's no signal or parent signal, there's no need to continue
+		-- That will prevent from iterating over newValue and oldValue
+		if not signal and not parentSignal then
+			continue
+		end
+
+		-- Use inlined getIn for better performance
+		local newPathValue = getIn(newValue, pathTable)
+		local oldPathValue = getIn(oldValue, pathTable)
 
 		if signal then
 			signal:Fire(newPathValue, oldPathValue)
 		end
 
-		if i > 1 then
-			local parentPath = Freeze.List.slice(pathTable, 1, i - 1)
-			local parentSignal = self:Get('onDescendantChange', parentPath, false)
-			if parentSignal then
-				parentSignal:Fire(eventPath, newPathValue, oldPathValue)
-			end
+		if parentSignal then
+			-- I don't like this clone, but we need it because we're mutating the path table
+			parentSignal:Fire(table.clone(pathTable), newPathValue, oldPathValue)
 		end
 	end
 end
 
-function Signals.Destroy(self: Signals)
+function Signals:Destroy()
 	assert(self._containers, 'This Replion has already been destroyed!')
 
 	local function destroySignals(container: Container)
@@ -119,7 +205,5 @@ function Signals.Destroy(self: Signals)
 
 	self._containers = nil
 end
-
-export type Signals = typeof(setmetatable({} :: SignalProps, Signals))
 
 return Signals

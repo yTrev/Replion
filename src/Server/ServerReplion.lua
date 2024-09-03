@@ -18,20 +18,21 @@ export type ServerReplion<D = any> = {
 	Tags: { string },
 	ReplicateTo: _T.ReplicateTo,
 
-	_beforeDestroy: Signal.Signal<ServerReplion<D>>,
+	_beforeDestroy: Signal.Signal<nil>,
 	_signals: Signals.Signals,
+	_replicateToChanged: Signal.Signal<_T.ReplicateTo, _T.ReplicateTo>,
 
 	_id: number,
 	_packedId: string,
 
 	new: <T>(config: ReplionConfig<T>) -> ServerReplion<D>,
-	BeforeDestroy: (self: ServerReplion<D>, callback: (replion: ServerReplion<D>) -> ()) -> Signal.Connection,
+	BeforeDestroy: (self: ServerReplion<D>, callback: () -> ()) -> Signal.Connection,
 
 	OnDataChange: (self: ServerReplion<D>, callback: (newData: D, path: _T.Path) -> ()) -> Signal.Connection,
-	OnChange: <V>(
+	OnChange: <T>(
 		self: ServerReplion<D>,
 		path: _T.Path,
-		callback: (newValue: V, oldValue: V) -> ()
+		callback: (newValue: T, oldValue: T) -> ()
 	) -> Signal.Connection,
 
 	OnArrayInsert: (self: ServerReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
@@ -39,13 +40,13 @@ export type ServerReplion<D = any> = {
 	OnDescendantChange: (
 		self: ServerReplion<D>,
 		path: _T.Path,
-		callback: (path: _T.Path, newDescendantValue: any, oldDescendantValue: any) -> ()
+		callback: (path: { string | any }, newDescendantValue: any, oldDescendantValue: any) -> ()
 	) -> Signal.Connection,
 
 	SetReplicateTo: (self: ServerReplion<D>, replicateTo: _T.ReplicateTo) -> (),
 
 	Set: <T>(self: ServerReplion<D>, path: _T.Path, newValue: T) -> T,
-	Update: (self: ServerReplion<D>, path: _T.Path, toUpdate: _T.Dictionary?) -> (),
+	Update: (self: ServerReplion<D>, path: _T.Path | any, toUpdate: _T.Dictionary?) -> (),
 
 	Increase: (self: ServerReplion<D>, path: _T.Path, amount: number) -> number,
 	Decrease: (self: ServerReplion<D>, path: _T.Path, amount: number) -> number,
@@ -70,13 +71,15 @@ export type ReplionConfig<D = any> = {
 	Data: D,
 	ReplicateTo: _T.ReplicateTo,
 
+	DisableAutoDestroy: boolean?,
+
 	Tags: { string }?,
 }
 
--- Unsigned short
-local ID_LIMIT: number = 1114111
+local ID_LIMIT = 65535
+local MIN_IDS_TO_RECYCLE = 16
 
-local id: number = 0
+local currentId = 0
 local availableIds: { number } = {}
 
 --[=[
@@ -131,6 +134,13 @@ local availableIds: { number } = {}
 ]=]
 
 --[=[
+	@prop DisableAutoDestroy boolean?
+	@readonly
+
+	@within ServerReplion
+]=]
+
+--[=[
 	@class ServerReplion	
 
 	@server
@@ -147,14 +157,15 @@ function ServerReplion.new<D>(config: ReplionConfig<D>): ServerReplion<D>
 	local replicateTo = config.ReplicateTo
 	local selectedId
 
-	local availableId = table.remove(availableIds)
-	if availableId then
-		selectedId = availableId
+	if currentId + 1 > ID_LIMIT or #availableIds >= MIN_IDS_TO_RECYCLE then
+		selectedId = table.remove(availableIds, 1)
 	else
-		id += 1
-		selectedId = id
+		currentId += 1
+
+		selectedId = currentId
 	end
 
+	assert(selectedId, 'No available ID!')
 	assert(selectedId <= ID_LIMIT, `ID limit reached! You already have {ID_LIMIT} ServerReplions!`)
 
 	local self: ServerReplion<D> = setmetatable({
@@ -163,10 +174,13 @@ function ServerReplion.new<D>(config: ReplionConfig<D>): ServerReplion<D>
 		Tags = if config.Tags then config.Tags else {},
 		ReplicateTo = replicateTo,
 
+		DisableAutoDestroy = config.DisableAutoDestroy,
+
 		_id = selectedId,
 		_packedId = utf8.char(selectedId),
 		_beforeDestroy = Signal.new(),
 		_signals = Signals.new(),
+		_replicateToChanged = Signal.new(),
 	}, ServerReplion) :: any
 
 	Network.sendTo(replicateTo, 'Added', self:_serialize())
@@ -280,6 +294,8 @@ function ServerReplion:OnDescendantChange(path, callback)
 end
 
 --[=[
+	@param replicateTo ReplicateTo	
+
 	Sets the players to which the data should be replicated.
 ]=]
 function ServerReplion:SetReplicateTo(replicateTo)
@@ -298,7 +314,7 @@ function ServerReplion:SetReplicateTo(replicateTo)
 	local oldReplicateToPlayers = if oldReplicateTo == 'All'
 		then Players:GetPlayers()
 		elseif type(oldReplicateTo) == 'table' then oldReplicateTo
-		else { replicateTo }
+		else { oldReplicateTo }
 
 	local newReplicateToPlayers = if replicateTo == 'All'
 		then Players:GetPlayers()
@@ -320,10 +336,11 @@ function ServerReplion:SetReplicateTo(replicateTo)
 			continue
 		end
 
-		Network.sendTo(replicateTo, 'Added', self:_serialize())
+		Network.sendTo(player, 'Added', self:_serialize())
 	end
 
 	self.ReplicateTo = replicateTo
+	self._replicateToChanged:Fire(replicateTo, oldReplicateTo :: any)
 
 	Network.sendTo(replicateTo, 'UpdateReplicateTo', self._packedId, replicateTo)
 end
@@ -334,17 +351,59 @@ end
 	print(newCoins) --> 79
 	```
 
-	@param path Path
+	@param path Path | { [any] : any }
 	@param newValue T
 
 	Sets the value at the given path to the given value.
+	If you're updating a table is recommended to use [ServerReplion:Update] instead of `ServerReplion:Set` 
+	to avoid sending unnecessary data to the client.
 ]=]
 function ServerReplion:Set<T>(path, newValue: T): T
 	local pathTable = Utils.getPathTable(path)
 
 	local currentValue: T? = Freeze.Dictionary.getIn(self.Data, pathTable)
 	if currentValue and Freeze.Dictionary.equals(currentValue :: any, newValue) then
+		if _G.__DEV__ and type(currentValue) == 'table' and currentValue == newValue then
+			-- Warn about identical table references
+			local scriptName, line = debug.info(2, 'sl')
+			local pathString = Utils.getPathString(path)
+
+			warn(
+				`Warning: Skipping Replion:Set('{pathString}') due to identical table references.\n`
+					.. `Consider using Replion:Update('{pathString}') at {scriptName}:{line} instead.`
+			)
+		end
+
 		return currentValue :: T
+	end
+
+	if _G.__DEV__ and type(currentValue) == 'table' and type(newValue) == 'table' then
+		-- Check if the value has the exact same keys
+		-- otherwise warn about a possible benefit of using Replion:Update
+		local currentValueKeys = Freeze.Dictionary.keys(currentValue)
+		local newValueKeys = Freeze.Dictionary.keys(newValue)
+
+		if Freeze.List.equals(currentValueKeys, newValueKeys) then
+			local scriptName, line = debug.info(2, 'sl')
+			local pathString = Utils.getPathString(path)
+
+			local changedValues = Freeze.Dictionary.filter(newValue, function(value, key)
+				return not Freeze.Dictionary.equals((currentValue :: any)[key], value)
+			end)
+
+			-- Check if all values have changed
+			if Freeze.Dictionary.count(changedValues) ~= Freeze.Dictionary.count(newValue) then
+				local formatedValue = ''
+				for key, value in changedValues do
+					formatedValue ..= `\n\t{key} = {value},`
+				end
+
+				warn(
+					`Warning: Sending a table with identical keys but different values to the client.\n`
+						.. `Consider using Replion:Update('{pathString}', \{{formatedValue}\n}) at {scriptName}:{line} for optimized updates.`
+				)
+			end
+		end
 	end
 
 	local newData = Freeze.Dictionary.setIn(self.Data, pathTable, newValue)
@@ -386,17 +445,20 @@ end
 	@param toUpdate { [any]: any }?
 
 	Updates the data with the given table. Only the keys that are different will be sent to the client.
+	If you want to remove a key, set it to `Replion.None`.
 
 	You can update the root data by passing a table as the first argument.
-
-	If you want to remove a key, set it to `Replion.None`.
 ]=]
 function ServerReplion:Update(path, toUpdate)
 	local pathTable = if toUpdate then Utils.getPathTable(path) else nil
-	local changedValues = Freeze.Dictionary.filter(toUpdate or path :: _T.Dictionary, function(value, key)
-		local currentValue = if pathTable then Freeze.Dictionary.getIn(self.Data, pathTable) else self.Data[key]
+	local pathCurrentValue = if pathTable then Freeze.Dictionary.getIn(self.Data, pathTable) else self.Data
 
-		return not Freeze.Dictionary.equals(currentValue, value)
+	local changedValues = Freeze.Dictionary.filter(toUpdate or path :: _T.Dictionary, function(value, key)
+		if not pathCurrentValue then
+			return true
+		end
+
+		return not Freeze.Dictionary.equals(pathCurrentValue[key], value)
 	end)
 
 	if Freeze.isEmpty(changedValues) then
@@ -431,14 +493,44 @@ function ServerReplion:Update(path, toUpdate)
 		self._signals:FireChange(path, newData, oldData)
 	end
 
+	-- Fix unordered arrays
+	local arraySize = table.maxn(changedValues)
+	local isUnordered
+	if arraySize > 0 then
+		local size = 0
+
+		for i in changedValues do
+			size += 1
+
+			if i ~= size then
+				isUnordered = true
+
+				break
+			end
+		end
+
+		-- is an unordered array, transform into dictionary
+		isUnordered = isUnordered or size ~= arraySize
+
+		if _G.__DEV__ and isUnordered then
+			local scriptName, line = debug.info(2, 'sl')
+
+			warn(
+				`Warning: You're trying to send an unordered array to the client, RemotesEvents can't send unordered arrays.\n`
+					.. `The array will be transformed into a dictionary to be sent to the client.\n`
+					.. `at {scriptName}:{line}`
+			)
+		end
+	end
+
 	local serializedUpdate = Freeze.Dictionary.map(changedValues, function(value, key)
-		return if value == Freeze.None then Utils.SerializedNone else value, key
+		return if value == Freeze.None then Utils.SerializedNone else value, if isUnordered then tostring(key) else key
 	end)
 
 	if not pathTable then
-		Network.sendTo(self.ReplicateTo, 'Update', self._packedId, serializedUpdate)
+		Network.sendTo(self.ReplicateTo, 'Update', self._packedId, serializedUpdate, nil, isUnordered)
 	else
-		Network.sendTo(self.ReplicateTo, 'Update', self._packedId, path, serializedUpdate)
+		Network.sendTo(self.ReplicateTo, 'Update', self._packedId, path, serializedUpdate, isUnordered)
 	end
 end
 
@@ -455,7 +547,21 @@ end
 function ServerReplion:Increase(path, amount)
 	assert(type(amount) == 'number', `"amount" expected number, got {type(amount)}`)
 
-	local currentValue: number = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
+	local currentValue = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
+	if amount == 0 then
+		return currentValue
+	end
+
+	if _G.__DEV__ and type(currentValue) ~= 'number' then
+		local scriptName, line = debug.info(2, 'sl')
+
+		warn(
+			`Warning: Attempt to increase non-numeric value at "{Utils.getPathString(path)}"\n`
+				.. `Check if the path is correct at {scriptName}:{line}.`
+		)
+
+		return currentValue
+	end
 
 	return self:Set(path, currentValue + amount)
 end
@@ -503,8 +609,7 @@ end
 function ServerReplion:Insert<T>(path, value: T, index)
 	local pathTable = Utils.getPathTable(path)
 
-	local array =
-		assert(Freeze.Dictionary.getIn(self.Data, pathTable), `"{Utils.getPathString(path)}" is not a valid path!`)
+	local array = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
 
 	local targetIndex: number = if index then index else #array + 1
 
@@ -550,8 +655,7 @@ end
 function ServerReplion:Remove<T>(path, index): T
 	local pathTable = Utils.getPathTable(path)
 
-	local array =
-		assert(Freeze.Dictionary.getIn(self.Data, pathTable), `"{Utils.getPathString(path)}" is not a valid path!`)
+	local array = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
 
 	local targetIndex: number = if index then index else #array
 	local value = array[targetIndex]
@@ -666,7 +770,35 @@ end
 function ServerReplion:Get<T>(path): T?
 	assert(path, 'Path is required!')
 
-	return Freeze.Dictionary.getIn(self.Data, Utils.getPathTable(path))
+	local value: T? = Freeze.Dictionary.getIn(self.Data, Utils.getPathTable(path))
+
+	if _G.__DEV__ and value == nil then
+		local pathTable = Utils.getPathTable(path)
+
+		for i, key in pathTable do
+			if type(key) == 'string' then
+				local trimmedString = Utils.trimString(key)
+
+				if trimmedString == key then
+					continue
+				end
+
+				local pathWithoutTrimmedString = Freeze.List.set(pathTable, i, trimmedString)
+				local valueWithTrimmedString = Freeze.Dictionary.getIn(self.Data, pathWithoutTrimmedString)
+
+				if valueWithTrimmedString then
+					local scriptName, line = debug.info(2, 'sl')
+
+					warn(
+						`Warning: the path "{Utils.getPathString(path)}" has a key with leading or trailing whitespaces.\n`
+							.. `This is likely a mistake, consider using "{Utils.getPathString(pathWithoutTrimmedString)}" at {scriptName}:{line} instead.`
+					)
+				end
+			end
+		end
+	end
+
+	return value
 end
 
 --[=[
@@ -705,12 +837,13 @@ function ServerReplion:Destroy()
 		return
 	end
 
-	self.Destroyed = true
-
-	self._beforeDestroy:Fire(self)
+	self._beforeDestroy:Fire()
 	self._beforeDestroy:DisconnectAll()
 
+	self._replicateToChanged:Destroy()
 	self._signals:Destroy()
+
+	self.Destroyed = true
 
 	Network.sendTo(self.ReplicateTo, 'Removed', self._packedId)
 

@@ -20,6 +20,7 @@ local NOT_INITIALIZED: string = 'Did you forget to require the Replion module on
 
 local RemotesFolder: Folder
 
+-- TODO: Make something to allow to fake RemoteEvents for testing
 if not Utils.ShouldMock then
 	if IS_SERVER then
 		RemotesFolder = Instance.new('Folder')
@@ -46,7 +47,7 @@ local function get(id: string): RemoteEvent
 end
 
 local function create(events: { string })
-	for _, id: string in events do
+	for _, id in events do
 		get(id)
 	end
 end

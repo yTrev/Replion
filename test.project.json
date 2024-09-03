@@ -1,12 +1,8 @@
 {
-	"name": "Replion_Test",
+	"name": "replion_tests",
 	"tree": {
 		"$className": "DataModel",
 		"ReplicatedStorage": {
-			"$className": "ReplicatedStorage",
-			"Tests": {
-				"$path": "tests"
-			},
 			"Packages": {
 				"$path": "Packages",
 				"Replion": {
