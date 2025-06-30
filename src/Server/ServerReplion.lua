@@ -1,17 +1,16 @@
---!strict
 local Players = game:GetService('Players')
 
 local Network = require(script.Parent.Parent.Internal.Network)
 local Signal = require(script.Parent.Parent.Parent.Signal)
 
 local Utils = require(script.Parent.Parent.Internal.Utils)
-local Signals = require(script.Parent.Parent.Internal.Signals)
+local Graph = require(script.Parent.Parent.Internal.Graph)
 
 local _T = require(script.Parent.Parent.Internal.Types)
 
 local Freeze = require(script.Parent.Parent.Parent.Freeze)
 
-export type ServerReplion<D = any> = {
+export type ServerReplionData<D = any> = {
 	Channel: string,
 	Data: D,
 	Destroyed: boolean?,
@@ -19,7 +18,7 @@ export type ServerReplion<D = any> = {
 	ReplicateTo: _T.ReplicateTo,
 
 	_beforeDestroy: Signal.Signal<nil>,
-	_signals: Signals.Signals,
+	_rootNode: Graph.Node?,
 	_replicateToChanged: Signal.Signal<_T.ReplicateTo, _T.ReplicateTo>,
 
 	_id: number,
@@ -37,11 +36,6 @@ export type ServerReplion<D = any> = {
 
 	OnArrayInsert: (self: ServerReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
 	OnArrayRemove: (self: ServerReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
-	OnDescendantChange: (
-		self: ServerReplion<D>,
-		path: _T.Path,
-		callback: (path: { string | any }, newDescendantValue: any, oldDescendantValue: any) -> ()
-	) -> Signal.Connection,
 
 	SetReplicateTo: (self: ServerReplion<D>, replicateTo: _T.ReplicateTo) -> (),
 
@@ -81,6 +75,7 @@ local MIN_IDS_TO_RECYCLE = 16
 
 local currentId = 0
 local availableIds: { number } = {}
+local warnsSent = {}
 
 --[=[
 	@type Path string | { any }
@@ -145,10 +140,10 @@ local availableIds: { number } = {}
 
 	@server
 ]=]
-local ServerReplionMeta = {}
-ServerReplionMeta.__index = ServerReplionMeta
+local ServerReplion = {}
+ServerReplion.__index = ServerReplion
 
-local ServerReplion: ServerReplion = ServerReplionMeta :: any
+export type ServerReplion<D = any> = typeof(setmetatable({} :: ServerReplionData<D>, ServerReplion))
 
 function ServerReplion.new<D>(config: ReplionConfig<D>): ServerReplion<D>
 	assert(type(config.Channel) == 'string', `"Channel" expected string, got {type(config.Channel)}`)
@@ -179,7 +174,7 @@ function ServerReplion.new<D>(config: ReplionConfig<D>): ServerReplion<D>
 		_id = selectedId,
 		_packedId = utf8.char(selectedId),
 		_beforeDestroy = Signal.new(),
-		_signals = Signals.new(),
+		_rootNode = Graph.createRootNode(),
 		_replicateToChanged = Signal.new(),
 	}, ServerReplion) :: any
 
@@ -242,7 +237,7 @@ end
 	Connects to a signal that is fired when a value is changed in the data. 
 ]=]
 function ServerReplion:OnDataChange(callback)
-	return self._signals:Connect('onDataChange', '__root', callback)
+	return Graph.connect(self._rootNode, 'onDataChange', { '__root' }, callback)
 end
 
 --[=[
@@ -254,7 +249,7 @@ end
 	Connects to a signal that is fired when the value at the given path is changed.
 ]=]
 function ServerReplion:OnChange<V>(path, callback)
-	return self._signals:Connect('onChange', path, callback)
+	return Graph.connect(self._rootNode, 'onChange', path, callback)
 end
 
 --[=[
@@ -266,7 +261,7 @@ end
 	Connects to a signal that is fired when a value is inserted in the array at the given path.
 ]=]
 function ServerReplion:OnArrayInsert(path, callback)
-	return self._signals:Connect('onArrayInsert', path, callback)
+	return Graph.connect(self._rootNode, 'onArrayInsert', path, callback)
 end
 
 --[=[
@@ -278,19 +273,7 @@ end
 	Connects to a signal that is fired when a value is removed in the array at the given path.
 ]=]
 function ServerReplion:OnArrayRemove(path, callback)
-	return self._signals:Connect('onArrayRemove', path, callback)
-end
-
---[=[
-	@param path Path
-	@param callback (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
-
-	@return RBXScriptConnection
-
-	Connects to a signal that is fired when a descendant value is changed.
-]=]
-function ServerReplion:OnDescendantChange(path, callback)
-	return self._signals:Connect('onDescendantChange', path, callback)
+	return Graph.connect(self._rootNode, 'onArrayRemove', path, callback)
 end
 
 --[=[
@@ -340,7 +323,7 @@ function ServerReplion:SetReplicateTo(replicateTo)
 	end
 
 	self.ReplicateTo = replicateTo
-	self._replicateToChanged:Fire(replicateTo, oldReplicateTo :: any)
+	self._replicateToChanged:Fire(replicateTo, oldReplicateTo)
 
 	Network.sendTo(replicateTo, 'UpdateReplicateTo', self._packedId, replicateTo)
 end
@@ -362,16 +345,28 @@ function ServerReplion:Set<T>(path, newValue: T): T
 	local pathTable = Utils.getPathTable(path)
 
 	local currentValue: T? = Freeze.Dictionary.getIn(self.Data, pathTable)
-	if currentValue and Freeze.Dictionary.equals(currentValue :: any, newValue) then
-		if _G.__DEV__ and type(currentValue) == 'table' and currentValue == newValue then
-			-- Warn about identical table references
+	if Freeze.Dictionary.equals(currentValue :: any, newValue) then
+		if _G.__DEV__ and type(currentValue) == 'table' then
 			local scriptName, line = debug.info(2, 'sl')
+			local lineString = `{scriptName}:{line}`
 			local pathString = Utils.getPathString(path)
 
-			warn(
-				`Warning: Skipping Replion:Set('{pathString}') due to identical table references.\n`
-					.. `Consider using Replion:Update('{pathString}') at {scriptName}:{line} instead.`
-			)
+			if not warnsSent[lineString] then
+				if currentValue == newValue then
+					warn(
+						`Warning: Skipping Replion:Set('{pathString}') due to identical table references.\n`
+							.. `Consider using Replion:Update('{pathString}') at {scriptName}:{line} instead.`
+					)
+				elseif currentValue ~= newValue and type(newValue) == 'table' then
+					warn(
+						`Warning: Replion:Set('{pathString}') detected a new table reference, but all values inside are identical.\n`
+							.. `This may indicate the use of a shallow clone for the table at Replion:Get('{pathString}') without properly cloning nested values. `
+							.. `Review your table cloning logic at {scriptName}:{line}.`
+					)
+				end
+
+				warnsSent[lineString] = true
+			end
 		end
 
 		return currentValue :: T
@@ -386,22 +381,27 @@ function ServerReplion:Set<T>(path, newValue: T): T
 		if Freeze.List.equals(currentValueKeys, newValueKeys) then
 			local scriptName, line = debug.info(2, 'sl')
 			local pathString = Utils.getPathString(path)
+			local lineString = `{scriptName}:{line}`
 
-			local changedValues = Freeze.Dictionary.filter(newValue, function(value, key)
-				return not Freeze.Dictionary.equals((currentValue :: any)[key], value)
-			end)
+			if not warnsSent[lineString] then
+				warnsSent[lineString] = true
 
-			-- Check if all values have changed
-			if Freeze.Dictionary.count(changedValues) ~= Freeze.Dictionary.count(newValue) then
-				local formatedValue = ''
-				for key, value in changedValues do
-					formatedValue ..= `\n\t{key} = {value},`
+				local changedValues = Freeze.Dictionary.filter(newValue, function(value, key)
+					return not Freeze.Dictionary.equals((currentValue :: any)[key], value)
+				end)
+
+				-- Check if all values have changed
+				if Freeze.Dictionary.count(changedValues) ~= Freeze.Dictionary.count(newValue) then
+					local formatedValue = ''
+					for key, value in changedValues do
+						formatedValue ..= `\n\t{key} = {value},`
+					end
+
+					warn(
+						`Warning: Sending a table with identical keys but different values to the client.\n`
+							.. `Consider using Replion:Update('{pathString}', \{{formatedValue}\n}) at {scriptName}:{line} for optimized updates.`
+					)
 				end
-
-				warn(
-					`Warning: Sending a table with identical keys but different values to the client.\n`
-						.. `Consider using Replion:Update('{pathString}', \{{formatedValue}\n}) at {scriptName}:{line} for optimized updates.`
-				)
 			end
 		end
 	end
@@ -411,10 +411,10 @@ function ServerReplion:Set<T>(path, newValue: T): T
 
 	self.Data = newData
 
-	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
-	self._signals:FireChange(path, newData, oldData)
-
 	Network.sendTo(self.ReplicateTo, 'Set', self._packedId, path, newValue)
+
+	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
+	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
 	return newValue
 end
@@ -452,8 +452,9 @@ end
 function ServerReplion:Update(path, toUpdate)
 	local pathTable = if toUpdate then Utils.getPathTable(path) else nil
 	local pathCurrentValue = if pathTable then Freeze.Dictionary.getIn(self.Data, pathTable) else self.Data
+	local targetTable = toUpdate or path :: _T.Dictionary
 
-	local changedValues = Freeze.Dictionary.filter(toUpdate or path :: _T.Dictionary, function(value, key)
+	local changedValues = Freeze.Dictionary.filter(targetTable, function(value, key)
 		if not pathCurrentValue then
 			return true
 		end
@@ -461,37 +462,20 @@ function ServerReplion:Update(path, toUpdate)
 		return not Freeze.Dictionary.equals(pathCurrentValue[key], value)
 	end)
 
-	if Freeze.isEmpty(changedValues) then
+	local nothingChanged = next(changedValues) == nil
+	if nothingChanged then
 		return
 	end
 
 	local oldData = self.Data
-	if not pathTable then
-		local newData = Freeze.Dictionary.merge(self.Data, changedValues)
+	local newData = if pathTable
+		then Freeze.Dictionary.mergeIn(self.Data, pathTable, changedValues)
+		else Freeze.Dictionary.merge(self.Data, changedValues)
 
-		self.Data = newData
+	self.Data = newData
 
-		self._signals:FireEvent('onDataChange', '__root', newData, {})
-
-		for index, value in changedValues do
-			self._signals:FireEvent('onChange', index, Utils.getValue(value), oldData[index])
-		end
-	else
-		local newData = Freeze.Dictionary.mergeIn(self.Data, pathTable, changedValues)
-
-		self.Data = newData
-
-		self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
-
-		for index, value in changedValues do
-			local indexPath = Freeze.List.push(pathTable, index)
-			local oldValue = Freeze.Dictionary.getIn(oldData, indexPath)
-
-			self._signals:FireEvent('onChange', indexPath, Utils.getValue(value), oldValue)
-		end
-
-		self._signals:FireChange(path, newData, oldData)
-	end
+	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
+	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
 	-- Fix unordered arrays
 	local arraySize = table.maxn(changedValues)
@@ -514,12 +498,17 @@ function ServerReplion:Update(path, toUpdate)
 
 		if _G.__DEV__ and isUnordered then
 			local scriptName, line = debug.info(2, 'sl')
+			local lineString = `{scriptName}:{line}`
 
-			warn(
-				`Warning: You're trying to send an unordered array to the client, RemotesEvents can't send unordered arrays.\n`
-					.. `The array will be transformed into a dictionary to be sent to the client.\n`
-					.. `at {scriptName}:{line}`
-			)
+			if not warnsSent[lineString] then
+				warnsSent[lineString] = true
+
+				warn(
+					`Warning: You're trying to send an unordered array to the client, RemotesEvents can't send unordered arrays.\n`
+						.. `The array will be transformed into a dictionary to be sent to the client.\n`
+						.. `at {scriptName}:{line}`
+				)
+			end
 		end
 	end
 
@@ -554,11 +543,16 @@ function ServerReplion:Increase(path, amount)
 
 	if _G.__DEV__ and type(currentValue) ~= 'number' then
 		local scriptName, line = debug.info(2, 'sl')
+		local lineString = `{scriptName}:{line}`
 
-		warn(
-			`Warning: Attempt to increase non-numeric value at "{Utils.getPathString(path)}"\n`
-				.. `Check if the path is correct at {scriptName}:{line}.`
-		)
+		if not warnsSent[lineString] then
+			warnsSent[lineString] = true
+
+			warn(
+				`Warning: Attempt to increase non-numeric value at "{Utils.getPathString(path)}"\n`
+					.. `Check if the path is correct at {scriptName}:{line}.`
+			)
+		end
 
 		return currentValue
 	end
@@ -611,18 +605,18 @@ function ServerReplion:Insert<T>(path, value: T, index)
 
 	local array = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
 
-	local targetIndex: number = if index then index else #array + 1
-
-	local newArray = Freeze.List.insert(array, targetIndex, value)
+	local targetIndex = if index then index else #array + 1
+	local newArray = table.clone(array)
+	table.insert(newArray, targetIndex, value)
 
 	local oldData = self.Data
 	local newData = Freeze.Dictionary.setIn(self.Data, pathTable, newArray)
 
 	self.Data = newData
 
-	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
-	self._signals:FireEvent('onArrayInsert', pathTable, targetIndex, value)
-	self._signals:FireChange(pathTable, newData, oldData)
+	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
+	Graph.fireEvent(self._rootNode, 'onArrayInsert', pathTable, targetIndex, value)
+	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
 	Network.sendTo(self.ReplicateTo, 'ArrayUpdate', self._packedId, 'i', path, value, index)
 end
@@ -657,19 +651,20 @@ function ServerReplion:Remove<T>(path, index): T
 
 	local array = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
 
-	local targetIndex: number = if index then index else #array
+	local targetIndex = if index then index else #array
 	local value = array[targetIndex]
 
-	local newArray = Freeze.List.remove(array, targetIndex)
+	local newArray = table.clone(array)
+	table.remove(newArray, targetIndex)
 
 	local oldData = self.Data
 	local newData = Freeze.Dictionary.setIn(self.Data, pathTable, newArray)
 
 	self.Data = newData
 
-	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
-	self._signals:FireEvent('onArrayRemove', path, targetIndex, value)
-	self._signals:FireChange(path, newData, oldData)
+	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
+	Graph.fireEvent(self._rootNode, 'onArrayRemove', path, targetIndex, value)
+	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
 	Network.sendTo(self.ReplicateTo, 'ArrayUpdate', self._packedId, 'r', path, index)
 
@@ -704,7 +699,7 @@ function ServerReplion:Clear(path)
 	local array = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
 
 	-- If the array is already empty, don't do anything
-	if Freeze.isEmpty(array) then
+	if next(array) == nil then
 		return
 	end
 
@@ -714,8 +709,8 @@ function ServerReplion:Clear(path)
 
 	self.Data = newData
 
-	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
-	self._signals:FireChange(path, newData, oldData)
+	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
+	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
 	Network.sendTo(self.ReplicateTo, 'ArrayUpdate', self._packedId, 'c', path)
 end
@@ -770,11 +765,10 @@ end
 function ServerReplion:Get<T>(path): T?
 	assert(path, 'Path is required!')
 
-	local value: T? = Freeze.Dictionary.getIn(self.Data, Utils.getPathTable(path))
+	local pathTable = Utils.getPathTable(path)
+	local value: T? = Freeze.Dictionary.getIn(self.Data, pathTable)
 
 	if _G.__DEV__ and value == nil then
-		local pathTable = Utils.getPathTable(path)
-
 		for i, key in pathTable do
 			if type(key) == 'string' then
 				local trimmedString = Utils.trimString(key)
@@ -841,8 +835,9 @@ function ServerReplion:Destroy()
 	self._beforeDestroy:DisconnectAll()
 
 	self._replicateToChanged:Destroy()
-	self._signals:Destroy()
+	Graph.destroyRootNode(self._rootNode)
 
+	self._rootNode = nil
 	self.Destroyed = true
 
 	Network.sendTo(self.ReplicateTo, 'Removed', self._packedId)

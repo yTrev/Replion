@@ -1,4 +1,3 @@
---!strict
 local Players = game:GetService('Players')
 local RunService = game:GetService('RunService')
 local Utils = require(script.Parent.Utils)

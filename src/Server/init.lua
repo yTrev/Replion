@@ -1,4 +1,3 @@
---!strict
 local Players = game:GetService('Players')
 local RunService = game:GetService('RunService')
 
@@ -50,8 +49,8 @@ export type ReplionServer = {
 	) -> Signal.Connection,
 }
 
-local replionAdded = Signal.new()
-local replionRemoved = Signal.new()
+local replionAdded: Signal.Signal<string, ServerReplion> = Signal.new()
+local replionRemoved: Signal.Signal<string, ServerReplion> = Signal.new()
 
 local replionsCache: { [string]: { [number]: ServerReplion } } = {}
 local waitingList: { [string]: WaitList } = {}
@@ -59,11 +58,11 @@ local playersReplionsIndex: { [Player]: { [string]: number } } = {}
 
 local timeouts: { [thread]: thread } = {}
 
-local function getCache<T>(cache: any, channel: any): T
+local function getCache<T>(cache: { [any]: T }, channel: any): T
 	local channelCache = cache[channel]
 
 	if not channelCache then
-		channelCache = {}
+		channelCache = {} :: any
 		cache[channel] = channelCache
 	end
 
@@ -104,7 +103,7 @@ end
 	@class Server
 	@server
 ]=]
-local Server: ReplionServer = {} :: any
+local Server: ReplionServer = {} :: ReplionServer
 
 --[=[
 	Creates a new Replion.
@@ -133,7 +132,7 @@ function Server.new<T>(config: ReplionConfig<T>): ServerReplion<T>
 		if isEqual then
 			local replicatingTo: string
 
-			if typeof(replicateTo) == 'Instance' or typeof(replicatingTo) == 'userdata' then
+			if typeof(replicateTo) == 'Instance' or typeof(replicateTo) == 'userdata' then
 				replicatingTo = tostring(replicateTo)
 			elseif type(replicateTo) == 'string' then
 				replicatingTo = replicateTo
@@ -147,7 +146,7 @@ function Server.new<T>(config: ReplionConfig<T>): ServerReplion<T>
 		end
 	end
 
-	local newReplion: ServerReplion = ServerReplion.new(config)
+	local newReplion: ServerReplion<T> = ServerReplion.new(config)
 	newReplion:BeforeDestroy(function()
 		channelCache[newReplion._id] = nil
 
@@ -274,12 +273,12 @@ end
 function Server:GetReplionFor<T>(player, channel): ServerReplion<T>?
 	local channelCache = replionsCache[channel]
 	if not channelCache then
-		return
+		return nil
 	end
 
 	local playerIndexes = playersReplionsIndex[player]
 	if not playerIndexes then
-		return
+		return nil
 	end
 
 	return channelCache[playerIndexes[channel]]
@@ -350,7 +349,7 @@ end
 
 	Wait for a replion to be created for the player.
 ]=]
-function Server:WaitReplionFor<T>(player, channel, timeout): ServerReplion<T>?
+function Server:WaitReplionFor<T>(player: Player, channel: string, timeout: number?): ServerReplion<T>?
 	local replion = self:GetReplionFor(player, channel)
 	if replion then
 		return replion
@@ -484,7 +483,7 @@ if not Utils.ShouldMock and RunService:IsServer() then
 
 	local function onPlayerAdded(player)
 		local replicatedToPlayer = Server:GetReplionsFor(player)
-		local playerReplions = {}
+		local playerReplions: { { any } } = {}
 
 		for _, replion in replicatedToPlayer do
 			table.insert(playerReplions, (replion :: any):_serialize())

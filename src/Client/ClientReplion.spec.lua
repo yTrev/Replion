@@ -120,23 +120,6 @@ describe('ClientReplion:_set', function()
 
 		expect(fnMock).toHaveBeenCalledWith(true, nil)
 	end)
-
-	it('should call the OnDescendantChange signal', function()
-		local newReplion = ClientReplion.new({ nil, 'Set', {
-			A = {
-				B = {
-					[1] = 'Bar',
-				},
-			},
-		} })
-
-		local fnMock = jest.fn()
-
-		newReplion:OnDescendantChange('A', fnMock)
-		newReplion:_set({ 'A', 'B', 1 }, 'Foo')
-
-		expect(fnMock).toHaveBeenCalledWith({ 'A', 'B' }, { [1] = 'Foo' }, { [1] = 'Bar' })
-	end)
 end)
 
 describe('ClientReplion:_clear', function()

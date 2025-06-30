@@ -1,4 +1,3 @@
---!strict
 local RunService = game:GetService('RunService')
 
 local Freeze = require(script.Parent.Parent.Parent.Freeze)
@@ -8,7 +7,7 @@ local SERIALIZED_NONE = '\0'
 
 local function getPathTable(path: _T.Path): { any }
 	if type(path) == 'table' then
-		return table.clone(path)
+		return path
 	elseif type(path) == 'string' then
 		return string.split(path, '.')
 	else

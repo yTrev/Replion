@@ -1,11 +1,10 @@
---!strict
 local Freeze = require(script.Parent.Parent.Parent.Freeze)
 
 local Utils = require(script.Parent.Parent.Internal.Utils)
 local Signal = require(script.Parent.Parent.Parent.Signal)
 local _T = require(script.Parent.Parent.Internal.Types)
 
-local Signals = require(script.Parent.Parent.Internal.Signals)
+local Graph = require(script.Parent.Parent.Internal.Graph)
 
 type Dictionary = _T.Dictionary
 
@@ -16,7 +15,7 @@ export type ClientReplion<D = any> = {
 	ReplicateTo: _T.ReplicateTo,
 
 	_channel: string,
-	_signals: Signals.Signals,
+	_rootNode: Graph.Node?,
 	_beforeDestroy: Signal.Signal<nil>,
 
 	new: (serializedReplion: _T.SerializedReplion) -> ClientReplion<D>,
@@ -27,12 +26,6 @@ export type ClientReplion<D = any> = {
 		self: ClientReplion<D>,
 		path: _T.Path,
 		callback: (newValue: T, oldValue: T) -> ()
-	) -> Signal.Connection,
-
-	OnDescendantChange: (
-		self: ClientReplion<D>,
-		path: _T.Path,
-		callback: (path: _T.Path, newDescendantValue: any, oldDescendantValue: any) -> ()
 	) -> Signal.Connection,
 
 	OnArrayInsert: (self: ClientReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
@@ -105,7 +98,7 @@ function ClientReplion.new(serializedReplion)
 		_channel = serializedReplion[2],
 
 		_beforeDestroy = Signal.new(),
-		_signals = Signals.new(),
+		_rootNode = Graph.createRootNode(),
 	}, ClientReplion) :: any
 
 	return self
@@ -134,7 +127,7 @@ end
 	Connects to a signal that is fired when a value is changed in the data. 
 ]=]
 function ClientReplion:OnDataChange(callback)
-	return self._signals:Connect('onDataChange', '__root', callback)
+	return Graph.connect(self._rootNode, 'onDataChange', '__root', callback)
 end
 
 --[=[
@@ -152,30 +145,7 @@ end
 	This function is called when the value of the path changes.
 ]=]
 function ClientReplion:OnChange<T>(path, callback)
-	return self._signals:Connect('onChange', path, callback)
-end
-
---[=[
-	```lua
-	-- On the server
-	replion:Set({'Areas', 'Ice'}, true)
-	```
-
-	```lua
-	replion:OnDescendantChange('Areas', function(path: { string }, newValue: any, oldValue: any)
-		print(path, newValue, oldValue) --> {'Areas', 'Ice'}, true, false
-	end)
-	```
-
-	@param path Path
-	@param callback (path: { string }, newDescendantValue: any, oldDescendantValue: any) -> ()
-
-	@return RBXScriptConnection
-
-	This event will be fired when any descendant of the path is changed.
-]=]
-function ClientReplion:OnDescendantChange(path, callback)
-	return self._signals:Connect('onDescendantChange', path, callback)
+	return Graph.connect(self._rootNode, 'onChange', path, callback)
 end
 
 --[=[
@@ -187,7 +157,7 @@ end
 	Connects to a signal that is fired when a value is inserted in the array at the given path.
 ]=]
 function ClientReplion:OnArrayInsert(path, callback)
-	return self._signals:Connect('onArrayInsert', path, callback)
+	return Graph.connect(self._rootNode, 'onArrayInsert', path, callback)
 end
 
 --[=[
@@ -199,7 +169,7 @@ end
 	Connects to a signal that is fired when a value is removed in the array at the given path.
 ]=]
 function ClientReplion:OnArrayRemove(path, callback)
-	return self._signals:Connect('onArrayRemove', path, callback)
+	return Graph.connect(self._rootNode, 'onArrayRemove', path, callback)
 end
 
 function ClientReplion:_set<T>(path, newValue: T): T
@@ -215,8 +185,8 @@ function ClientReplion:_set<T>(path, newValue: T): T
 
 	self.Data = newData
 
-	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
-	self._signals:FireChange(path, newData, oldData)
+	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
+	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
 	return newValue
 end
@@ -226,35 +196,17 @@ function ClientReplion:_update(path, toUpdate, isUnordered)
 		return if value == Utils.SerializedNone then Freeze.None else value, if isUnordered then tonumber(key) else key
 	end)
 
+	local pathTable = Utils.getPathTable(path)
+
 	local oldData = self.Data
+	local newData = if toUpdate == nil
+		then Freeze.Dictionary.merge(self.Data, values)
+		else Freeze.Dictionary.mergeIn(self.Data, pathTable, values)
 
-	if toUpdate == nil then
-		local newData = Freeze.Dictionary.merge(self.Data, values)
+	self.Data = newData
 
-		self.Data = newData
-
-		self._signals:FireEvent('onDataChange', '__root', newData, {})
-
-		for index, value in values do
-			self._signals:FireEvent('onChange', index, Utils.getValue(value), oldData[index])
-		end
-	else
-		local pathTable = Utils.getPathTable(path)
-		local newData = Freeze.Dictionary.mergeIn(self.Data, pathTable, values)
-
-		self.Data = newData
-
-		self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
-
-		for index, value in values do
-			local indexPath = Freeze.List.push(pathTable, index)
-			local oldValue = Freeze.Dictionary.getIn(oldData, indexPath)
-
-			self._signals:FireEvent('onChange', indexPath, Utils.getValue(value), oldValue)
-		end
-
-		self._signals:FireChange(path, newData, oldData)
-	end
+	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
+	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 end
 
 function ClientReplion:_increase(path, amount)
@@ -281,16 +233,15 @@ function ClientReplion:_insert<T>(path, value: T, index)
 
 	self.Data = newData
 
-	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
-	self._signals:FireEvent('onArrayInsert', pathTable, targetIndex, value)
-	self._signals:FireChange(pathTable, newData, oldData)
+	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
+	Graph.fireEvent(self._rootNode, 'onArrayInsert', pathTable, targetIndex, value)
+	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 end
 
 function ClientReplion:_remove<T>(path, index)
 	local pathTable = Utils.getPathTable(path)
 
-	local array =
-		assert(Freeze.Dictionary.getIn(self.Data, pathTable), `"{Utils.getPathString(path)}" is not a valid path!`)
+	local array = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
 	local targetIndex: number = if index then index else #array
 	local value = array[targetIndex]
 
@@ -301,9 +252,9 @@ function ClientReplion:_remove<T>(path, index)
 
 	self.Data = newData
 
-	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
-	self._signals:FireEvent('onArrayRemove', path, targetIndex, value)
-	self._signals:FireChange(path, newData, oldData)
+	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
+	Graph.fireEvent(self._rootNode, 'onArrayRemove', path, targetIndex, value)
+	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
 	return value
 end
@@ -316,8 +267,8 @@ function ClientReplion:_clear(path)
 
 	self.Data = newData
 
-	self._signals:FireEvent('onDataChange', '__root', newData, pathTable)
-	self._signals:FireChange(path, newData, oldData)
+	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
+	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 end
 
 --[=[
@@ -396,7 +347,8 @@ function ClientReplion:Destroy()
 	self._beforeDestroy:Fire()
 	self._beforeDestroy:DisconnectAll()
 
-	self._signals:Destroy()
+	Graph.destroyRootNode(self._rootNode)
+	self._rootNode = nil
 
 	self.Destroyed = true
 end

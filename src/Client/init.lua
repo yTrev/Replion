@@ -1,4 +1,3 @@
---!strict
 local RunService = game:GetService('RunService')
 
 local Utils = require(script.Parent.Internal.Utils)
@@ -96,7 +95,9 @@ local function createReplion(serializedReplion: SerializedReplion)
 	local waitList = waitingList[channel]
 	if waitList then
 		for _, info in waitList do
-			pcall(task.spawn, info.thread, newReplion)
+			if coroutine.status(info.thread) == 'suspended' then
+				task.spawn(info.thread, newReplion)
+			end
 		end
 
 		waitingList[channel] = nil

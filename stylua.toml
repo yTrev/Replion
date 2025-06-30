@@ -1,2 +1,3 @@
 quote_style = "AutoPreferSingle"
 indent_type = "Tabs"
+syntax = "Luau"

@@ -201,7 +201,15 @@ describe('ServerReplion:Set', function()
 
 	it('should call the OnChange signal', function()
 		local newReplion = ReplionServer.new({
-			Data = {},
+			Data = {
+				Daily = {
+					Quests = {
+						[1] = {
+							id = '1234-5678',
+						},
+					},
+				},
+			},
 
 			Channel = 'SetOnChange',
 			ReplicateTo = 'All',
@@ -209,34 +217,50 @@ describe('ServerReplion:Set', function()
 		})
 
 		local fnMock = jest.fn()
+		local fnMock2 = jest.fn()
 
 		newReplion:OnChange('Foo', fnMock)
 		newReplion:Set('Foo', true)
 
 		expect(fnMock).toHaveBeenCalledWith(true, nil)
+
+		newReplion:OnChange('Daily.Quests', fnMock2)
+		newReplion:Set({ 'Daily', 'Quests', 1, 'id' }, '8765-4321')
+
+		expect(fnMock2).toHaveBeenCalledWith({ [1] = { id = '8765-4321' } }, { [1] = { id = '1234-5678' } })
 	end)
 
-	it('should call the OnDescendantChange signal', function()
+	it('should call the OnChange signal once when some values change', function()
 		local newReplion = ReplionServer.new({
-			Data = {
-				A = {
-					B = {
-						[1] = 'Bar',
-					},
-				},
-			},
-
-			Channel = 'SetOnDescendantChange',
+			Channel = 'SetOnChangeOnce',
 			ReplicateTo = 'All',
 			Tags = {},
+			Data = { A = {} },
 		})
 
 		local fnMock = jest.fn()
 
-		newReplion:OnDescendantChange('A', fnMock)
-		newReplion:Set({ 'A', 'B', 1 }, 'Foo')
+		newReplion:OnChange('A', fnMock)
+		newReplion:Set('A', { { 1 } })
 
-		expect(fnMock).toHaveBeenCalledWith({ 'A', 'B' }, { [1] = 'Foo' }, { [1] = 'Bar' })
+		expect(fnMock).toHaveBeenCalledTimes(1)
+	end)
+
+	it('should call the OnChange signal if an value inside a table changes', function()
+		local newReplion = ReplionServer.new({
+			Channel = 'SetOnChangeNested',
+			ReplicateTo = 'All',
+			Tags = {},
+			Data = { A = { B = { C = true } } },
+		})
+
+		local fnMock = jest.fn()
+
+		newReplion:OnChange('A', fnMock)
+
+		newReplion:Set('A.B.C', false)
+
+		expect(fnMock).toHaveBeenCalledWith({ B = { C = false } }, { B = { C = true } })
 	end)
 end)
 
@@ -479,25 +503,6 @@ describe('ServerReplion:OnArrayRemove', function()
 		newReplion:Remove('Array', 2)
 
 		expect(fnMock).toHaveBeenCalledWith(2, 2)
-	end)
-end)
-
-describe('ServerReplion:OnDescendantChange', function()
-	it('should call the callback if an value inside a table changes', function()
-		local newReplion = ReplionServer.new({
-			Data = { A = { B = { C = true } } },
-
-			Channel = 'OnDescendantChangeNested',
-			ReplicateTo = 'All',
-			Tags = {},
-		})
-
-		local fnMock = jest.fn()
-
-		newReplion:OnDescendantChange('A', fnMock)
-		newReplion:Set('A.B.C', false)
-
-		expect(fnMock).toHaveBeenCalledWith({ 'A', 'B' }, { C = false }, { C = true })
 	end)
 end)
 

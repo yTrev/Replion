@@ -1,9 +1,8 @@
---!strict
 export type Path = { any } | string | any
 export type Tags = { string }?
 export type Dictionary = { [any]: any }
 
--- {id, channel, data, replicateTo, tags}
+-- { id, channel, data, replicateTo, tags }
 export type SerializedReplion = { any }
 
 export type ArrayCallback = <T>(index: number, value: T) -> ()
