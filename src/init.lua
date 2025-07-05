@@ -4,6 +4,7 @@ local Server = require(script.Server)
 
 local Freeze = require(script.Parent.Freeze)
 
+export type ReplionConfig<T = any> = Server.ReplionConfig<T>
 export type ServerReplion<T = any> = Server.ServerReplion<T>
 export type ClientReplion<T = any> = Client.ClientReplion<T>
 

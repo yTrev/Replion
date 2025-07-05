@@ -10,7 +10,7 @@ local Signal = require(script.Parent.Parent.Signal)
 local _T = require(script.Parent.Internal.Types)
 
 export type ServerReplion<D = any> = ServerReplion.ServerReplion<D>
-type ReplionConfig<T> = ServerReplion.ReplionConfig<T>
+export type ReplionConfig<T> = ServerReplion.ReplionConfig<T>
 
 type WaitList = { { thread: thread, player: Player?, async: boolean? } }
 
