@@ -161,13 +161,11 @@ function Server.new<T>(config: ReplionConfig<T>): ServerReplion<T>
 	-- Because of the new optimizations we need to update the playersReplionsIndex
 	-- when the replicateTo changes
 	newReplion._replicateToChanged:Connect(function(replicateTo, oldReplicateTo)
-		if typeof(oldReplicateTo) == 'Player' then
+		if typeof(oldReplicateTo) == 'Instance' and oldReplicateTo:IsA('Player') then
 			local playerCache = playersReplionsIndex[oldReplicateTo]
-			if not playerCache then
-				return
+			if playerCache then
+				playerCache[channel] = nil
 			end
-
-			playerCache[channel] = nil
 		elseif typeof(oldReplicateTo) == 'table' then
 			for _, player in oldReplicateTo do
 				local playerCache = playersReplionsIndex[player]
@@ -179,7 +177,7 @@ function Server.new<T>(config: ReplionConfig<T>): ServerReplion<T>
 			end
 		end
 
-		if typeof(replicateTo) == 'Player' then
+		if typeof(replicateTo) == 'Instance' and replicateTo:IsA('Player') then
 			local playerCache = getCache(playersReplionsIndex, replicateTo)
 			playerCache[channel] = newReplion._id
 		elseif typeof(replicateTo) == 'table' then
