@@ -19,7 +19,7 @@
 				"ExecuteWithStudioRun": true
 			},
 			"run": {
-				"$path": "RunTests.server.lua"
+				"$path": "RunTests.server.luau"
 			}
 		}
 	}
