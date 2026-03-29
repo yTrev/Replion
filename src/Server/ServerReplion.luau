@@ -267,7 +267,9 @@ end
 	and then whenever the value at the given path is changed.
 ]=]
 function ServerReplion:Observe<V>(path, callback)
-	callback(self:Get(path), nil)
+	task.defer(function()
+		callback(self:Get(path), nil)
+	end)
 	return Graph.connect(self._rootNode, 'onChange', path, callback)
 end
 
