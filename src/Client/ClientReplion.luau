@@ -162,7 +162,9 @@ end
 	Calls the callback immediately with the current value at the path, then connects to changes.
 ]=]
 function ClientReplion:Observe<T>(path, callback)
-	callback(self:Get(path), nil)
+	task.defer(function()
+		callback(self:Get(path), nil)
+	end)
 	return Graph.connect(self._rootNode, 'onChange', path, callback)
 end
 
