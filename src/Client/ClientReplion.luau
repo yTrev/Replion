@@ -87,7 +87,7 @@ export type ClientReplion<D = any> = {
 
 --[=[
 	@class ClientReplion
-	
+
 	@client
 ]=]
 local ClientReplionMeta = {}
@@ -130,7 +130,7 @@ end
 
 	@return RBXScriptConnection
 
-	Connects to a signal that is fired when a value is changed in the data. 
+	Connects to a signal that is fired when a value is changed in the data.
 ]=]
 function ClientReplion:OnDataChange(callback)
 	return Graph.connect(self._rootNode, 'onDataChange', '__root', callback)
@@ -163,7 +163,9 @@ end
 	Calls the callback immediately with the current value at the path, then connects to changes.
 ]=]
 function ClientReplion:Observe<T>(path, callback)
-	task.defer(callback, self:Get(path), nil)
+	task.spawn(function()
+		callback(self:Get(path), nil)
+	end)
 
 	return Graph.connect(self._rootNode, 'onChange', path, callback)
 end
