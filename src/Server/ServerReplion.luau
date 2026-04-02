@@ -31,12 +31,13 @@ export type ServerReplionData<D = any> = {
 	OnChange: <T>(
 		self: ServerReplion<D>,
 		path: _T.Path,
-		callback: (newValue: T, oldValue: T) -> ()
+		callback: (newValue: T, oldValue: T?) -> ()
 	) -> Signal.Connection,
+
 	Observe: <T>(
 		self: ServerReplion<D>,
 		path: _T.Path,
-		callback: (newValue: T, oldValue: T) -> ()
+		callback: (newValue: T, oldValue: T?) -> ()
 	) -> Signal.Connection,
 
 	OnArrayInsert: (self: ServerReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
@@ -267,9 +268,8 @@ end
 	and then whenever the value at the given path is changed.
 ]=]
 function ServerReplion:Observe<V>(path, callback)
-	task.defer(function()
-		callback(self:Get(path), nil)
-	end)
+	task.defer(callback, self:Get(path), nil)
+
 	return Graph.connect(self._rootNode, 'onChange', path, callback)
 end
 
