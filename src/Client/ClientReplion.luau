@@ -25,12 +25,13 @@ export type ClientReplion<D = any> = {
 	OnChange: <T>(
 		self: ClientReplion<D>,
 		path: _T.Path,
-		callback: (newValue: T, oldValue: T) -> ()
+		callback: (newValue: T, oldValue: T?) -> ()
 	) -> Signal.Connection,
+
 	Observe: <T>(
 		self: ClientReplion<D>,
 		path: _T.Path,
-		callback: (newValue: T, oldValue: T) -> ()
+		callback: (newValue: T, oldValue: T?) -> ()
 	) -> Signal.Connection,
 
 	OnArrayInsert: (self: ClientReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
@@ -162,9 +163,8 @@ end
 	Calls the callback immediately with the current value at the path, then connects to changes.
 ]=]
 function ClientReplion:Observe<T>(path, callback)
-	task.defer(function()
-		callback(self:Get(path), nil)
-	end)
+	task.defer(callback, self:Get(path), nil)
+
 	return Graph.connect(self._rootNode, 'onChange', path, callback)
 end
 
