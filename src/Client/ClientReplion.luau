@@ -25,7 +25,13 @@ export type ClientReplion<D = any> = {
 	OnChange: <T>(
 		self: ClientReplion<D>,
 		path: _T.Path,
-		callback: (newValue: T, oldValue: T) -> ()
+		callback: (newValue: T, oldValue: T?) -> ()
+	) -> Signal.Connection,
+
+	Observe: <T>(
+		self: ClientReplion<D>,
+		path: _T.Path,
+		callback: (newValue: T, oldValue: T?) -> ()
 	) -> Signal.Connection,
 
 	OnArrayInsert: (self: ClientReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
@@ -81,7 +87,7 @@ export type ClientReplion<D = any> = {
 
 --[=[
 	@class ClientReplion
-	
+
 	@client
 ]=]
 local ClientReplionMeta = {}
@@ -124,7 +130,7 @@ end
 
 	@return RBXScriptConnection
 
-	Connects to a signal that is fired when a value is changed in the data. 
+	Connects to a signal that is fired when a value is changed in the data.
 ]=]
 function ClientReplion:OnDataChange(callback)
 	return Graph.connect(self._rootNode, 'onDataChange', '__root', callback)
@@ -145,6 +151,22 @@ end
 	This function is called when the value of the path changes.
 ]=]
 function ClientReplion:OnChange<T>(path, callback)
+	return Graph.connect(self._rootNode, 'onChange', path, callback)
+end
+
+--[=[
+	@param path Path
+	@param callback (newValue: any, oldValue: any) -> ()
+
+	@return RBXScriptConnection
+
+	Calls the callback immediately with the current value at the path, then connects to changes.
+]=]
+function ClientReplion:Observe<T>(path, callback)
+	task.spawn(function()
+		callback(self:Get(path), nil)
+	end)
+
 	return Graph.connect(self._rootNode, 'onChange', path, callback)
 end
 

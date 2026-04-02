@@ -31,7 +31,13 @@ export type ServerReplionData<D = any> = {
 	OnChange: <T>(
 		self: ServerReplion<D>,
 		path: _T.Path,
-		callback: (newValue: T, oldValue: T) -> ()
+		callback: (newValue: T, oldValue: T?) -> ()
+	) -> Signal.Connection,
+
+	Observe: <T>(
+		self: ServerReplion<D>,
+		path: _T.Path,
+		callback: (newValue: T, oldValue: T?) -> ()
 	) -> Signal.Connection,
 
 	OnArrayInsert: (self: ServerReplion<D>, path: _T.Path, callback: _T.ArrayCallback) -> Signal.Connection,
@@ -249,6 +255,23 @@ end
 	Connects to a signal that is fired when the value at the given path is changed.
 ]=]
 function ServerReplion:OnChange<V>(path, callback)
+	return Graph.connect(self._rootNode, 'onChange', path, callback)
+end
+
+--[=[
+	@param path Path
+	@param callback (newValue: any, oldValue: any) -> ()
+
+	@return RBXScriptConnection
+
+	Connects to a signal that is fired immediately with the current value at the given path,
+	and then whenever the value at the given path is changed.
+]=]
+function ServerReplion:Observe<V>(path, callback)
+	task.spawn(function()
+		callback(self:Get(path), nil)
+	end)
+
 	return Graph.connect(self._rootNode, 'onChange', path, callback)
 end
 
