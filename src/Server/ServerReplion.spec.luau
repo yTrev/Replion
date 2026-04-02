@@ -264,6 +264,24 @@ describe('ServerReplion:Set', function()
 	end)
 end)
 
+describe('ServerReplion:Observe', function()
+	it('should call the callback with the current value', function()
+		local newReplion = ReplionServer.new({
+			Data = { Foo = 20 },
+
+			Channel = 'Observe',
+			ReplicateTo = 'All',
+		})
+
+		local fnMock = jest.fn()
+		newReplion:Observe('Foo', fnMock)
+		newReplion:Set('Foo', 200)
+
+		expect(fnMock).toHaveBeenCalledWith(20, nil)
+		expect(fnMock).toHaveBeenCalledWith(200, 20)
+	end)
+end)
+
 describe('ServerReplion:SetReplicateTo', function()
 	it('should set the ReplicateTo value of the Replion', function()
 		local newReplion = ReplionServer.new({

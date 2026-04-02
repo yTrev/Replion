@@ -201,6 +201,21 @@ describe('ClientReplion:OnChange', function()
 	end)
 end)
 
+describe('ClientReplion:Observe', function()
+	it('should call the callback with the current value', function()
+		local newReplion = ClientReplion.new({ nil, 'Observe', {
+			Foo = 20,
+		} })
+
+		local fnMock = jest.fn()
+		newReplion:Observe('Foo', fnMock)
+		newReplion:_set('Foo', 200)
+
+		expect(fnMock).toHaveBeenCalledWith(20, nil)
+		expect(fnMock).toHaveBeenCalledWith(200, 20)
+	end)
+end)
+
 describe('ClientReplion:OnArrayInsert', function()
 	it('should call the callback when a value is inserted', function()
 		local newReplion = ClientReplion.new({ nil, 'OnArrayInsert', { Array = { 1, 2, 3 } } })

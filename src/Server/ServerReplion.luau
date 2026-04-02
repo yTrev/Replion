@@ -142,7 +142,7 @@ local warnsSent = {}
 ]=]
 
 --[=[
-	@class ServerReplion	
+	@class ServerReplion
 
 	@server
 ]=]
@@ -240,7 +240,7 @@ end
 
 	@return RBXScriptConnection
 
-	Connects to a signal that is fired when a value is changed in the data. 
+	Connects to a signal that is fired when a value is changed in the data.
 ]=]
 function ServerReplion:OnDataChange(callback)
 	return Graph.connect(self._rootNode, 'onDataChange', { '__root' }, callback)
@@ -249,7 +249,7 @@ end
 --[=[
 	@param path Path
 	@param callback (newValue: any, oldValue: any) -> ()
-	
+
 	@return RBXScriptConnection
 
 	Connects to a signal that is fired when the value at the given path is changed.
@@ -300,7 +300,7 @@ function ServerReplion:OnArrayRemove(path, callback)
 end
 
 --[=[
-	@param replicateTo ReplicateTo	
+	@param replicateTo ReplicateTo
 
 	Sets the players to which the data should be replicated.
 ]=]
@@ -361,7 +361,7 @@ end
 	@param newValue T
 
 	Sets the value at the given path to the given value.
-	If you're updating a table is recommended to use [ServerReplion:Update] instead of `ServerReplion:Set` 
+	If you're updating a table is recommended to use [ServerReplion:Update] instead of `ServerReplion:Set`
 	to avoid sending unnecessary data to the client.
 ]=]
 function ServerReplion:Set<T>(path, newValue: T): T
@@ -620,7 +620,7 @@ end
 	:::note Arrays only
 	This only works on Arrays.
 
-	Inserts a value into the array at the given path, and returns the index and value. 
+	Inserts a value into the array at the given path, and returns the index and value.
 	If no index is given, it will insert the value at the end of the array.
 ]=]
 function ServerReplion:Insert<T>(path, value: T, index)
@@ -865,7 +865,9 @@ function ServerReplion:Destroy()
 
 	Network.sendTo(self.ReplicateTo, 'Removed', self._packedId)
 
-	table.insert(availableIds, self._id)
+	if table.find(availableIds, self._id) == nil then
+		table.insert(availableIds, self._id)
+	end
 end
 
 return ServerReplion
