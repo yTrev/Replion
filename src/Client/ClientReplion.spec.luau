@@ -64,7 +64,7 @@ describe('ClientReplion:Get', function()
 	end)
 end)
 
-describe('ServerReplion:GetExpect', function()
+describe('ClientReplion:GetExpect', function()
 	it('should get the value of the Replion', function()
 		local newReplion = ClientReplion.new({
 			nil,
