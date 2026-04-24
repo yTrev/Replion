@@ -1,7 +1,7 @@
 --!native
-local Signal = require(script.Parent.Parent.Parent.Signal)
+local Signal = require('../../Signal')
 
-local _T = require(script.Parent.Types)
+local _T = require('./Types')
 
 export type Node = {
 	children: { [any]: Node }?,
@@ -65,7 +65,7 @@ local function destroySignal(node: Node, eventName: string)
 	end
 end
 
-function getSignal(node: Node?, eventName: string, path: _T.Path, create: boolean?): Signal.Signal<...any>?
+local function getSignal(node: Node?, eventName: string, path: _T.Path, create: boolean?): Signal.Signal<...any>?
 	-- Only create the node/signal if it's really needed
 	-- This is to prevent creating a lot of empty tables and unused signals
 	local shouldCreate = create == nil or create
@@ -130,7 +130,7 @@ function getSignal(node: Node?, eventName: string, path: _T.Path, create: boolea
 	return if events then events[eventName] else nil
 end
 
-function fireEvent(node: Node?, eventName: string, path: _T.Path, ...: any)
+local function fireEvent(node: Node?, eventName: string, path: _T.Path, ...: any)
 	assert(node, DESTROYED_ERROR)
 
 	local signal = getSignal(node, eventName, path, false)
@@ -139,7 +139,7 @@ function fireEvent(node: Node?, eventName: string, path: _T.Path, ...: any)
 	end
 end
 
-function connect(node: Node?, eventName: string, path: _T.Path, callback: (...any) -> ())
+local function connect(node: Node?, eventName: string, path: _T.Path, callback: (...any) -> ())
 	assert(node, DESTROYED_ERROR)
 
 	if _G.__DEV__ and not _G.__IGNORE_INSTANCES_WARNING__ then
@@ -324,7 +324,7 @@ local function destroyRootNode(rootNode: Node?)
 		node.parent = nil
 	end
 
-	queue = nil
+	queue = nil :: any
 end
 
 return {

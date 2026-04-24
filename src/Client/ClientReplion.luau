@@ -1,10 +1,9 @@
-local Freeze = require(script.Parent.Parent.Parent.Freeze)
+local Freeze = require('../../Freeze')
+local Signal = require('../../Signal')
 
-local Utils = require(script.Parent.Parent.Internal.Utils)
-local Signal = require(script.Parent.Parent.Parent.Signal)
-local _T = require(script.Parent.Parent.Internal.Types)
-
-local Graph = require(script.Parent.Parent.Internal.Graph)
+local Graph = require('../Internal/Graph')
+local Utils = require('../Internal/Utils')
+local _T = require('../Internal/Types')
 
 type Dictionary = _T.Dictionary
 

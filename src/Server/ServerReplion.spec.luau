@@ -1,8 +1,8 @@
 --!nocheck
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
-local Replion = require(script.Parent.Parent)
 local JestGlobals = require(ReplicatedStorage.DevPackages.JestGlobals)
+local Replion = require(script.Parent.Parent)
 
 local expect = JestGlobals.expect
 local describe = JestGlobals.describe

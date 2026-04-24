@@ -1,13 +1,13 @@
 local Players = game:GetService('Players')
 local RunService = game:GetService('RunService')
 
-local Freeze = require(script.Parent.Parent.Freeze)
-local Utils = require(script.Parent.Internal.Utils)
-local Network = require(script.Parent.Internal.Network)
-local ServerReplion = require(script.ServerReplion)
+local Freeze = require('../Freeze')
+local Signal = require('../Signal')
 
-local Signal = require(script.Parent.Parent.Signal)
-local _T = require(script.Parent.Internal.Types)
+local Network = require('./Internal/Network')
+local ServerReplion = require('@self/ServerReplion')
+local Utils = require('./Internal/Utils')
+local _T = require('./Internal/Types')
 
 export type ServerReplion<D = any> = ServerReplion.ServerReplion<D>
 type ReplionConfig<T> = ServerReplion.ReplionConfig<T>

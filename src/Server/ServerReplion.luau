@@ -1,14 +1,12 @@
 local Players = game:GetService('Players')
 
-local Network = require(script.Parent.Parent.Internal.Network)
-local Signal = require(script.Parent.Parent.Parent.Signal)
+local Freeze = require('../../Freeze')
+local Signal = require('../../Signal')
 
-local Utils = require(script.Parent.Parent.Internal.Utils)
-local Graph = require(script.Parent.Parent.Internal.Graph)
-
-local _T = require(script.Parent.Parent.Internal.Types)
-
-local Freeze = require(script.Parent.Parent.Parent.Freeze)
+local Graph = require('../Internal/Graph')
+local Network = require('../Internal/Network')
+local Utils = require('../Internal/Utils')
+local _T = require('../Internal/Types')
 
 export type ServerReplionData<D = any> = {
 	Channel: string,

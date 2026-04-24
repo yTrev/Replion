@@ -1,10 +1,12 @@
 local RunService = game:GetService('RunService')
 
-local Utils = require(script.Parent.Internal.Utils)
-local Signal = require(script.Parent.Parent.Signal)
-local Network = require(script.Parent.Internal.Network)
-local ClientReplion = require(script.ClientReplion)
-local _T = require(script.Parent.Internal.Types)
+local Signal = require('../Signal')
+
+local Network = require('./Internal/Network')
+local Utils = require('./Internal/Utils')
+local _T = require('./Internal/Types')
+
+local ClientReplion = require('@self/ClientReplion')
 
 export type ClientReplion<D = any> = ClientReplion.ClientReplion<D>
 type SerializedReplion = _T.SerializedReplion

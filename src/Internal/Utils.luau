@@ -1,7 +1,8 @@
 local RunService = game:GetService('RunService')
 
-local Freeze = require(script.Parent.Parent.Parent.Freeze)
-local _T = require(script.Parent.Types)
+local Freeze = require('../../Freeze')
+
+local _T = require('./Types')
 
 local SERIALIZED_NONE = '\0'
 

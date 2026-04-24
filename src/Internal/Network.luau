@@ -1,21 +1,16 @@
 local Players = game:GetService('Players')
 local RunService = game:GetService('RunService')
-local Utils = require(script.Parent.Utils)
+
+local Utils = require('./Utils')
 
 export type Remotes = {
 	[string]: RemoteEvent,
 }
 
-type Network = {
-	get: (id: string) -> RemoteEvent,
-	create: (events: { string }) -> (),
-
-	sendTo: (replicateTo: any, id: string, ...any) -> (),
-}
-
-local IS_SERVER: boolean = RunService:IsServer()
-local IS_CLIENT: boolean = RunService:IsClient()
-local NOT_INITIALIZED: string = 'Did you forget to require the Replion module on the server?'
+local IS_SERVER = RunService:IsServer()
+local IS_CLIENT = RunService:IsClient()
+local WAIT_FOR_CHILD_TIMEOUT = 60
+local NOT_INITIALIZED = 'Did you forget to require the Replion module on the server?'
 
 local RemotesFolder: Folder
 
@@ -26,12 +21,15 @@ if not Utils.ShouldMock then
 		RemotesFolder.Name = 'Remotes'
 		RemotesFolder.Parent = script.Parent.Parent
 	else
-		RemotesFolder = assert(script.Parent.Parent:WaitForChild('Remotes', 5), NOT_INITIALIZED) :: Folder
+		RemotesFolder =
+			assert(script.Parent.Parent:WaitForChild('Remotes', WAIT_FOR_CHILD_TIMEOUT), NOT_INITIALIZED) :: Folder
 	end
 end
 
 local function get(id: string): RemoteEvent
-	local remote = RemotesFolder:FindFirstChild(id)
+	local remote = if IS_CLIENT
+		then RemotesFolder:WaitForChild(id, WAIT_FOR_CHILD_TIMEOUT)
+		else RemotesFolder:FindFirstChild(id)
 	if remote then
 		return remote :: RemoteEvent
 	elseif IS_CLIENT then
@@ -79,4 +77,4 @@ return table.freeze({
 	get = get,
 	create = create,
 	sendTo = sendTo,
-}) :: Network
+})
