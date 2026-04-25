@@ -73,6 +73,8 @@ local function getSignal(node: Node?, eventName: string, path: _T.Path, create: 
 		error('You are trying to use a destroyed Replion!')
 	end
 
+	debug.profilebegin('Graph.getSignal')
+
 	for _, index in getPathTable(path) do
 		if not node.children or not node.children[index] then
 			if shouldCreate then
@@ -84,6 +86,8 @@ local function getSignal(node: Node?, eventName: string, path: _T.Path, create: 
 
 				node.children = children
 			else
+				debug.profileend()
+
 				return nil
 			end
 		end
@@ -91,6 +95,8 @@ local function getSignal(node: Node?, eventName: string, path: _T.Path, create: 
 		node = if node.children then node.children[index] else nil
 
 		if not node then
+			debug.profileend()
+
 			return nil
 		end
 	end
@@ -127,16 +133,22 @@ local function getSignal(node: Node?, eventName: string, path: _T.Path, create: 
 		end
 	end
 
+	debug.profileend()
+
 	return if events then events[eventName] else nil
 end
 
 local function fireEvent(node: Node?, eventName: string, path: _T.Path, ...: any)
 	assert(node, DESTROYED_ERROR)
 
+	debug.profilebegin('Graph.fireEvent')
+
 	local signal = getSignal(node, eventName, path, false)
 	if signal then
 		signal:Fire(...)
 	end
+
+	debug.profileend()
 end
 
 local function connect(node: Node?, eventName: string, path: _T.Path, callback: (...any) -> ())
@@ -179,6 +191,8 @@ local function fireChange(rootNode: Node?, path: _T.Path, newValue: any, oldValu
 		return
 	end
 
+	debug.profilebegin('Graph.fireChange')
+
 	local startNode = rootNode
 	local startNewValue = newValue
 	local startOldValue = oldValue
@@ -209,6 +223,8 @@ local function fireChange(rootNode: Node?, path: _T.Path, newValue: any, oldValu
 					currentNewValue = get(currentNewValue, index)
 					currentOldValue = get(currentOldValue, index)
 				else
+					debug.profileend()
+
 					return -- path doesn't exist, nothing to process
 				end
 			end
@@ -268,6 +284,8 @@ local function fireChange(rootNode: Node?, path: _T.Path, newValue: any, oldValu
 			end
 		end
 	end
+
+	debug.profileend()
 end
 
 local function createRootNode(): Node
@@ -292,6 +310,8 @@ local function destroyRootNode(rootNode: Node?)
 	if not index then
 		return
 	end
+
+	debug.profilebegin('Graph:destroyRootNode')
 
 	tree[index] = tree[tree.n]
 	tree[tree.n] = nil
@@ -325,6 +345,8 @@ local function destroyRootNode(rootNode: Node?)
 	end
 
 	queue = nil :: any
+
+	debug.profileend()
 end
 
 return {

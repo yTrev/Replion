@@ -54,6 +54,8 @@ local function sendTo(replicateTo: any, id: string, ...: any)
 		return
 	end
 
+	debug.profilebegin('Network.sendTo')
+
 	local remote = get(id) :: RemoteEvent
 
 	if replicateTo == 'All' then
@@ -71,6 +73,8 @@ local function sendTo(replicateTo: any, id: string, ...: any)
 	else
 		error('Invalid replicateTo!')
 	end
+
+	debug.profileend()
 end
 
 return table.freeze({

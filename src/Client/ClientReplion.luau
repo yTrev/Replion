@@ -194,10 +194,14 @@ function ClientReplion:OnArrayRemove(path, callback)
 end
 
 function ClientReplion:_set<T>(path, newValue: T): T
+	debug.profilebegin('ClientReplion:_set')
+
 	local pathTable = Utils.getPathTable(path)
 
 	local currentValue: T? = Freeze.Dictionary.getIn(self.Data, pathTable)
 	if currentValue == newValue then
+		debug.profileend()
+
 		return newValue
 	end
 
@@ -209,10 +213,14 @@ function ClientReplion:_set<T>(path, newValue: T): T
 	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
 	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
+	debug.profileend()
+
 	return newValue
 end
 
 function ClientReplion:_update(path, toUpdate, isUnordered)
+	debug.profilebegin('ClientReplion:_update')
+
 	local values = Freeze.Dictionary.map(toUpdate or path :: Dictionary, function(value, key)
 		return if value == Utils.SerializedNone then Freeze.None else value, if isUnordered then tonumber(key) else key
 	end)
@@ -228,23 +236,39 @@ function ClientReplion:_update(path, toUpdate, isUnordered)
 
 	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
 	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
+
+	debug.profileend()
 end
 
 function ClientReplion:_increase(path, amount)
-	local currentValue: number = self:GetExpect(path)
+	debug.profilebegin('ClientReplion:_increase')
 
-	return self:_set(path, currentValue + amount)
+	local currentValue: number = self:GetExpect(path)
+	local newValue = self:_set(path, currentValue + amount)
+
+	debug.profileend()
+
+	return newValue
 end
 
 function ClientReplion:_decrease(path, amount)
-	return self:_increase(path, -amount)
+	debug.profilebegin('ClientReplion:_decrease')
+
+	local value = self:_increase(path, -amount)
+
+	debug.profileend()
+
+	return value
 end
 
 function ClientReplion:_insert<T>(path, value: T, index)
+	debug.profilebegin('ClientReplion:_insert')
+
 	local pathTable = Utils.getPathTable(path)
 
 	local array =
 		assert(Freeze.Dictionary.getIn(self.Data, pathTable), `"{Utils.getPathString(path)}" is not a valid path!`)
+
 	local targetIndex: number = if index then index else #array + 1
 
 	local newArray = Freeze.List.insert(array, targetIndex, value)
@@ -257,9 +281,13 @@ function ClientReplion:_insert<T>(path, value: T, index)
 	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
 	Graph.fireEvent(self._rootNode, 'onArrayInsert', pathTable, targetIndex, value)
 	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
+
+	debug.profileend()
 end
 
 function ClientReplion:_remove<T>(path, index)
+	debug.profilebegin('ClientReplion:_remove')
+
 	local pathTable = Utils.getPathTable(path)
 
 	local array = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
@@ -277,10 +305,14 @@ function ClientReplion:_remove<T>(path, index)
 	Graph.fireEvent(self._rootNode, 'onArrayRemove', path, targetIndex, value)
 	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
+	debug.profileend()
+
 	return value
 end
 
 function ClientReplion:_clear(path)
+	debug.profilebegin('ClientReplion:_clear')
+
 	local pathTable = Utils.getPathTable(path)
 
 	local oldData = self.Data
@@ -290,6 +322,8 @@ function ClientReplion:_clear(path)
 
 	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
 	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
+
+	debug.profileend()
 end
 
 --[=[
@@ -306,15 +340,23 @@ end
 	Try to find the value in the array at the given path, and returns the index and value.
 ]=]
 function ClientReplion:Find<T>(path, value: T): (number?, T?)
+	debug.profilebegin('ClientReplion:Find')
+
 	local array: { T }? = self:Get(path)
 	if not array then
+		debug.profileend()
+
 		return
 	end
 
 	local index: number? = table.find(array, value)
 	if not index then
+		debug.profileend()
+
 		return
 	end
+
+	debug.profileend()
 
 	return index, value
 end
@@ -330,7 +372,13 @@ end
 	If you are expecting a value to exist, use `Replion:GetExpect` instead.
 ]=]
 function ClientReplion:Get<T>(path): T?
-	return Freeze.Dictionary.getIn(self.Data, Utils.getPathTable(path))
+	debug.profilebegin('ClientReplion:Get')
+
+	local value = Freeze.Dictionary.getIn(self.Data, Utils.getPathTable(path))
+
+	debug.profileend()
+
+	return value
 end
 
 --[=[
@@ -350,12 +398,16 @@ end
 function ClientReplion:GetExpect<T>(path, message): T
 	assert(path, 'Path is required!')
 
+	debug.profilebegin('ClientReplion:GetExpect')
+
 	message = if message then message else `"{Utils.getPathString(path)}" is not a valid path!`
 
 	local value: T? = self:Get(path)
 	if value == nil then
 		error(message)
 	end
+
+	debug.profileend()
 
 	return value
 end

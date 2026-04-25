@@ -363,9 +363,11 @@ end
 	to avoid sending unnecessary data to the client.
 ]=]
 function ServerReplion:Set<T>(path, newValue: T): T
-	local pathTable = Utils.getPathTable(path)
+	debug.profilebegin('ServerReplion:Set')
 
+	local pathTable = Utils.getPathTable(path)
 	local currentValue: T? = Freeze.Dictionary.getIn(self.Data, pathTable)
+
 	if Freeze.Dictionary.equals(currentValue :: any, newValue) then
 		if _G.__DEV__ and type(currentValue) == 'table' then
 			local scriptName, line = debug.info(2, 'sl')
@@ -389,6 +391,8 @@ function ServerReplion:Set<T>(path, newValue: T): T
 				warnsSent[lineString] = true
 			end
 		end
+
+		debug.profileend()
 
 		return currentValue :: T
 	end
@@ -437,6 +441,8 @@ function ServerReplion:Set<T>(path, newValue: T): T
 	Graph.fireEvent(self._rootNode, 'onDataChange', '__root', newData, pathTable)
 	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
+	debug.profileend()
+
 	return newValue
 end
 
@@ -471,6 +477,8 @@ end
 	You can update the root data by passing a table as the first argument.
 ]=]
 function ServerReplion:Update(path, toUpdate)
+	debug.profilebegin('Replion:Update')
+
 	local pathTable = if toUpdate then Utils.getPathTable(path) else nil
 	local pathCurrentValue = if pathTable then Freeze.Dictionary.getIn(self.Data, pathTable) else self.Data
 	local targetTable = toUpdate or path :: _T.Dictionary
@@ -485,6 +493,8 @@ function ServerReplion:Update(path, toUpdate)
 
 	local nothingChanged = next(changedValues) == nil
 	if nothingChanged then
+		debug.profileend()
+
 		return
 	end
 
@@ -542,6 +552,8 @@ function ServerReplion:Update(path, toUpdate)
 	else
 		Network.sendTo(self.ReplicateTo, 'Update', self._packedId, path, serializedUpdate, isUnordered)
 	end
+
+	debug.profileend()
 end
 
 --[=[
@@ -557,8 +569,12 @@ end
 function ServerReplion:Increase(path, amount)
 	assert(type(amount) == 'number', `"amount" expected number, got {type(amount)}`)
 
+	debug.profilebegin('ServerReplion:Increase')
+
 	local currentValue = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
 	if amount == 0 then
+		debug.profileend()
+
 		return currentValue
 	end
 
@@ -575,8 +591,12 @@ function ServerReplion:Increase(path, amount)
 			)
 		end
 
+		debug.profileend()
+
 		return currentValue
 	end
+
+	debug.profileend()
 
 	return self:Set(path, currentValue + amount)
 end
@@ -592,7 +612,13 @@ end
 	Decreases the value at the given path by the given amount.
 ]=]
 function ServerReplion:Decrease(path, amount)
-	return self:Increase(path, -amount)
+	debug.profilebegin('ServeReplion:Decrease')
+
+	local newValue = self:Increase(path, -amount)
+
+	debug.profileend()
+
+	return newValue
 end
 
 --[=[
@@ -622,6 +648,8 @@ end
 	If no index is given, it will insert the value at the end of the array.
 ]=]
 function ServerReplion:Insert<T>(path, value: T, index)
+	debug.profilebegin('ServerReplion:Insert')
+
 	local pathTable = Utils.getPathTable(path)
 
 	local array = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
@@ -640,6 +668,8 @@ function ServerReplion:Insert<T>(path, value: T, index)
 	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
 	Network.sendTo(self.ReplicateTo, 'ArrayUpdate', self._packedId, 'i', path, value, index)
+
+	debug.profileend()
 end
 
 --[=[
@@ -668,6 +698,8 @@ end
 	If no index is given, it will remove the value at the end of the array.
 ]=]
 function ServerReplion:Remove<T>(path, index): T
+	debug.profilebegin('ServerReplion:Remove')
+
 	local pathTable = Utils.getPathTable(path)
 
 	local array = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
@@ -688,6 +720,8 @@ function ServerReplion:Remove<T>(path, index): T
 	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
 	Network.sendTo(self.ReplicateTo, 'ArrayUpdate', self._packedId, 'r', path, index)
+
+	debug.profileend()
 
 	return value
 end
@@ -717,10 +751,14 @@ end
 	Clears the array at the given path.
 ]=]
 function ServerReplion:Clear(path)
+	debug.profilebegin('ServerReplion:Clear')
+
 	local array = self:GetExpect(path, `"{Utils.getPathString(path)}" is not a valid path!`)
 
 	-- If the array is already empty, don't do anything
 	if next(array) == nil then
+		debug.profileend()
+
 		return
 	end
 
@@ -734,6 +772,8 @@ function ServerReplion:Clear(path)
 	Graph.fireChange(self._rootNode, pathTable, newData, oldData)
 
 	Network.sendTo(self.ReplicateTo, 'ArrayUpdate', self._packedId, 'c', path)
+
+	debug.profileend()
 end
 
 --[=[
@@ -761,15 +801,23 @@ end
 	Try to find the value in the array at the given path, and returns the index and value.
 ]=]
 function ServerReplion:Find<T>(path, value: T): (number?, T?)
+	debug.profilebegin('ServerReplion:Find')
+
 	local array: { T }? = self:Get(path)
 	if not array then
+		debug.profileend()
+
 		return
 	end
 
 	local index: number? = table.find(array, value)
 	if not index then
+		debug.profileend()
+
 		return
 	end
+
+	debug.profileend()
 
 	return index, value
 end
@@ -785,6 +833,8 @@ end
 ]=]
 function ServerReplion:Get<T>(path): T?
 	assert(path, 'Path is required!')
+
+	debug.profilebegin('Replion:Get')
 
 	local pathTable = Utils.getPathTable(path)
 	local value: T? = Freeze.Dictionary.getIn(self.Data, pathTable)
@@ -813,6 +863,8 @@ function ServerReplion:Get<T>(path): T?
 		end
 	end
 
+	debug.profileend()
+
 	return value
 end
 
@@ -833,12 +885,16 @@ end
 function ServerReplion:GetExpect<T>(path, message): T
 	assert(path, 'Path is required!')
 
+	debug.profilebegin('ServerReplion:GetExpect')
+
 	message = if message then message else `"{Utils.getPathString(path)}" is not a valid path!`
 
 	local value: T? = self:Get(path)
 	if value == nil then
 		error(message)
 	end
+
+	debug.profileend()
 
 	return value
 end
